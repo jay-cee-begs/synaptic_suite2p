@@ -10,10 +10,12 @@ def merge_cellprofiler_csvs(folder):
     skele_data = pd.read_csv(folder + r'\GCaMP6f_SkeletonizationImage.csv')
 
     merged_df = skele_data.merge(img_data, on="FileName_Originals")
-    merged_df = merged_df[['AreaOccupied_AreaOccupied_Neurites_Skeleton', "AreaOccupied_AreaOccupied_Thresholded_Neurites",
-                           'AreaShape_BoundingBoxMaximum_X', 'AreaShape_BoundingBoxMaximum_Y', 'FileName_Originals']]
+
     merged_df['FileName_Originals'] = merged_df['FileName_Originals'].str[4:-4]
     merged_df['Total Area'] = merged_df['AreaShape_BoundingBoxMaximum_Y'] * merged_df['AreaShape_BoundingBoxMaximum_X']
+    merged_df['Normalized Skeleton Coverage'] = merged_df['AreaOccupied_AreaOccupied_Neurites_Skeleton']
+    merged_df['Normalized Neurite Area'] = merged_df['AreaOccupied_AreaOccupied_Thresholded_Neurites']
+    merged_df = merged_df[['Normalized Neurite Area', "Normalized Skeleton Coverage", 'FileName_Originals']]
     sorted_skeletons = merged_df.sort_values(by="FileName_Originals").reset_index(drop=True)
     # print(sorted_skeletons)
     
@@ -29,9 +31,11 @@ def merge_cellprofiler_csvs(folder):
         idx2 = full_df['FileName_Originals'].iloc[i]
         if idx1 != idx2:
             print(idx1)
-    print(full_df)
+    full_df['area_normalized_synapses'] = full_df['synapse_count'] / full_df['Normalized Neurite Area']
+    full_df['skeleton_normalized_synapses'] = full_df['synapse_count'] / full_df["Normalized Skeleton Coverage"]
 
-    return merged_df, stats
+    return full_df
 
 if __name__ == "__main__":
-    merge_cellprofiler_csvs(folder)
+    df = merge_cellprofiler_csvs(folder)
+    print(df)
