@@ -1,0 +1,15 @@
+[project]
+name = "synaptic_suite2p"
+version = "0.1.0"
+description = "a python project for using suite2p for NMDA synapse detection"
+authors = [{name = "jay-cee-begs" email = "jcbegs@gmail.com"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+
+requires-python = "<=3.8"
+dependencies = "requirements.txt"
+packages = 'process_syanpse_suite2p'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
