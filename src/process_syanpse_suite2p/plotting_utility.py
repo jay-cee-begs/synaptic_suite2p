@@ -69,32 +69,6 @@ def add_significance_bar_to_axis(ax, series1, series2, center_x, line_width):
     
     return ax
 
-_available_tests = {
-    "mann-whitney-u": stats.mannwhitneyu,
-    "wilcoxon": stats.wilcoxon,
-    "paired_t": stats.ttest_rel,
-}
-def get_significance_text(series1, series2, test="mann-whitney-u", bonferroni_correction=1, show_ns=False, 
-                          cutoff_dict={"*":0.05, "**":0.01, "***":0.001, "****":0.00099}, return_string="{text}\n{pvalue:.4f}"):
-    statistic, pvalue = _available_tests[test](series1, series2)
-    levels, cutoffs = np.vstack(list(cutoff_dict.items())).T
-    levels = np.insert(levels, 0, "n.s." if show_ns else "")
-    text = levels[(pvalue < cutoffs.astype(float)).sum()]
-    return return_string.format(pvalue=pvalue, text=text) #, text=text
-
-def add_significance_bar_to_axis(ax, series1, series2, center_x, line_width):
-    significance_text = get_significance_text(series1, series2, show_ns=True)
-    
-    original_limits = ax.get_ylim()
-    
-    ax.errorbar(center_x, original_limits[1], xerr=line_width/2, color="k", capsize=12)
-    ax.text(center_x, original_limits[1], significance_text, ha="center", va="bottom", fontsize = 32)
-    
-    extended_limits = (original_limits[0], (original_limits[1] - original_limits[0]) * 1.2 + original_limits[0])
-    ax.set_ylim(extended_limits)
-    
-    return ax
-
 def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="median", comparison_function="mean",
                             palette="Set3", significance_check=False, group_order=None, control_group = None, ylim = 0, y_label = "", x_label = ""):
     """
