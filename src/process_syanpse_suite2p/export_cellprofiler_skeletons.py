@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 folder = r'C:\Users\jcbeg\Desktop\004 - Cell Profiler TroubleShooting\sults'
 
-def merge_cellprofiler_csvs(folder):
+def merge_cellprofiler_csvs(folder, summary_file_name):
     img_data = pd.read_csv(folder + r'\GCaMP6f_SkeletonizationImageArea.csv')
     skele_data = pd.read_csv(folder + r'\GCaMP6f_SkeletonizationImage.csv')
 
@@ -19,18 +19,18 @@ def merge_cellprofiler_csvs(folder):
     sorted_skeletons = merged_df.sort_values(by="FileName_Originals").reset_index(drop=True)
     # print(sorted_skeletons)
     
-    stats = pd.read_csv(folder + r'\NMDA_synapse_experiment_summary.csv')
+    stats = pd.read_csv(folder + '\\' + summary_file_name)
     stats['FileName_Originals'] = stats['file_name'].apply(lambda x: "".join(x.split("Dur")[0]))
     stats = stats.drop(columns = 'Unnamed: 0')
     sorted_experiment_stats = stats.sort_values(by='file_name').reset_index(drop=True)
     # print(sorted_experiment_stats)
     full_df = sorted_experiment_stats.merge(sorted_skeletons)
     #Troubleshooting
-    for i in range(len(full_df)):
-        idx1 = full_df['file_name'].iloc[i]
-        idx2 = full_df['FileName_Originals'].iloc[i]
-        if idx1 != idx2:
-            print(idx1)
+    # for i in range(len(full_df)):
+    #     idx1 = full_df['file_name'].iloc[i]
+    #     idx2 = full_df['FileName_Originals'].iloc[i]
+    #     if idx1 != idx2:
+    #         print(idx1)
     full_df['area_normalized_synapses'] = full_df['synapse_count'] / full_df['Normalized Neurite Area']
     full_df['skeleton_normalized_synapses'] = full_df['synapse_count'] / full_df["Normalized Skeleton Coverage"]
 
