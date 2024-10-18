@@ -1,0 +1,11 @@
+#Where is your data?
+main_folder: 'data'
+#where is your suite2p ops file saved (you should manually curate one)
+ops_path: 'C:\Users\jcbegs\python3\suite2p_ops\2024.04.24_20fps_func_not_conn_40x_wide_ops.npy'
+#Imaging Parameters
+data_extension: "nd2"
+frame_rate: 20
+EXPERIMENT_DURATION: 180 #total number of seconds that the experiment lasts (tends to be flexible so we will have to figure out how to set this)
+
+FILTER_NEURONS: true
+
