@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+synaptic_suite2p.egg-info/PKG-INFO
+synaptic_suite2p.egg-info/SOURCES.txt
+synaptic_suite2p.egg-info/dependency_links.txt
+synaptic_suite2p.egg-info/requires.txt
+synaptic_suite2p.egg-info/top_level.txt
