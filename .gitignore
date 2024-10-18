@@ -3,4 +3,5 @@ configurations.py
 *.npy
 *.csv
 __pycache__
-*.txt
+requirements.txt
+/notebook_scripts
