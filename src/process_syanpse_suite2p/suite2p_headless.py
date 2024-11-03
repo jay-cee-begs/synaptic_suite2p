@@ -5,7 +5,6 @@ import numpy as np
 import tqdm
 from pathlib import Path
 from PIL import Image
-# !pip install nd2reader
 from nd2reader import ND2Reader #only if converting to tiff
 import shutil
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
