@@ -504,7 +504,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     # df.fillna(0, inplace = True) potentially for decay time calculations
     return df
 
-def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False):
+def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -537,8 +537,19 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         ops = suite2p_dict["ops"]
         Img = getImg(ops)
         scatters, nid2idx, nid2idx_rejected, pixel2neuron = getStats(suite2p_dict["stat"], Img.shape, suite2p_df)
+        iscell_path = os.path.join(folder, *SUITE2P_STRUCTURE['iscell'])
+        if update_iscell == True:
+            updated_iscell = suite2p_dict['iscell']
+            for idx in nid2idx:
+                updated_iscell[idx,0] = 1.0
+            for idxr in nid2idx_rejected:
+                updated_iscell[idxr,0] = 0.0
+            np.save(iscell_path, updated_iscell)
+            print(f"Updated iscell.npy saved for {folder}")
+        else:
+            continue
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
         dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(suite2p_outputs)} .csv files were saved under {main_folder+r'/csv_files'}")
+    print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
