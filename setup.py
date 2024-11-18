@@ -22,8 +22,7 @@ setup(
     name='synaptic_suite2p', 
     version='0.1',
     packages=find_packages('src'),
-    package_dir={'analyze_suite2p': 'src',
-                 "gui_config": 'src'},
+    package_dir={'': 'src'},
     install_requires=requirements
         # List your project dependencies here
     

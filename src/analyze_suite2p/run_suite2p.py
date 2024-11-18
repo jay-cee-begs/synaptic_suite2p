@@ -1,17 +1,15 @@
 import os
-import sys
-import matplotlib.pyplot as plt
 import numpy as np
 import tqdm
 from pathlib import Path
 from PIL import Image
-# !pip install nd2reader
 from nd2reader import ND2Reader #only if converting to tiff
 import shutil
+#import sys
 # sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
 
-import configurations
+from gui_config import gui_configurations as configurations
 #potential issue here in that configurations would need to 
 #be accessed in both virtual environments if we define a directory here
 
@@ -61,7 +59,7 @@ def iterConvert():
 
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= configurations.data_extension):
-    """Export .tif files each into its own folder for suite2p processing, for all directories within a given parent directory."""
+    """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
@@ -115,6 +113,7 @@ def get_all_image_folders_in_path(path):
     for current_path, directories, files in os.walk(path):
         # Check if current directory is a "deepest" directory (no subdirectories)
         if check_for_single_image_file_in_folder(current_path):
+            #current_path = current_path.split("\\")[-2]
             found_image_folders.append(current_path)
 
     return found_image_folders
@@ -147,13 +146,13 @@ def process_files_with_suite2p(image_list):
                  }
             
                  opsEnd = run_s2p(ops=configurations.ops, db=db)
-            except (ValueError, AssertionError) as e:
+            except (ValueError, AssertionError, IndexError) as e:
                  print(f"Error processing {image_path}: {e}")
 
 def main():
     main_folder = configurations.main_folder
     data_extension = configurations.data_extension
-    export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
+    export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     process_files_with_suite2p(image_folders)
 
@@ -167,4 +166,6 @@ activate suite2p
 import run_suite2p 
 if __name__ == "__main__":
     run_suite2p.main()
+
+or simply in ipynb file: run_suite2p_main()
     """
