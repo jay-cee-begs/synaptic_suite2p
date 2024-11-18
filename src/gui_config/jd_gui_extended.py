@@ -145,11 +145,15 @@ class ConfigEditor:
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
     def edit_default_ops(self):
         """Call the function to edit default ops"""
-        subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        batch_file_path = os.path.join(base_path, "Scripts", "run_default_ops.bat")
+        subprocess.call([batch_file_path])  # Execute run_ops.bat
 
     def create_new_ops_file(self):
         """Call the function to create new ops file"""
-        subprocess.call(["run_s2p_gui.bat"]) # Execute run_s2p_gui.bat
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        batch_file_path = os.path.join(base_path, "Scripts", "run_s2p_gui.bat")
+        subprocess.call([batch_file_path]) # Execute run_s2p_gui.bat
 
     def browse_ops_file(self):
         file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
@@ -219,8 +223,6 @@ class ConfigEditor:
         else:
             messagebox.showinfo("No Groups Added", "No folders with a single file matching the specified extension were found.")
 
-               
-
 
     def add_timepoint(self):
         """call this function to change a/each timepoint name"""
@@ -233,6 +235,7 @@ class ConfigEditor:
             messagebox.showinfo("TimePoint Added", f"Added TimePoint: {key} -> {value}")
         else:
             messagebox.showwarning("Input Error", "Please enter both key and value for TimePoint.")
+
 
     def create_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
@@ -249,11 +252,13 @@ class ConfigEditor:
             tk.Label(frame, text="Value:").pack(side=tk.LEFT)
             tk.Entry(frame, textvariable=value_var, width=15).pack(side=tk.LEFT)
 
+
     def update_groups22_entries(self):
         """Update the entries in the Groups22 dictionary with the use of create_dict_entries"""
         for widget in self.groups22_frame.winfo_children():
             widget.destroy()  # Remove old entries
         self.create_dict_entries(self.groups22_frame, "Groups22", self.groups22)
+
 
     def create_parameters_entries(self):
         """Create entries for the parameters dictionary, contains lists for the various dropdown options"""
@@ -270,7 +275,6 @@ class ConfigEditor:
         # List of selectable values for 'legend'
         legend_options = ["auto", "inside", "false"]
 
-        
         for key, value in self.config.get('parameters', {}).items():
             frame = tk.Frame(self.parameters_frame)
             frame.pack(pady=5)
@@ -292,6 +296,7 @@ class ConfigEditor:
                 continue  # Skip 'testby' as it is a list
             else:
                 tk.Entry(frame, textvariable=var, width=20).pack(side=tk.LEFT)
+
 
     def save_config(self):
         main_folder = self.main_folder_var.get().strip()
@@ -356,14 +361,15 @@ class ConfigEditor:
         base_path = os.path.dirname(os.path.abspath(__file__))
         if self.skip_suite2p_var.get():
             batch_file_path = os.path.join(base_path, "..", "gui_config", "Scripts", "run_plots.bat")
-            subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
+            subprocess.call([batch_file_path])  # Execute run_plots.bat
         else:
-            batch_file_path = os.path.join(base_path, "..", "gui_config", "Scripts", "run_sequence.bat")
-            subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
+            batch_file_path = os.path.join(base_path, "..", "analyze_suite2p", "Scripts", "analyze_suite2p.bat")
+            subprocess.call([batch_file_path])  # Execute sequence.bat
         if self.skip_iscell_var.get():
             batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "jd_default_gui.bat")
         else:
-            batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "run_s2p_gui.bat")
+            print("successfully made it through processing)")
+            # batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "run_s2p_gui.bat")
 
 
     def show_ops_options(self):
