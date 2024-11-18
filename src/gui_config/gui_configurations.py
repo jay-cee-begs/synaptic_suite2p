@@ -1,23 +1,13 @@
-import numpy as np 
-
-main_folder = r'D:\users\JC\pipeline\008-JC Synapse Imaging\240207 NMDA pt AB 50k glass DIV20\pbs40X CONTROL'
-group1 = main_folder + r'\Gly'
-group2 = main_folder + r'\PBS'
-
+main_folder = r'F:\JC_calcium_imaging\001_synapse_ca_imaging\glycine\240207_pbs_glycine'
+group1 = main_folder + r'F:\JC_calcium_imaging\001_synapse_ca_imaging\glycine\240207_pbs_glycine\Gly'
+group2 = main_folder + r'F:\JC_calcium_imaging\001_synapse_ca_imaging\glycine\240207_pbs_glycine\PBS'
 group_number = 2
-
 data_extension = 'nd2'
 frame_rate = 20
-ops_path = r'D:\users\JC\suite2p_ops_n_classifiers\2024.04.24_20fps_func_not_conn_40x_wide_ops.npy'
-ops = np.load(ops_path, allow_pickle=True).item()
-ops['input_format'] = data_extension
-ops['fs'] = frame_rate
+ops_path = r'C:\Users\jcbegs\python3\suite2p_ops\2024.04.24_20fps_func_not_conn_40x_wide_ops.npy'
 TimePoints = {
 }
-Experimental_Groups = {
-    'Glycine': '',
-    'PBS': '',
-
+Groups22 = {
 }
 pairs = [ ('PBS', 'Glycine') ]
 parameters = {
@@ -33,15 +23,17 @@ parameters = {
     'location': 'outside',
     'palette': 'viridis',
 }
-frame_rate = 20
-EXPERIMENT_DURATION = 180
+## Additional configurations
+nb_neurons = 16
+model_name = "Global_EXC_10Hz_smoothing200ms"
+EXPERIMENT_DURATION = 60
 FRAME_INTERVAL = 1 / frame_rate
-BIN_WIDTH = 5
+BIN_WIDTH = 20
 FILTER_NEURONS = True
 groups = []
 for n in range(group_number):
     group_name = f"group{n + 1}"
     groups.append(eval(group_name))
-for name, value in Experimental_Groups.items():
-    # Add your logic to handle Experimental_Groups
+for name, value in Groups22.items():
+    # Add your logic to handle Groups22
     pass

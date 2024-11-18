@@ -5,16 +5,30 @@ from pathlib import Path
 import os
 import subprocess
 
+class TwoColumnFrame(tk.Frame):
+    def __init__(self,master):
+        super().__init__(master)
+
+        #first column
+        self.left_frame = tk.Frame(self)
+        self.left_frame.pack(side="left", fill = "both", expand=True, padx=10)
+
+        self.right_frame = tk.Frame(self)
+        self.right_frame.pack(side = "right", fill = "both", expand = True, padx=10)
+
+
+
 class ConfigEditor:
     def __init__(self, master):
         self.master = master
-        self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
+        self.master.title("Synaptic Suite2P Pipeline Configuration Editor")
         self.master.geometry("450x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
         self.canvas = tk.Canvas(master)
         self.scrollbar = tk.Scrollbar(master, orient="vertical", command=self.canvas.yview)
         self.scrollable_frame = tk.Frame(self.canvas)
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         # Configure the scrollbar #### Find a way to have the whole frame scrollable
         self.scrollable_frame.bind(
@@ -36,23 +50,20 @@ class ConfigEditor:
 
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 0))
+        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 10))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
-        self.groups22 = {key: value for key, value in self.config.get('Groups22', {}).items()}
+        self.groups22 = {key: value for key, value in self.config.get('Experimental Conditions', {}).items()}
 
         # Main folder input
-        tk.Label(self.scrollable_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
+        tk.Label(self.scrollable_frame, text="Experiment Folder Path:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.main_folder_var, width=50).pack(padx=10)
-        
         # Button to open file explorer for selecting a folder
         tk.Button(self.scrollable_frame, text="Browse", command=self.browse_folder).pack(padx=10, pady=5)
         
-
         # Data extension input
         tk.Label(self.scrollable_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.scrollable_frame, textvariable=self.data_extension_var).pack(padx=10)
-
         #intermediate save button, to save the configurations before adding the groups
         tk.Button(self.scrollable_frame, text="Save Configurations (optional, in case you changed the data extension)", command=self.save_config).pack(pady=10)
         
@@ -78,7 +89,7 @@ class ConfigEditor:
         tk.Button(self.scrollable_frame, text="Edit Default Ops", command=self.edit_default_ops).pack(pady=5)
 
         # Option c: Create new ops file
-        tk.Button(self.scrollable_frame, text="Create New Ops File (WIP)", command=self.create_new_ops_file).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Create New Ops File", command=self.create_new_ops_file).pack(pady=5)
         tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck").pack(anchor='w', padx=10, pady=5)
         # Frame rate input
         tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
@@ -121,7 +132,8 @@ class ConfigEditor:
         # Skip Suite2P option
         self.skip_suite2p_var = tk.BooleanVar()
         tk.Checkbutton(self.scrollable_frame, text="Skip Suite2P", variable=self.skip_suite2p_var).pack(anchor='w', padx=10, pady=5)
-
+        self.skip_iscell_var = tk.BooleanVar()
+        tk.Checkbutton(self.scrollable_frame, text = "Use iscell.npy", variable=self.skip_iscell_var).pack(anchor='w', padx = 10, pady = 5)
         # Processing button
         tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
 
@@ -129,6 +141,8 @@ class ConfigEditor:
         self.timepoints = {}
 
 ################ Functions AREA ################    put in seperate file eventually
+    def _on_mousewheel(self, event):
+        self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
     def edit_default_ops(self):
         """Call the function to edit default ops"""
         subprocess.call(["run_default_ops.bat"])  # Execute run_ops.bat
@@ -255,6 +269,7 @@ class ConfigEditor:
         
         # List of selectable values for 'legend'
         legend_options = ["auto", "inside", "false"]
+
         
         for key, value in self.config.get('parameters', {}).items():
             frame = tk.Frame(self.parameters_frame)
@@ -338,10 +353,18 @@ class ConfigEditor:
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
+        base_path = os.path.dirname(os.path.abspath(__file__))
         if self.skip_suite2p_var.get():
+            batch_file_path = os.path.join(base_path, "..", "gui_config", "Scripts", "run_plots.bat")
             subprocess.call(["run_plots.bat"])  # Execute run_plots.bat
         else:
+            batch_file_path = os.path.join(base_path, "..", "gui_config", "Scripts", "run_sequence.bat")
             subprocess.call(["run_sequence.bat"])  # Execute sequence.bat
+        if self.skip_iscell_var.get():
+            batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "jd_default_gui.bat")
+        else:
+            batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "run_s2p_gui.bat")
+
 
     def show_ops_options(self):
         ops_window = tk.Toplevel(self.master)
