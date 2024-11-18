@@ -1,7 +1,6 @@
 from setuptools import setup, find_packages
 import chardet
-import yaml
-#will need to run pip install chardet
+
 # Detect file encoding
 def detect_encoding(filename):
     with open(filename, 'rb') as file:
@@ -20,10 +19,11 @@ print(f"Detected encoding: {encoding}")
 requirements = parse_requirements('requirements.txt', encoding)
 
 setup(
-    name='synaptic_suite2p',
+    name='synaptic_suite2p', 
     version='0.1',
     packages=find_packages('src'),
-    package_dir={'process_synapse_suite2p': 'src'},
+    package_dir={'analyze_suite2p': 'src',
+                 "gui_config": 'src'},
     install_requires=requirements
         # List your project dependencies here
     
