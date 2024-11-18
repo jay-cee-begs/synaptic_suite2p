@@ -30,18 +30,19 @@ maybe consider a dictionary of dictionaries?? although I am not sure the benefit
 """
 _experiment_structure_example = {
     "control": {
-        "dataset1": ["file1", "file2"]
+        "replicate01": ["file1", "file2"]
     },
-    "APV": {
-        "dataset2": ["file3", "file4"]
+    "treatment1": {
+        "replicate01": ["file3", "file4"]
     },
-    "PDBu": {
-        "dataset3": ["file1", "file2"]
+    "treatment2": {
+        "replicate01": ["file1", "file2"]
     },
-    "CNQX": {
-        "dataset4": ["file3", "file4"]
+    "treatment3": {
+        "replicate01": ["file3", "file4"]
     },
 }
+
 
 _available_tests = {
     "mann-whitney-u": stats.mannwhitneyu,
@@ -50,6 +51,13 @@ _available_tests = {
 }
 def get_significance_text(series1, series2, test="mann-whitney-u", bonferroni_correction=1, show_ns=False, 
                           cutoff_dict={"*":0.05, "**":0.01, "***":0.001, "****":0.00099}, return_string="{text}\n{pvalue:.4f}"):
+    
+    """Function to calculate significance for data to plot
+    INPUTS:
+    series 1: first sample
+    series 2: second sample
+    test: chosen from scipy.stats"""
+
     statistic, pvalue = _available_tests[test](series1, series2)
     levels, cutoffs = np.vstack(list(cutoff_dict.items())).T
     levels = np.insert(levels, 0, "n.s." if show_ns else "")
@@ -57,6 +65,7 @@ def get_significance_text(series1, series2, test="mann-whitney-u", bonferroni_co
     return return_string.format(pvalue=pvalue, text=text) #, text=text
 
 def add_significance_bar_to_axis(ax, series1, series2, center_x, line_width):
+    """Function to add significance stars to figures"""
     significance_text = get_significance_text(series1, series2, show_ns=True)
     
     original_limits = ax.get_ylim()
@@ -72,7 +81,15 @@ def add_significance_bar_to_axis(ax, series1, series2, center_x, line_width):
 def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="median", comparison_function="mean",
                             palette="Set3", significance_check=False, group_order=None, control_group = None, ylim = 0, y_label = "", x_label = ""):
     """
-    Add a 'group_order' parameter that takes a list of groups in the desired order.
+    Plot summary statistics for aggregated calcium imaging dataframe
+    INPUTS:
+    experiment_df: parent dataframe
+    feature: column to aggregate in df
+    agg_function: mean or median (median less sensitive to outliers)
+    comparison_function: comparing between groups
+    signficance_check: list of lists of groups to compare
+    group_order: order of experimental conditions
+    control_group: for normalizing values to a control conditions
     """
     grouped_df = experiment_df.groupby(["group", "file_name"]).agg(agg_function).reset_index(drop=False) #"dataset",
 
@@ -116,8 +133,6 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     #         ax.plot([tick_positions[group] - marker_width/2, tick_positions[group] + marker_width/2],
     #                 [feature_mean, feature_mean], "-", color=color_palette[dataset_index], lw=2)
 
-    # Your significance check and plotting logic remains unchanged
-
     if significance_check:
         sub_checks = [significance_check] if not any(isinstance(element, list) for element in significance_check) else significance_check
         for sub_check in sub_checks:
@@ -145,6 +160,7 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
 
 
 def build_experiment_dfs(input_path, experiment_structure):
+    """Function to build experiment dataframe from pickle files; currently performs for binned stats and cell stats; only need cell stats in future"""
     experiment_cell_stats, experiment_binned_stats = pd.DataFrame(), pd.DataFrame()
 
     for group in experiment_structure.keys():
@@ -177,6 +193,8 @@ def get_all_pkl_outputs_in_path(path):
 
 
 def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
+    """raster plot function for all graphs; also can plot event amplitude"""
+    
     import warnings
     warnings.filterwarnings('ignore')
     
@@ -221,7 +239,6 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
 
     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
     
-    #Check if output 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     
@@ -230,7 +247,6 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
     plt.savefig(figure_output_path)
     plt.show()
 
-            ## You can then just group the amplitude as you want for later analysis
 
     transient_count = []
     for idx in my_tsd.keys():

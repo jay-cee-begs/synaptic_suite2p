@@ -3,3 +3,4 @@ configurations.py
 *.npy
 *.csv
 __pycache__
+*.txt
