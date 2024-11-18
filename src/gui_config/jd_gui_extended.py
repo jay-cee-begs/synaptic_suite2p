@@ -77,12 +77,11 @@ class ConfigEditor:
        
         # Ops path input
         tk.Label(self.scrollable_frame, text="Ops Path Options:").pack(anchor='w', padx=10, pady=5)
-        #tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
+        tk.Entry(self.scrollable_frame, textvariable=self.ops_path_var, width=50).pack(padx=10)
         
         # Option a: Insert file path
         ops_frame = tk.Frame(self.scrollable_frame)
         ops_frame.pack(padx=10, pady=5)
-        tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
         tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
         # Option b: Edit default ops
@@ -156,7 +155,7 @@ class ConfigEditor:
         subprocess.call([batch_file_path]) # Execute run_s2p_gui.bat
 
     def browse_ops_file(self):
-        file_selected = filedialog.askopenfilename(filetypes=[("Ops Files", "*.ops")])
+        file_selected = filedialog.askopenfilename(filetypes=[("NumPy Files", "*.npy")])
         if file_selected:
             self.ops_path_var.set(file_selected)
 
