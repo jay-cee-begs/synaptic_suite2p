@@ -2,10 +2,10 @@
 import pandas as pd
 import numpy as np
 import os
-from configurations import *
+from gui_config import gui_configurations as configurations
 from detector_utility import *
     #this is where all the detector functions will be used; at least initially
-
+import concurrent.futures
 
 """
 SUITE2P_STRUCTURE describes the sequence of directories to traverse to arrive at the files named in the key.
@@ -52,7 +52,7 @@ found_output_paths.append(current_path)
 
 def check_for_suite2p_output(folder_name_list):
     for folder in folder_name_list:
-        location = os.path.join(folder, *SUITE2P_STRUCTURE["F"])
+        location = os.path.join(folder, *SUITE2P_STRUCTURE["stat"])
         if os.path.exists(location):
             continue
         if not os.path.isfile(os.path.join(folder, location)):
@@ -60,21 +60,75 @@ def check_for_suite2p_output(folder_name_list):
     return True
 
 
-def get_all_suite2p_outputs_in_path(folder_path): ## accounts for possible errors if deltaF files have been created before
+def calculate_deltaF(F_file):
+    """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
+    inputs: 
+    
+    F_file: F.npy file that serves as a template for understanding the fluorescence of individual ROIs"""
+
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    deltaF= []
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+        amount = int(0.125*len(corrected_trace))
+        middle = 0.5*len(corrected_trace)
+        F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
+                    corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
+        #TODO decide if mean, median or mode is best for deltaF calculations
+        F_baseline = np.median(F_sample)
+        deltaF.append((corrected_trace-F_baseline)/F_baseline)
+
+    deltaF = np.array(deltaF)
+    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+    print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
+    csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
+    if not os.path.exists(configurations.main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
+        os.mkdir(configurations.main_folder + r'\csv_files_deltaF')
+    np.savetxt(f"{configurations.main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
+    print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+
+
+def check_deltaF(folder_name_list):
+    for folder in folder_name_list:
+        location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
+        if os.path.exists(location):
+            continue
+        else:
+            calculate_deltaF(location.replace("deltaF.npy","F.npy"))
+            if os.path.exists(location):
+                continue
+            else:
+                print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
+
+
+def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     file_names = []
+    other_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith("F.npy" ):
+            if file_ending is "folders" and file.endswith(file_ending):
                     file_names.append(os.path.join(root, file)[:-21])
-
-    if len(file_names)> 0:
+            elif file_ending is "F.npy" and not file.endswith('deltaF.npy'):
+                file_names.append(os.path.join(root, file))
+            else:
+                if file.endswith(file_ending): other_files.append(os.pathjoin(root,file))
+    if file_ending=="F.npy" or file_ending=="deltaF.npy" or file_ending=="predictions_deltaF.npy":
+        if not supress_printing:
+            print(f"{len(file_names)} {file_ending} files found:")
+            print(file_names)
         return file_names
-    
+    elif file_ending=="samples":
+        check_deltaF(file_names)  #checks if deltaf exists, else calculates it
+        if not supress_printing:
+            print(f"{len(file_names)} folders containing {file_ending} found:")
+            print(file_names)
+        return file_names
     else:
-        print("Suite2p files for this dataset do not exist yet")
-
-
-
+        print("Is the file ending spelled right?")
+        return other_files
+    
 
 def load_suite2p_output(path, use_iscell=False):
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
@@ -95,27 +149,39 @@ def load_suite2p_output(path, use_iscell=False):
         suite2p_dict["IsUsed"] = load_npy_df(os.path.join(path, *SUITE2P_STRUCTURE["iscell"]))[0].astype(bool)
 
     return suite2p_dict
-"""
-Possible to append this function further for synapse exclusion
- for example, append the document based on 
-suite2p_dict["stat"] using values for ["skew"]/["npix"]/["compactness"]
-"""
+
+
+def get_experimental_dates(main_folder):
+    """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
+    well_folders = get_all_suite2p_outputs_in_path(main_folder, "folders", supress_printing = True)
+    date_list= []
+    sample_dict = {}
+    for well in well_folders:
+        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+    distinct_dates = [i for i in set(date_list)]
+    distinct_dates.sort(key=lambda x: int(x))
+ 
+    for i1 in range(len(well_folders)):
+        for i2, date in enumerate(distinct_dates):
+            if date in well_folders[i1]: # if date in list
+                sample_dict[well_folders[i1]]=f"sample_{i2+1}"
+    return sample_dict
 
 
 def translate_suite2p_dict_to_df(suite2p_dict):
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
-        
-    spikes_per_neuron = [single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peaks = True) 
-                             for (f_trace, fneu_trace) in zip(suite2p_dict["F"], suite2p_dict["Fneu"])]
-    decay_points_after_peaks = [single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_frames = True)
-                             for (f_trace, fneu_trace) in zip(suite2p_dict["F"], suite2p_dict["Fneu"])]
-    spike_amplitudes = [single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_amplitudes = True) 
-                             for (f_trace, fneu_trace) in zip(suite2p_dict["F"], suite2p_dict["Fneu"])]
-    decay_times = [single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_time = True)
-                             for (f_trace, fneu_trace) in zip(suite2p_dict["F"], suite2p_dict["Fneu"])]
-    peak_count = [single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peak_count = True)
-                             for (f_trace, fneu_trace) in zip(suite2p_dict["F"], suite2p_dict["Fneu"])]
+    def process_individual_synapse(f_trace, fneu_trace):
+        peaks = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peaks = True)
+        amplitudes = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_amplitudes=True)
+        decay_times = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_times = True)
+        peak_count = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peak_count=True)
+        decay_frames = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_frames=True)
+        return peaks, amplitudes, peak_count, decay_times, decay_frames
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
+    spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
@@ -131,6 +197,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
 
     # df.fillna(0, inplace = True) potentially for decay time calculations
     return df
+
 
 def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False):
     """This will create .csv files for each video loaded from out data fram function below.
@@ -173,4 +240,4 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
         dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(suite2p_outputs)} .csv files were saved under {main_folder+r'/csv_files'}")
+    print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
