@@ -1,6 +1,6 @@
 Synaptic suite2p README.md
 
-An adaptation of 2-photon in vivo suite2p for in vitro NMDA synaptic calcium imaging
+This code takes the MouseLand suite2p software, an automated calcium imaging ROI detector, and applies it to a new method of mass detecting synapses with  adaptation of 2-photon in vivo suite2p for in vitro NMDA synaptic calcium imaging
 
 Part 1: creating a repository
 
@@ -8,7 +8,7 @@ for this you will need to have a conda virtual environment (suite2p) created wit
 alternatively, you can use the suite2p_env.yml file
 
 
-To create a conda env, simply use $conda create -n suite2p python=3.8 -r requirements.txt
+To create a conda env, simply use $conda create -n suite2p python=3.8 -r suite2p_requirements.txt
 can also be done outside of anaconda if you want open sourced code, then you can download python and custom install it so it runs only in environments
 https://www.youtube.com/watch?v=28eLP22SMTA&t=11s
 -r requirements.txt
@@ -17,6 +17,9 @@ https://www.youtube.com/watch?v=28eLP22SMTA&t=11s
 once inside you can activate the environment and run the code on the test data
 
 CONTENTS:
+
+notebook_scripts/
+    test_pipline: for running suite2p in its current state, including user inputs
 src/
     main code of the repository
     init: marks code as source code
@@ -43,5 +46,26 @@ suite2p/
 tests/
     yet to be implemented
 
-Everything can be run in the provided example
-jupyter notebook (pipeline_testing.ipynb)
+config/
+    configurations: User defined constants that will remain here
+
+
+## Configuration
+
+You can modify the behavior of the application by creating and editing `config/user_config.yaml`. 
+Here are some example configuration options:
+
+```yaml
+data_path: "/path/to/data"
+output_path: "/path/to/output"
+processing_options:
+  filter_type: "median"  # Options: median, gaussian, etc.
+  filter_size: 5         # Size of the filter window
+model:
+  type: "random_forest"  # Machine learning model type
+  parameters:
+    n_estimators: 100    # Number of estimators for Random Forest
+    max_depth: 10        # Maximum depth of the trees
+
+
+To install the src

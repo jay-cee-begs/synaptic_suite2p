@@ -11,10 +11,10 @@ import pickle
 from PIL import Image
 import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
-from configurations import *
+# from configurations import *
 import scipy.signal as signal
 from scipy.optimize import curve_fit
-from configurations import *
+# from configurations import *
 from BaselineRemoval import BaselineRemoval
 from sklearn.metrics import r2_score
 from scipy.stats import norm
@@ -238,7 +238,7 @@ def single_spine_peak_plotting(input_f,input_fneu):
     plt.figure(figsize=[15,5])
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
     plt.hist(bleached_deltaF, bins = 1000)
-    threshold = np.median(bleached_deltaF) + 3 * std
+    threshold = np.median(bleached_deltaF) + 4 * std
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax, 100)
     p = norm.pdf(x, mu, std) #gaussian fit over histograpm
@@ -394,7 +394,10 @@ def ExpZero(x, m, t):
 
 def doubleExpFit(x, a, b, c, d):
     return a * np.exp(-b * x) + c * np.exp(-d * x)
-    
+
+
+frame_rate = 20
+
 def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, return_peaks = False, return_decay_frames = False, 
                                                        return_amplitudes = False, return_decay_time = False, return_peak_count = False,
                                                        calculate_tau = False):
@@ -415,115 +418,131 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
     deltaF = np.squeeze(deltaF)
     deltaF = BaselineRemoval(deltaF)
     deltaF = deltaF.ZhangFit()
+    iqr_noise = filter_outliers(deltaF) #iqr noise
+    mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
+    threshold = np.median(deltaF) + 4 * std
     peaks, _ = find_peaks(deltaF, height = abs(np.median(deltaF) + 2.5*(abs(np.median(deltaF)))), distance = 10) #frequency
     amplitudes = deltaF[peaks] - np.median(deltaF) #amplitude
-    peak_count = len(peaks)
+    filtered_peaks =[]
+    filtered_amplitudes =  []
+    for peak, amplitude, in zip(peaks,amplitudes):
+        if amplitude < 0.1:
+            filtered_peaks.append(peak)
+            filtered_amplitudes.append(amplitude)
+    peak_count = len(filtered_peaks)
+    if return_peaks == True:
+        return filtered_peaks
+    if return_amplitudes == True:
+        return filtered_amplitudes
 
-    negative_points = np.where((deltaF < np.median(deltaF)))[0]
-    # print(negative_points)
+
+# """
+    threshold_points = np.where((deltaF < threshold))[0]
+#     # print(negative_points)
     decay_points = []
     decay_time = []
-    tau_values_expPlB = []
-    tau_values_expZero = []
-    tau_values_doubleExp = []
-    r2_values_expPlB = []
-    r2_values_expZero = []
-    r2_values_doubleExp = []
+#     tau_values_expPlB = []
+#     tau_values_expZero = []
+#     tau_values_doubleExp = []
+#     r2_values_expPlB = []
+#     r2_values_expZero = []
+#     r2_values_doubleExp = []
     for peak1, peak2 in zip(peaks[:-1], peaks[1:]):
-        negative_between_peaks = negative_points[negative_points>peak1]
+        negative_between_peaks = threshold_points[threshold_points>peak1]
         negative_between_peaks = negative_between_peaks[negative_between_peaks<peak2]
         if len(negative_between_peaks)>0:
             decay_points.append(negative_between_peaks[0])
         if len(negative_between_peaks)==0:
             decay_points.append(np.nan)
-    if calculate_tau == False:
+#     if calculate_tau == False:
             
-        if len(peaks)>0:
-            negative_after_last_peak = negative_points[negative_points>peaks[-1]]
-            if len(negative_after_last_peak)>0:
-                decay_points.append(negative_after_last_peak[0])
-            else:
-                decay_points.append(np.nan)
-        else:
-            decay_points = []
+#         if len(peaks)>0:
+#             negative_after_last_peak = negative_points[negative_points>peaks[-1]]
+#             if len(negative_after_last_peak)>0:
+#                 decay_points.append(negative_after_last_peak[0])
+#             else:
+#                 decay_points.append(np.nan)
+#         else:
+#             decay_points = []
 
-        for peak,decay in zip(peaks, decay_points):
-            decay_time.append(np.abs(decay - peak)/frame_rate) #import framerate
+#         for peak,decay in zip(peaks, decay_points):
+#             decay_time.append(np.abs(decay - peak)/frame_rate) #import framerate
 
-        decay_points = np.array(decay_points) #decay frames crossing baseline
-        decay_time = np.array(decay_time) #seconds after a calcium peak to return to baseline
-    if calculate_tau:
-        for peak, decay in zip(peaks, decay_points):
-            if not np.isnan(decay):
-                x_data = np.arange(peak, decay) / frame_rate
-                y_data = deltaF[peak:decay]
+#         decay_points = np.array(decay_points) #decay frames crossing baseline
+#         decay_time = np.array(decay_time) #seconds after a calcium peak to return to baseline
+#     if calculate_tau:
+#         for peak, decay in zip(peaks, decay_points):
+#             if not np.isnan(decay):
+#                 x_data = np.arange(peak, decay) / frame_rate
+#                 y_data = deltaF[peak:decay]
 
-                # Fit ExpPlB
-                try:
-                    popt, _ = curve_fit(ExpPlB, x_data, y_data, p0=(1, 1, 0))
-                    y_fit = ExpPlB(x_data, *popt)
-                    r2_values_expPlB.append(r2_score(y_data, y_fit))
-                    tau_values_expPlB.append(1 / popt[1])  # tau = 1 / t
-                except:
-                    r2_values_expPlB.append(np.nan)
-                    tau_values_expPlB.append(np.nan)
+#                 # Fit ExpPlB
+#                 try:
+#                     popt, _ = curve_fit(ExpPlB, x_data, y_data, p0=(1, 1, 0))
+#                     y_fit = ExpPlB(x_data, *popt)
+#                     r2_values_expPlB.append(r2_score(y_data, y_fit))
+#                     tau_values_expPlB.append(1 / popt[1])  # tau = 1 / t
+#                 except:
+#                     r2_values_expPlB.append(np.nan)
+#                     tau_values_expPlB.append(np.nan)
 
-                # Fit ExpZero
-                try:
-                    popt, _ = curve_fit(ExpZero, x_data, y_data, p0=(1, 1))
-                    y_fit = ExpZero(x_data, *popt)
-                    r2_values_expZero.append(r2_score(y_data, y_fit))
-                    tau_values_expZero.append(1 / popt[1])  # tau = 1 / t
-                except:
-                    r2_values_expZero.append(np.nan)
-                    tau_values_expZero.append(np.nan)
+#                 # Fit ExpZero
+#                 try:
+#                     popt, _ = curve_fit(ExpZero, x_data, y_data, p0=(1, 1))
+#                     y_fit = ExpZero(x_data, *popt)
+#                     r2_values_expZero.append(r2_score(y_data, y_fit))
+#                     tau_values_expZero.append(1 / popt[1])  # tau = 1 / t
+#                 except:
+#                     r2_values_expZero.append(np.nan)
+#                     tau_values_expZero.append(np.nan)
 
-                # Fit doubleExpFit
-                try:
-                    popt, _ = curve_fit(doubleExpFit, x_data, y_data, p0=(1, 1, 1, 1))
-                    y_fit = doubleExpFit(x_data, *popt)
-                    r2_values_doubleExp.append(r2_score(y_data, y_fit))
-                    tau_values_doubleExp.append((1 / popt[1], 1 / popt[3]))  # tau1 = 1 / b, tau2 = 1 / d
-                except:
-                    r2_values_doubleExp.append(np.nan)
-                    tau_values_doubleExp.append((np.nan, np.nan))
+#                 # Fit doubleExpFit
+#                 try:
+#                     popt, _ = curve_fit(doubleExpFit, x_data, y_data, p0=(1, 1, 1, 1))
+#                     y_fit = doubleExpFit(x_data, *popt)
+#                     r2_values_doubleExp.append(r2_score(y_data, y_fit))
+#                     tau_values_doubleExp.append((1 / popt[1], 1 / popt[3]))  # tau1 = 1 / b, tau2 = 1 / d
+#                 except:
+#                     r2_values_doubleExp.append(np.nan)
+#                     tau_values_doubleExp.append((np.nan, np.nan))
 
-        avg_tau_expPlB = np.nanmean(tau_values_expPlB)
-        avg_tau_expZero = np.nanmean(tau_values_expZero)
-        avg_tau_doubleExp = np.nanmean([tau[0] for tau in tau_values_doubleExp if not np.isnan(tau[0])]), np.nanmean([tau[1] for tau in tau_values_doubleExp if not np.isnan(tau[1])])
-        avg_r2_expPlB = np.nanmean(r2_values_expPlB)
-        avg_r2_expZero = np.nanmean(r2_values_expZero)
-        avg_r2_doubleExp = np.nanmean(r2_values_doubleExp)
+#         avg_tau_expPlB = np.nanmean(tau_values_expPlB)
+#         avg_tau_expZero = np.nanmean(tau_values_expZero)
+#         avg_tau_doubleExp = np.nanmean([tau[0] for tau in tau_values_doubleExp if not np.isnan(tau[0])]), np.nanmean([tau[1] for tau in tau_values_doubleExp if not np.isnan(tau[1])])
+#         avg_r2_expPlB = np.nanmean(r2_values_expPlB)
+#         avg_r2_expZero = np.nanmean(r2_values_expZero)
+#         avg_r2_doubleExp = np.nanmean(r2_values_doubleExp)
         
-        return {
-            "avg_tau_expPlB": avg_tau_expPlB,
-            "avg_tau_expZero": avg_tau_expZero,
-            "avg_tau_doubleExp": avg_tau_doubleExp,
-            "avg_r2_expPlB": avg_r2_expPlB,
-            "avg_r2_expZero": avg_r2_expZero,
-            "avg_r2_doubleExp": avg_r2_doubleExp,
-            "peaks": peaks if return_peaks else None,
-            "decay_points": decay_points if return_decay_frames else None,
-            "amplitudes": amplitudes if return_amplitudes else None,
-            "decay_time": decay_time if return_decay_time else None,
-            "peak_count": peak_count if return_peak_count else None
-        }
-    # if return_peaks == True:
-    #     return peaks
-    # if return_decay_frames == True:
-    #     return decay_points
-    # if return_amplitudes == True:
-    #     return amplitudes
-    # if return_decay_time == True:
-    #     return decay_time
-    # if return_peak_count ==True:
-    #     return peak_count
-    # if calculate_tau == True:
-    #     return decay_time
- #The following are  lines of code written by Marti, who I generally trust to write cohesive and concise code
-# for coding; If you find my functions above to be inadequate you may impliment these instead
+#         return peaks, amplitudes
+#     # {
+#     #         "avg_tau_expPlB": avg_tau_expPlB,
+#     #         "avg_tau_expZero": avg_tau_expZero,
+#     #         "avg_tau_doubleExp": avg_tau_doubleExp,
+#     #         "avg_r2_expPlB": avg_r2_expPlB,
+#     #         "avg_r2_expZero": avg_r2_expZero,
+#     #         "avg_r2_doubleExp": avg_r2_doubleExp,
+#     #         "peaks": peaks if return_peaks else None,
+#     #         "decay_points": decay_points if return_decay_frames else None,
+#     #         "amplitudes": amplitudes if return_amplitudes else None,
+#     #         "decay_time": decay_time if return_decay_time else None,
+#     #         "peak_count": peak_count if return_peak_count else None
+#     #     }
+#     # # if return_peaks == True:
+#     #     return peaks
+#     # if return_decay_frames == True:
+#     #     return decay_points
+#     # if return_amplitudes == True:
+#     #     return amplitudes
+#     # if return_decay_time == True:
+#     #     return decay_time
+#     # if return_peak_count ==True:
+#     #     return peak_count
+#     # if calculate_tau == True:
+#     #     return decay_time
+#  #The following are  lines of code written by Marti, who I generally trust to write cohesive and concise code
+# # for coding; If you find my functions above to be inadequate you may impliment these instead
     
-    
+#    """ 
 
 def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
     median = np.median(input_trace)
