@@ -1,13 +1,12 @@
 @echo off
 
-CALL "C:\miniforge3\Scripts\activate.bat" suite2p
-
 SET SCRIPT_DIR=%~dp0
-SET PROJECT_DIR=%SCRIPT_DIR%\..\..
-SET PYTHONPATH=%PROJECT_DIR%\src;%PYTHONPATH%
+SET PROJECT_DIR=%SCRIPT_DIR%\..
 
-conda info --envs
+cd /d %PROJECT_DIR%
+CALL "C:\miniforge3\Scripts\activate.bat" suite2p
 
 python -m run_suite2p
 
-CALL conda deactivate
+
+pause
