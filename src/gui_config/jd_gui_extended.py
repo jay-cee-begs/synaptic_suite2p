@@ -54,6 +54,8 @@ class ConfigEditor:
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
         self.groups22 = {key: value for key, value in self.config.get('Experimental Conditions', {}).items()}
+        self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 180))
+        self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", ))
 
         # Main folder input
         tk.Label(self.scrollable_frame, text="Experiment Folder Path:").pack(anchor='w', padx=10, pady=5)
@@ -93,7 +95,15 @@ class ConfigEditor:
         tk.Label(self.scrollable_frame, text="Press any key in terminal when GUI is stuck").pack(anchor='w', padx=10, pady=5)
         # Frame rate input
         tk.Label(self.scrollable_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
-        tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=10)
+        tk.Entry(self.scrollable_frame, textvariable=self.frame_rate_var).pack(padx=0)
+
+        #Experiment Duration / Bin Width 
+
+        tk.Label(self.scrollable_frame, text="Experiment\nDuration:").pack(anchor='w', padx=10, pady=5)
+        tk.Entry(self.scrollable_frame, textvariable=self.exp_dur_var).pack(padx=10)
+
+        tk.Label(self.scrollable_frame, text = "Network\nBin Width:").pack(anchor='n', padx=10, pady=5)
+        tk.Entry(self.scrollable_frame, textvariable=self.bin_width_var).pack(padx=10)
 
         # TimePoints input
         tk.Label(self.scrollable_frame, text="In case you need to rename your Baseconditions:").pack(anchor='w')
@@ -303,6 +313,8 @@ class ConfigEditor:
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
         ops_path = self.ops_path_var.get().strip()
+        BIN_WIDTH = self.bin_width_var.get()
+        EXPERIMENT_DURATION = self.exp_dur_var.get()
 
         if not os.path.exists(main_folder):
             messagebox.showerror("Error", "Main folder does not exist.")
@@ -313,6 +325,7 @@ class ConfigEditor:
         pairs_input = self.pairs_var.get().strip()
 
         with open('gui_configurations.py', 'w') as f:
+            f.write("import numpy as np\n")
             f.write(f"main_folder = r'{main_folder}'\n")
             for i, group in enumerate(self.groups, start=1):
                 f.write(f"group{i} = main_folder + r'{group}'\n")
@@ -320,6 +333,14 @@ class ConfigEditor:
             f.write(f"data_extension = '{data_extension}'\n")
             f.write(f"frame_rate = {frame_rate}\n")
             f.write(f"ops_path = r'{ops_path}'\n")
+            f.write(f"ops = np.load(r'{ops_path}', allow_pickle = True).item()\n")
+            f.write(f"ops['input_format'] = '{data_extension}'\n")
+            f.write(f"ops['frame_rate'] = {frame_rate}\n")
+            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
+            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
+            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
+            f.write("FILTER_NEURONS = True\n")
+
 
             f.write("TimePoints = {\n")
             for key, value in self.timepoints.items():
@@ -341,12 +362,6 @@ class ConfigEditor:
             f.write("}\n")
             #### Add addtionals here, maybe make them editable in the gui as well
             f.write("## Additional configurations\n")
-            f.write("nb_neurons = 16\n")
-            f.write('model_name = "Global_EXC_10Hz_smoothing200ms"\n')
-            f.write("EXPERIMENT_DURATION = 60\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("BIN_WIDTH = 20\n")
-            f.write("FILTER_NEURONS = True\n")
             f.write("groups = []\n")
             f.write("for n in range(group_number):\n")
             f.write("    group_name = f\"group{n + 1}\"\n")
@@ -359,17 +374,16 @@ class ConfigEditor:
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then 
         base_path = os.path.dirname(os.path.abspath(__file__))
+        print(base_path)
         if self.skip_suite2p_var.get():
             batch_file_path = os.path.join(base_path, "..", "gui_config", "Scripts", "run_plots.bat")
             subprocess.call([batch_file_path])  # Execute run_plots.bat
+        elif self.skip_iscell_var.get():
+            batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "jd_default_gui.bat")
         else:
             batch_file_path = os.path.join(base_path, "..", "analyze_suite2p", "Scripts", "analyze_suite2p.bat")
             subprocess.call([batch_file_path])  # Execute sequence.bat
-        if self.skip_iscell_var.get():
-            batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "jd_default_gui.bat")
-        else:
-            print("successfully made it through processing)")
-            # batch_file_path = os.path.join(base_path,  "..", "gui_config", "Scripts", "run_s2p_gui.bat")
+        
 
 
     def show_ops_options(self):
