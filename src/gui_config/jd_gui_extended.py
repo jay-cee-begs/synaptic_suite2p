@@ -346,7 +346,7 @@ class ConfigEditor:
                 f.write(f"    '{key}': '{value}',\n")
             f.write("}\n")
 
-            f.write("Groups22 = {\n")
+            f.write("exp_groups = {\n")
             for key, (key_var, value_var) in self.dict_vars.items():
                 f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
             f.write("}\n")
@@ -365,7 +365,7 @@ class ConfigEditor:
             f.write("for n in range(group_number):\n")
             f.write("    group_name = f\"group{n + 1}\"\n")
             f.write("    groups.append(eval(group_name))\n")
-            f.write("for name, value in Groups22.items():\n")
+            f.write("for name, value in exp_groups.items():\n")
             f.write("    # Add your logic to handle Groups22\n")
             f.write("    pass\n")
 
