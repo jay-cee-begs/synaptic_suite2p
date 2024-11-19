@@ -117,7 +117,7 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
     for spike_df, file_name in spike_df_iterator(csv_path):
             processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
-                                        f"Dur{int(EXPERIMENT_DURATION)}s"
+                                        f"Dur{int(configurations.EXPERIMENT_DURATION)}s"
                                         f"Int{int(configurations.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
 
@@ -125,7 +125,7 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
                 print(f"Processed file {processed_path} already exists!")
                 continue
                 
-            if FILTER_NEURONS:
+            if configurations.FILTER_NEURONS:
                 spike_df = spike_df[spike_df["IsUsed"]]
                 
             processed_dict = {
