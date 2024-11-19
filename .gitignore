@@ -1,5 +1,6 @@
 *.ipynb
 configurations.py
+gui_configurations.py
 *.npy
 *.csv
 __pycache__
