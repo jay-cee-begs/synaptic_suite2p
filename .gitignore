@@ -1,6 +1,6 @@
 *.ipynb
 configurations.py
-gui_configurations.py
+src\gui_config\gui_configurations.py
 *.npy
 *.csv
 *.bat
