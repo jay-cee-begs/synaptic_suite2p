@@ -52,6 +52,6 @@ groups = []
 for n in range(group_number):
     group_name = f"group{n + 1}"
     groups.append(eval(group_name))
-for name, value in Groups22.items():
-    # Add your logic to handle Groups22
+for name, value in exp_groups.items():
+    # Add your logic to handle exp_groups
     pass
