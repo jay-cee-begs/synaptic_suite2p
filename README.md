@@ -1,20 +1,33 @@
 Synaptic suite2p README.md
 
-This code takes the MouseLand suite2p software, an automated calcium imaging ROI detector, and applies it to a new method of mass detecting synapses with  adaptation of 2-photon in vivo suite2p for in vitro NMDA synaptic calcium imaging
+This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), an automated calcium imaging ROI detector and fluorescence extractor, and applies it to a new method of automatically detecting in vitro NMDA synaptic calcium influx.
 
-Part 1: creating a repository
+Part 1: creating an environment for suite2p
 
-for this you will need to have a conda virtual environment (suite2p) created with python3.8 from the provided requirements.txt file
-alternatively, you can use the suite2p_env.yml file
+First please download the project code or create a fork on GitHub so that you can access the code locally on your system. 
 
+Option 1 (Anaconda): In an anaconda prompt, you will need to create a conda virtual environment for this project with python3.8
+The environment and all of its dependencies are stored in a requirements.txt file. 
 
-To create a conda env, simply use $conda create -n suite2p python=3.8 -r suite2p_requirements.txt
-can also be done outside of anaconda if you want open sourced code, then you can download python and custom install it so it runs only in environments
-https://www.youtube.com/watch?v=28eLP22SMTA&t=11s
--r requirements.txt
+To create an environment using these requirements, enter $conda env create -n synaptic_suite2p -r suite2p_requirements.txt$. This is recommended as MouseLand's suite2p installation lacks key installables such as chardet and PyYAML which are needed to install the source code for this project (see below).
 
+*For conda installations, the name does not really matter. -n = name, -r = requires
 
-once inside you can activate the environment and run the code on the test data
+If you would like to follow the original author's recommendations, p go to suite2p's README.md file for a full explanation of how to download their software from them and set up a virtual environment for suite2p ((https://github.com/MouseLand/suite2p).
+You will still need to run some commands to get all the appropriate packages (e.g., $conda install chardet pyyaml) 
+It is RECOMMENDED that you in 
+
+Installing synaptic_suite2p source code as editable installation
+
+After creating your synaptic_suite2p environment, please navigate the head of the directory (synaptic_suite2p) using cd "PATH_TO_DIRECTORY"; if your project folder is on a different drive than your conda installation; switch to the drive first (i.e., 'D:' 'C:', etc.)
+
+activate the synaptic_suite2p virtual environment by running $conda activate suite2p (or whatever you named this)
+
+once in the directory, please run $pip install -e . (this will automatically install all the source code in the src folder to your environment)
+
+From this point on we can now access all the code and go through examples in the example_data folders
+
+once inside you can activate the environment and run the code on the test data ***YET TO BE PROVIDED
 
 CONTENTS:
 
