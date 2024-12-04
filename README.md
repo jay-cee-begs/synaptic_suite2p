@@ -9,7 +9,9 @@ First please download the project code or create a fork on GitHub so that you ca
 Option 1 (Anaconda): In an anaconda prompt, you will need to create a conda virtual environment for this project with python3.8
 The environment and all of its dependencies are stored in a requirements.txt file. 
 
-To create an environment using these requirements, enter $conda env create -n synaptic_suite2p -r suite2p_requirements.txt$. This is recommended as MouseLand's suite2p installation lacks key installables such as chardet and PyYAML which are needed to install the source code for this project (see below).
+To create an environment using these requirements, enter $conda env create -n synaptic_suite2p python=3.8$. This is recommended as MouseLand's suite2p installation lacks key installables such as chardet and PyYAML which are needed to install the source code for this project (see below).
+
+to install synaptic_suite2p requirements run $conda activate suite2p$ followed by $pip install -r requirements.txt
 
 *For conda installations, the name does not really matter. -n = name, -r = requires
 
