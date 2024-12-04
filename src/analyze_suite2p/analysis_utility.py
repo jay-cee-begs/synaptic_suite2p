@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from configurations import *
+from gui_config import gui_configurations as configurations
 
 def list_all_files_of_type(input_path, filetype):
     return [file for file in os.listdir(input_path) if file.endswith(filetype)]
@@ -16,7 +16,7 @@ def spike_list_translator(input_string):
     """This funciton is nested in the next. It is designed to convert the time stamp of each event into a time
         during the experiment (e.g. frame 2 = 1.1 seconds into the recording)"""
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * FRAME_INTERVAL
+    return np.array(string_list).astype(int) * configurations.FRAME_INTERVAL
 
 def amplitude_list_translator(input_string):
     amp_string_list = string_to_list_translator(input_string)
@@ -26,7 +26,7 @@ def amplitude_list_translator(input_string):
 
 def decay_frame_list_translator(input_string):
      decay_frame_list = string_to_list_translator(input_string)
-     return np.array(decay_frame_list).astype(float)*FRAME_INTERVAL
+     return np.array(decay_frame_list).astype(float)*configurations.FRAME_INTERVAL
 
 def decay_time_list_translator(input_string):
     decay_time_list = string_to_list_translator(input_string) 
@@ -44,9 +44,9 @@ def spike_df_iterator(input_path, return_name=True):
 def calculate_binned_stats(input_df):
     local_df = input_df.copy()
 
-    bins = np.arange(0, EXPERIMENT_DURATION + BIN_WIDTH, BIN_WIDTH)
+    bins = np.arange(0, configurations.EXPERIMENT_DURATION + configurations.BIN_WIDTH, configurations.BIN_WIDTH) 
     population_spikes, _ = np.histogram(np.hstack(local_df["PeakTimes"].values), bins=bins)
-    population_frequency = population_spikes / BIN_WIDTH
+    population_frequency = population_spikes / configurations.BIN_WIDTH
 
     bin_stats = pd.DataFrame.from_dict({
         "Bin_Limits": [(bins[bin_index], bins[bin_index + 1]) for bin_index in range(len(bins) - 1)],
@@ -59,7 +59,7 @@ def calculate_binned_stats(input_df):
 def calculate_cell_freq(input_df):
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / frame_rate)) #divide by total # of frames NOT framerate
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / configurations.frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
     return output_df
 
@@ -117,15 +117,15 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
     for spike_df, file_name in spike_df_iterator(csv_path):
             processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
-                                        f"Dur{int(EXPERIMENT_DURATION)}s"
-                                        f"Int{int(FRAME_INTERVAL*1000)}ms"
+                                        f"Dur{int(configurations.EXPERIMENT_DURATION)}s"
+                                        f"Int{int(configurations.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
 
             if os.path.exists(processed_path) and not overwrite:
                 print(f"Processed file {processed_path} already exists!")
                 continue
                 
-            if FILTER_NEURONS:
+            if configurations.FILTER_NEURONS:
                 spike_df = spike_df[spike_df["IsUsed"]]
                 
             processed_dict = {

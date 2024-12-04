@@ -13,7 +13,7 @@ import seaborn as sns #needed for aggregated feature plots
 # import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
 import scipy.signal as signal
 from scipy.optimize import curve_fit
-from configurations import *
+from gui_config import gui_configurations as configurations
 from BaselineRemoval import BaselineRemoval
 from scipy.stats import norm
 

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from gui_config import gui_configurations as configurations
-from detector_utility import *
+from analyze_suite2p import detector_utility
     #this is where all the detector functions will be used; at least initially
 import concurrent.futures
 
@@ -21,8 +21,8 @@ SUITE2P_STRUCTURE = {
     #'spks': ["suite2p", "plane0", "spks.npy"],
     "stat": ["suite2p", "plane0", "stat.npy"],
     "iscell": ["suite2p", "plane0", "iscell.npy"],
-    "ops": ["suite2p", "plane0", "ops.npy"]#,
-    # "deltaF": ["suite2p","plane0","deltaF.npy"]
+    "ops": ["suite2p", "plane0", "ops.npy"],
+    "deltaF": ["suite2p","plane0","deltaF.npy"]
 }
 """ spks is not really necessary with our current set up since the spont. events are all pretty uniform, and are below 
     AP threshold (and therefore will not need to be deconvolved into action potentials themselves)"""
@@ -119,7 +119,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
             print(f"{len(file_names)} {file_ending} files found:")
             print(file_names)
         return file_names
-    elif file_ending=="samples":
+    elif file_ending=="folders":
         check_deltaF(file_names)  #checks if deltaf exists, else calculates it
         if not supress_printing:
             print(f"{len(file_names)} folders containing {file_ending} found:")
@@ -136,7 +136,8 @@ def load_suite2p_output(path, use_iscell=False):
         "F": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["F"])),
         "Fneu": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["Fneu"])),
         "stat": load_npy_df(os.path.join(path, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
-        "ops": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["ops"])).item()#,
+        "ops": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["ops"])).item(),
+        "iscell": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["iscell"])),
         # "deltaF": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["deltaF"]))
     }
 
@@ -172,11 +173,11 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
     def process_individual_synapse(f_trace, fneu_trace):
-        peaks = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peaks = True)
-        amplitudes = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_amplitudes=True)
-        decay_times = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_times = True)
-        peak_count = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peak_count=True)
-        decay_frames = single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_frames=True)
+        peaks = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peaks = True)
+        amplitudes = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_amplitudes=True)
+        decay_times = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_times = True)
+        peak_count = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peak_count=True)
+        decay_frames = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_frames=True)
         return peaks, amplitudes, peak_count, decay_times, decay_frames
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -199,7 +200,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     return df
 
 
-def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False):
+def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -207,7 +208,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
         from the baseline (the median of each trace)"""
     
-    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path)
+    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "folders", supress_printing=True)
 
     output_path = input_path+r"\csv_files"
     if not os.path.exists(output_path):
@@ -223,13 +224,21 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         suite2p_dict = load_suite2p_output(suite2p_output)
         suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
 
-        ###TODO CHANGE ASAP
-
+        ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
         # suite2p_dict = load_suite2p_output(suite2p_output, groups, input_path, use_iscell=check_for_iscell)
         # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
         ops = suite2p_dict["ops"]
-        Img = getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = getStats(suite2p_dict["stat"], Img.shape, suite2p_df)
+        Img = detector_utility.getImg(ops)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict["stat"], Img.shape, suite2p_df)
+        iscell_path = os.path.join(suite2p_output, *SUITE2P_STRUCTURE['iscell'])
+        if update_iscell:
+            updated_iscell = suite2p_dict['iscell']
+            for idx in nid2idx: 
+                updated_iscell[idx, 0] = 1.0
+            for idxr in nid2idx_rejected:
+                updated_iscell[idxr,0] = 0.0
+            np.save(iscell_path, updated_iscell)
+            print(f"Updated iscell.npy saved for {suite2p_output}")
         synapse_key = set(synapseID)
         suite2p_df.loc[synapse_key, 'IsUsed'] = True
 
@@ -238,6 +247,6 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         print(f"csv created for {suite2p_output}")
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
-        dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        detector_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
     print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
