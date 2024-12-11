@@ -22,19 +22,19 @@ def load_for_networkx(data_folder):  ## creates a dictionary for the suite2p pat
     Creates a dictionary for networkx analysis from the SUITE2P_STRUCTURE in the data folder.
     """    
     stat = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["stat"]))
-    cascade_predictions = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["cascade_predictions"]))
+    F = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["F"]))
+    Fneu = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE["Fneu"]))
     iscell = transform.load_npy_array(os.path.join(data_folder, *transform.SUITE2P_STRUCTURE['iscell']))[:,0].astype(bool)
     neuron_data = {}
 
     for idx, neuron_stat in enumerate(stat):
         x_median = np.median(neuron_stat['xpix'])
         y_median = np.median(neuron_stat['ypix'])
-        predicted_spikes = cascade_predictions[idx,:]
+        # deltaF = cascade_predictions[idx,:]
 
         neuron_data[f"neuron_{idx}"] = {
             "x": x_median,
             "y": y_median,
-            "predicted_spikes": predicted_spikes,
             "IsUsed": iscell[idx]
         }
     filtered_neuron_data = {}
