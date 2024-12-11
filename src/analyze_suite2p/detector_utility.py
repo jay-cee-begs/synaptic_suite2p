@@ -16,6 +16,7 @@ from scipy.optimize import curve_fit
 from gui_config import gui_configurations as configurations
 from BaselineRemoval import BaselineRemoval
 from scipy.stats import norm
+from analyze_suite2p import suite2p_utility
 
 
 def getImg(ops):
@@ -285,22 +286,8 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
                                                        return_peak_count = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
-    corrected_trace = input_f - (0.7*input_fneu) ## neuropil correction
-    # corrected_trace = remove_bleaching(corrected)
-    deltaF= []
-    peak_count = []
-    amount = int(0.125*len(corrected_trace))
-    middle = 0.5*len(corrected_trace)
-    F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-                corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-    #TODO Changed np.mean to np.median()
-    F_baseline = np.median(F_sample)
-    deltaF.append((corrected_trace-F_baseline)/F_baseline)
-
-    deltaF = np.array(deltaF)
-    deltaF = np.squeeze(deltaF)
-    deltaF = BaselineRemoval(deltaF)
-    deltaF = deltaF.ZhangFit()
+    deltaF = suite2p_utility.calculate_deltaF(input_f)
+    
 
     negative_points = np.where((deltaF < np.median(deltaF)))[0]
     iqr_noise = filter_outliers(deltaF) #iqr noise
@@ -332,7 +319,7 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
             decay_points = []
 
         for peak,decay in zip(peaks, decay_points):
-            decay_time.append(np.abs(decay - peak)/frame_rate) #import framerate
+            decay_time.append(np.abs(decay - peak)/configurations.frame_rate) #import framerate
 
         decay_points = np.array(decay_points) #decay frames crossing baseline
         decay_time = np.array(decay_time) #seconds after a calcium peak to return to baseline
