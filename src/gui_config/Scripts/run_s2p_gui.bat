@@ -8,4 +8,3 @@ python -m suite2p
 :: Deactivate the environment
 CALL conda deactivate
 
-pause
