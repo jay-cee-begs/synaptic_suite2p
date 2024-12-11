@@ -4,6 +4,7 @@ import numpy as np
 import os
 from gui_config import gui_configurations as configurations
 from analyze_suite2p import detector_utility
+from BaselineRemoval import BaselineRemoval
     #this is where all the detector functions will be used; at least initially
 import concurrent.futures
 
@@ -81,14 +82,17 @@ def calculate_deltaF(F_file):
         deltaF.append((corrected_trace-F_baseline)/F_baseline)
 
     deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    deltaF = BaselineRemoval(deltaF)
+    deltaF = deltaF.ZhangFit()
     np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
     print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
-    csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
-    if not os.path.exists(configurations.main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
-        os.mkdir(configurations.main_folder + r'\csv_files_deltaF')
-    np.savetxt(f"{configurations.main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
+    # csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
+    # if not os.path.exists(configurations.main_folder + r'\csv_files_deltaF'): ## creates directory if it doesn't exist
+    #     os.mkdir(configurations.main_folder + r'\csv_files_deltaF')
+    # np.savetxt(f"{configurations.main_folder}/csv_files_deltaF/{csv_filename}.csv", deltaF, delimiter=";") ### can be commented out if you don't want to save deltaF as .csv files (additionally to .npy)
     print(f"delta F traces saved as deltaF.npy under {savepath}\n")
-
+    return deltaF
 
 def check_deltaF(folder_name_list):
     for folder in folder_name_list:
