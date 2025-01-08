@@ -192,6 +192,10 @@ def single_spine_peak_plotting(input_f,input_fneu):
     F_baseline = np.mean(F_sample)
     deltaF.append((corrected_trace-F_baseline)/F_baseline)
 
+    iqr_noise = filter_outliers(deltaF) #iqr noise
+    mu, SD = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
+    threshold = mu + 3.5 * SD
+
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
     # corrected_trace = deltaF
@@ -332,7 +336,7 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
         return amplitudes
     if return_decay_time == True:
         return decay_time
-    if return_peak_count ==True:
+    if return_peak_count == True:
         return peak_count
     # if calculate_tau == True:
     #     return decay_time
