@@ -283,16 +283,14 @@ def filter_outliers(trace):
     filtered_values = trace[(trace >= lower_bound) & (trace <= upper_bound)]
     return filtered_values   
     
-def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, return_peaks = False, 
+#TODO make sure that deltaF conversion here actually works
+def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
                                                        return_peak_count = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
-    deltaF = suite2p_utility.calculate_deltaF(input_f)
-    
-
     negative_points = np.where((deltaF < np.median(deltaF)))[0]
     iqr_noise = filter_outliers(deltaF) #iqr noise
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
