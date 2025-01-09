@@ -79,12 +79,14 @@ def calculate_deltaF(F_file):
                     corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
         #TODO decide if mean, median or mode is best for deltaF calculations
         F_baseline = np.median(F_sample)
-        deltaF.append((corrected_trace-F_baseline)/F_baseline)
+        normalized_F = (corrected_trace-F_baseline)/F_baseline
+        baseline_correction = BaselineRemoval(normalized_F)
+        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10, repitition=20)
+        deltaF.append(ZhangFit_normalized)
+        
 
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
-    deltaF = BaselineRemoval(deltaF)
-    deltaF = deltaF.ZhangFit()
     np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
     print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
     # csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
@@ -115,7 +117,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
         for file in files:
             if file_ending=="F.npy" and file.endswith(file_ending) and not file.endswith("deltaF.npy"):
                     file_names.append(os.path.join(root, file))
-            elif file_ending=="deltaF.npy" and file.endswith(file_ending) and not file.endswith("predictions_deltaF.npy"):
+            elif file_ending=="deltaF.npy" and file.endswith(file_ending):
                     file_names.append(os.path.join(root, file))
             elif file_ending=="samples":
                 if file.endswith("F.npy") and not file.endswith("deltaF.npy"):
@@ -169,9 +171,10 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
             (suite2p_dict["stat"]["skew"] >= 1) &
             (suite2p_dict["stat"]["footprint"] >= 1.0) &
             (suite2p_dict["stat"]["npix"] >= 25)]
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
-        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+        # suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
+
+        # suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     else:
         suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
@@ -244,7 +247,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
         else:
             result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
         results.append(result)
-    spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
+    spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
 
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
@@ -256,11 +259,11 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
                        "Amplitudes": spike_amplitudes,
                         "DecayTimes": decay_times,
-                       "DecayFrames": decay_points_after_peaks,
+                       "DecayFrames": decay_frames,
                        "Total Frames": len(suite2p_dict["F"].T)})
                        
     df.index.set_names("SynapseID", inplace=True)
-    df["IsUsed"] = False
+    # df["IsUsed"] = False
 
     # df.fillna(0, inplace = True) potentially for decay time calculations
     return df
