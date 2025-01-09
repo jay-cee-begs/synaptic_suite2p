@@ -44,7 +44,7 @@ class ConfigEditor:
         self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 20))
         self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
-        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        self.exp_condition = {}
         self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 180))
         self.bin_width_var = tk.IntVar(value=self.config.get("BIN_WIDTH", 5))
 
@@ -248,7 +248,7 @@ class ConfigEditor:
         self.data_extension_var.set(self.config.get('data_extension', ''))
         self.frame_rate_var.set(self.config.get('frame_rate', 10))
         self.ops_path_var.set(self.config.get('ops_path', ''))
-        self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+        # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
         
         # Update the GUI components to reflect the new values
         self.update_exp_condition_entries()
@@ -261,7 +261,6 @@ class ConfigEditor:
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
         ops_path = self.ops_path_var.get().strip()
-        csc_path = self.csc_path_var.get().strip()
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
