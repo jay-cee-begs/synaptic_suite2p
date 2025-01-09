@@ -16,6 +16,7 @@ from scipy.optimize import curve_fit
 from gui_config import gui_configurations as configurations
 from BaselineRemoval import BaselineRemoval
 from scipy.stats import norm
+from analyze_suite2p import suite2p_utility
 
 
 def getImg(ops):
@@ -191,6 +192,10 @@ def single_spine_peak_plotting(input_f,input_fneu):
     F_baseline = np.mean(F_sample)
     deltaF.append((corrected_trace-F_baseline)/F_baseline)
 
+    iqr_noise = filter_outliers(deltaF) #iqr noise
+    mu, SD = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
+    threshold = mu + 3.5 * SD
+
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
     # corrected_trace = deltaF
@@ -278,30 +283,14 @@ def filter_outliers(trace):
     filtered_values = trace[(trace >= lower_bound) & (trace <= upper_bound)]
     return filtered_values   
     
-def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, return_peaks = False, 
+#TODO make sure that deltaF conversion here actually works
+def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
                                                        return_peak_count = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
-    corrected_trace = input_f - (0.7*input_fneu) ## neuropil correction
-    # corrected_trace = remove_bleaching(corrected)
-    deltaF= []
-    peak_count = []
-    amount = int(0.125*len(corrected_trace))
-    middle = 0.5*len(corrected_trace)
-    F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-                corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-    #TODO Changed np.mean to np.median()
-    F_baseline = np.median(F_sample)
-    deltaF.append((corrected_trace-F_baseline)/F_baseline)
-
-    deltaF = np.array(deltaF)
-    deltaF = np.squeeze(deltaF)
-    deltaF = BaselineRemoval(deltaF)
-    deltaF = deltaF.ZhangFit()
-
     negative_points = np.where((deltaF < np.median(deltaF)))[0]
     iqr_noise = filter_outliers(deltaF) #iqr noise
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
@@ -332,7 +321,7 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
             decay_points = []
 
         for peak,decay in zip(peaks, decay_points):
-            decay_time.append(np.abs(decay - peak)/frame_rate) #import framerate
+            decay_time.append(np.abs(decay - peak)/configurations.frame_rate) #import framerate
 
         decay_points = np.array(decay_points) #decay frames crossing baseline
         decay_time = np.array(decay_time) #seconds after a calcium peak to return to baseline
@@ -345,7 +334,7 @@ def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, retu
         return amplitudes
     if return_decay_time == True:
         return decay_time
-    if return_peak_count ==True:
+    if return_peak_count == True:
         return peak_count
     # if calculate_tau == True:
     #     return decay_time

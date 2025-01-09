@@ -1,13 +1,23 @@
-Synaptic suite2p README.md
 
-This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), an automated calcium imaging ROI detector and fluorescence extractor, and applies it to a new method of automatically detecting in vitro NMDA synaptic calcium influx.
+# Synaptic suite2p README.md
 
-Part 1: creating an environment for suite2p
+This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting NMDA synaptic puncta in 0mM Mg2+ solutions with TTX.
+
+## Part 1: creating an environment for suite2p
 
 First please download the project code or create a fork on GitHub so that you can access the code locally on your system. 
 
-Option 1 (Anaconda): In an anaconda prompt, you will need to create a conda virtual environment for this project with python3.8
-The environment and all of its dependencies are stored in a requirements.txt file. 
+### Option 1 (Anaconda virtual environment):
+
+In an anaconda command prompt, you will need to create a virtual environment for this project with python version 3.8
+The environment and all of its dependencies are stored in the "synaptic_suite2p.yml" file.
+
+### Option 2 (python venv) installation
+
+For those who want to use python without anaconda, please do a custom installation of python 3.8 using terminal 
+Then build the environment in a new folder you create (e.g. mkdir $py_projects$) with the code $\your\python\version\path\python -m venv synaptic_suite2p
+
+you can then install all the necessary requirements with pip install -r requirements.txt in the downloaded fork
 
 To create an environment using these requirements, enter $conda env create -n synaptic_suite2p python=3.8$. This is recommended as MouseLand's suite2p installation lacks key installables such as chardet and PyYAML which are needed to install the source code for this project (see below).
 
