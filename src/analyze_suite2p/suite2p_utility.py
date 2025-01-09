@@ -107,23 +107,27 @@ def check_deltaF(folder_name_list):
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
 
+
 def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     file_names = []
     other_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file_ending is "folders" and file.endswith(file_ending):
+            if file_ending=="F.npy" and file.endswith(file_ending) and not file.endswith("deltaF.npy"):
+                    file_names.append(os.path.join(root, file))
+            elif file_ending=="deltaF.npy" and file.endswith(file_ending) and not file.endswith("predictions_deltaF.npy"):
+                    file_names.append(os.path.join(root, file))
+            elif file_ending=="samples":
+                if file.endswith("F.npy") and not file.endswith("deltaF.npy"):
                     file_names.append(os.path.join(root, file)[:-21])
-            elif file_ending is "F.npy" and not file.endswith('deltaF.npy'):
-                file_names.append(os.path.join(root, file))
             else:
-                if file.endswith(file_ending): other_files.append(os.pathjoin(root,file))
-    if file_ending=="F.npy" or file_ending=="deltaF.npy" or file_ending=="predictions_deltaF.npy":
+                 if file.endswith(file_ending): other_files.append(os.path.join(root, file))
+    if file_ending=="F.npy" or file_ending=="deltaF.npy":
         if not supress_printing:
             print(f"{len(file_names)} {file_ending} files found:")
             print(file_names)
         return file_names
-    elif file_ending=="folders":
+    elif file_ending=="samples":
         check_deltaF(file_names)  #checks if deltaf exists, else calculates it
         if not supress_printing:
             print(f"{len(file_names)} folders containing {file_ending} found:")
@@ -132,33 +136,81 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     else:
         print("Is the file ending spelled right?")
         return other_files
+def get_sample_dict(main_folder):
+    """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
+    well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
+    date_list= []
+    sample_dict = {}
+    for well in well_folders:
+        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+    distinct_dates = [i for i in set(date_list)]
+    distinct_dates.sort(key=lambda x: int(x))
+ 
+    for i1 in range(len(well_folders)):
+        for i2, date in enumerate(distinct_dates):
+            if date in well_folders[i1]: # if date in list
+                sample_dict[well_folders[i1]]=f"sample_{i2+1}"
+    return sample_dict
     
 
-def load_suite2p_output(path, use_iscell=False):
+def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
-        "F": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["F"])),
-        "Fneu": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["Fneu"])),
-        "stat": load_npy_df(os.path.join(path, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
-        "ops": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["ops"])).item(),
-        "iscell": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["iscell"])),
-        # "deltaF": load_npy_array(os.path.join(path, *SUITE2P_STRUCTURE["deltaF"]))
+        "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
+        "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
+        "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
+        "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"])).item(),
+        "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["iscell"])),
+        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["deltaF"]))
     }
 
-    if use_iscell == False:
-        suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+    if not use_iscell:
+        suite2p_dict["IsUsed"] = [
+            (suite2p_dict["stat"]["skew"] >= 1) &
+            (suite2p_dict["stat"]["footprint"] >= 1.0) &
+            (suite2p_dict["stat"]["npix"] >= 25)]
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["IsUsed"]).iloc[:,0:].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
     else:
-        suite2p_dict["IsUsed"] = load_npy_df(os.path.join(path, *SUITE2P_STRUCTURE["iscell"]))[0].astype(bool)
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
+    if not groups:
+        raise ValueError("The 'groups' list is empty. Please provide valid gorup names...")
+
+    print(f"Data folder: {data_folder}")
+    print(f"Groups: {groups}")
+    print(f"Main folder: {main_folder}")
+    found_group = False
+    for group in groups:
+        if (str(group)) in data_folder:
+            group_name = os.path.basename(group.strip("\\/"))
+            suite2p_dict["Group"] = group_name
+            found_group = True
+            print(f"Assigned Group: {suite2p_dict['Group']}")
+    
+    # debugging
+    if "iscell" not in suite2p_dict:
+        raise KeyError ("'IsUsed' was not defined correctly either")
+    if "Group" not in suite2p_dict:
+        raise KeyError("'Group' key not found in suite2p_dict.")
+    if not found_group:
+        raise KeyError(f"No group found in the data_folder path: {data_folder}")
+
+    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+   
+    suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
+ 
+    
     return suite2p_dict
 
 
 def get_experimental_dates(main_folder):
     """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
-    well_folders = get_all_suite2p_outputs_in_path(main_folder, "folders", supress_printing = True)
+    well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
     date_list= []
     sample_dict = {}
     for well in well_folders:
@@ -176,17 +228,27 @@ def get_experimental_dates(main_folder):
 def translate_suite2p_dict_to_df(suite2p_dict):
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
-    def process_individual_synapse(f_trace, fneu_trace):
-        peaks = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peaks = True)
-        amplitudes = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_amplitudes=True)
-        decay_times = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_times = True)
-        peak_count = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_peak_count=True)
-        decay_frames = detector_utility.single_synapse_baseline_correction_and_peak_return(f_trace, fneu_trace, return_decay_frames=True)
+    def process_individual_synapse(deltaF):
+        peaks = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = True)
+        amplitudes = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_amplitudes=True)
+        decay_times = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_time = True)
+        peak_count = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peak_count=True)
+        decay_frames = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_frames=True)
         return peaks, amplitudes, peak_count, decay_times, decay_frames
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
+    results = []
+
+    for idx, (is_used, deltaF) in enumerate(zip(suite2p_dict["IsUsed"],suite2p_dict["deltaF"])):
+        if is_used:
+            result = process_individual_synapse(deltaF)
+        else:
+            result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
+        results.append(result)
     spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
+
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
+    # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
