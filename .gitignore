@@ -7,3 +7,4 @@ src\gui_config\gui_configurations.py
 __pycache__
 xs_code\__pycache__
 *.txt
+gui_configurations.py
