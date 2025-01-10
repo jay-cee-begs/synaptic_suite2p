@@ -276,8 +276,9 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         if os.path.exists(translated_path) and not overwrite:
             print(f"CSV file {translated_path} already exists!")
             continue
-                    #CHANGE POTENTIALLY
-        suite2p_dict = load_suite2p_output(suite2p_output, configurations.groups, configurations.main_folder)
+
+        suite2p_dict = load_suite2p_output(suite2p_output, configurations.groups, input_path)
+        
         suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
 
         ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
@@ -285,20 +286,25 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
         ops = suite2p_dict["ops"]
         Img = detector_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict["stat"], Img.shape, suite2p_df)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict, Img.shape, suite2p_df, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *SUITE2P_STRUCTURE['iscell'])
+        parent_iscell = load_npy_array(iscell_path)
+        updated_iscell = parent_iscell.copy()
         if update_iscell:
-            updated_iscell = suite2p_dict['iscell']
-            for idx in nid2idx: 
-                updated_iscell[idx, 0] = 1.0
+            for idx in nid2idx:
+                update_iscell[idx] = [1.0, update_iscell[idx][1]]
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr,0] = 0.0
-            np.save(iscell_path, updated_iscell)
+                update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
+            np.save(iscell_path, update_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
+        else:
+            print("Using iscell from suite2p to classify ROIs")
+
         synapse_key = set(synapseID)
         suite2p_df.iloc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
+
         suite2p_df.to_csv(translated_path)
         print(f"csv created for {suite2p_output}")
 
