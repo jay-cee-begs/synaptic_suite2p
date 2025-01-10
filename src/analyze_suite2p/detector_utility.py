@@ -1,6 +1,8 @@
 import os
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import matplotlib.cm as cm
 import random
 from scipy.signal import find_peaks
@@ -55,63 +57,64 @@ def boundary(ypix,xpix):
 
 #gets neuronal indices
 
-def getStats(stat, frame_shape, output_df):
-    MIN_COUNT = 2 #TODO: define for iscell; also figure exclude noncell
+def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
+    stat = suite2p_dict['stat']
+    iscell = suite2p_dict['iscell']
+    MIN_COUNT = 2 # minimum number of detected spikes for ROI inclusion
     MIN_SKEW = 1.0
     min_pixel = 25
-    max_compact = 1.4
     min_footprint = 0
-    max_footprint = 3
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
     nid2idx_rejected = {}
-    synapseID = []
+    synapse_ID = []
     print(f"Number of detected ROIs: {stat.shape[0]}")
-    for n in range(stat.shape[0]): #TODO change back to be based on csv file (estimated_spike count)
-        estimated_spikes = output_df.iloc[n]["PeakCount"]
-        skew = stat.iloc[n]['skew']
-        footprint = stat.iloc[n]['footprint']
+    
+    if not use_iscell:
 
-        if estimated_spikes >= MIN_COUNT and skew >=MIN_SKEW and footprint > min_footprint:
-            synapseID.append(n)
-        # # min_skew, max_skew = min(skew, min_skew), max(skew, max_skew)
-        # npix = stat.iloc[n]['npix']
-        # footprint = stat.iloc[n]['footprint']
-        # compact = stat.iloc[n]['compact']
-        # # min_skew, max_skew = min(skew, min_skew), max(skew, max_skew)
-        # if skew >= MIN_SKEW and footprint > min_footprint and npix > min_pixel and compact < max_compact:
+        for n in range(stat.shape[0]):
+            peak_count = output_df.iloc[n]["PeakCount"]
+            skew = stat.iloc[n]['skew']
+            footprint = stat.iloc[n]['footprint']
+            npix = stat.iloc[n]['npix']
 
-        
-            nid2idx[n] = len(scatters["x"]) # Assign new idx
-        else:
-            nid2idx_rejected[n] = len(scatters["x"])
-        
-        
-        
-        #----------------------------------------------------------------------------------------------------------#
+            if peak_count >= MIN_COUNT and skew >=MIN_SKEW and footprint > min_footprint and npix > min_pixel:
+                synapse_ID.append(n)
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
             
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
 
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
+    else:
+        for n in range(stat.shape[0]):
 
-        ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat[n]['overlap']] - 1
-        xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat[n]['overlap']] - 1
-        # print(f"Before filtering - xpix max: {xpix.max()}, ypix max: {ypix.max()}")
+            if iscell[n,0]:
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
 
-        valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
-        ypix = ypix[valid_idx]
-        xpix = xpix[valid_idx]
-        # print(f'After filtering - xpix max: {xpix.max()}, ypix max: {ypix.max()}')
-        yext, xext = boundary(ypix, xpix)
-        scatters['x'] += [xext]
-        scatters['y'] += [yext]
-        pixel2neuron[ypix, xpix] = n
-        scatters["color"].append(skew)
-        scatters["text"].append(f"Cell #{n} - Skew: {skew}")
-    # print("Min/max skew: ", min_skew, max_skew)
-    # Normalize colors between 0 and 1
-    # color_raw = np.array(scatters["color"])
-    # scatters["color"] = (color_raw - min_skew) / (max_skew - min_skew)
-    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
+
+    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              pixel2neuron, F, Fneu, save_path, axs=None):
@@ -128,9 +131,9 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.imshow(MaxImg, cmap='gist_gray')
              ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
                              labelbottom=False, left=False, right=False, labelleft=False)
-             print("Synaptic count:", len(nid2idx))
-            #  norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
-            #  mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
+             print("Synapse count:", len(nid2idx))
+             norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
+             mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
 
              def plotDict(n2d2idx_dict, override_color = None):
                  for neuron_id, idx in n2d2idx_dict.items():
@@ -146,7 +149,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              plt.savefig(save_path)
              plt.close(fig)
 
-def create_suite2p_ROI_masks(stat, frame_shape, nid2idx):
+def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
     """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
     #Make an empty array to contain the nid2idx masks
     roi_masks = np.zeros(frame_shape, dtype=int)
