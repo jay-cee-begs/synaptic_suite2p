@@ -138,7 +138,8 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     else:
         print("Is the file ending spelled right?")
         return other_files
-def get_sample_dict(main_folder):
+
+def get_experimental_dates(main_folder):
     """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
     well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
     date_list= []
@@ -203,29 +204,12 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
     if not found_group:
         raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
-    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+    sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
     
     return suite2p_dict
-
-
-def get_experimental_dates(main_folder):
-    """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
-    well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
-    date_list= []
-    sample_dict = {}
-    for well in well_folders:
-        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
-    distinct_dates = [i for i in set(date_list)]
-    distinct_dates.sort(key=lambda x: int(x))
- 
-    for i1 in range(len(well_folders)):
-        for i2, date in enumerate(distinct_dates):
-            if date in well_folders[i1]: # if date in list
-                sample_dict[well_folders[i1]]=f"sample_{i2+1}"
-    return sample_dict
 
 
 def translate_suite2p_dict_to_df(suite2p_dict):
@@ -260,7 +244,10 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "Amplitudes": spike_amplitudes,
                         "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
-                       "Total Frames": len(suite2p_dict["F"].T)})
+                       "Total Frames": len(suite2p_dict["F"].T),
+                       "Experimental Group": suite2p_dict['Group'],
+                       "Replicate No.": suite2p_dict['sample']
+                       })
                        
     df.index.set_names("SynapseID", inplace=True)
     # df["IsUsed"] = False
@@ -277,7 +264,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
         from the baseline (the median of each trace)"""
     
-    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "folders", supress_printing=True)
+    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
 
     output_path = input_path+r"\csv_files"
     if not os.path.exists(output_path):
@@ -290,7 +277,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
             print(f"CSV file {translated_path} already exists!")
             continue
                     #CHANGE POTENTIALLY
-        suite2p_dict = load_suite2p_output(suite2p_output)
+        suite2p_dict = load_suite2p_output(suite2p_output, configurations.groups, configurations.main_folder)
         suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
 
         ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
@@ -309,7 +296,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
             np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
         synapse_key = set(synapseID)
-        suite2p_df.loc[synapse_key, 'IsUsed'] = True
+        suite2p_df.iloc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
         suite2p_df.to_csv(translated_path)
