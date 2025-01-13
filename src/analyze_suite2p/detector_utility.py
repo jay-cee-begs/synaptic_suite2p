@@ -62,8 +62,8 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     iscell = suite2p_dict['iscell']
     MIN_COUNT = 2 # minimum number of detected spikes for ROI inclusion
     MIN_SKEW = 1.0
-    min_pixel = 25
-    min_footprint = 0
+    # min_pixel = 25
+    # min_footprint = 0
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -76,10 +76,10 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
         for n in range(stat.shape[0]):
             peak_count = output_df.iloc[n]["PeakCount"]
             skew = stat.iloc[n]['skew']
-            footprint = stat.iloc[n]['footprint']
-            npix = stat.iloc[n]['npix']
+            # footprint = stat.iloc[n]['footprint']
+            # npix = stat.iloc[n]['npix']
 
-            if peak_count >= MIN_COUNT and skew >=MIN_SKEW and footprint > min_footprint and npix > min_pixel:
+            if peak_count >= MIN_COUNT and skew >=MIN_SKEW:
                 synapse_ID.append(n)
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
