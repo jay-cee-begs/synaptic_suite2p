@@ -169,9 +169,9 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
 
     if not use_iscell:
         suite2p_dict["IsUsed"] = [
-            (suite2p_dict["stat"]["skew"] >= 1) &
-            (suite2p_dict["stat"]["footprint"] >= 1.0) &
-            (suite2p_dict["stat"]["npix"] >= 25)]
+            (suite2p_dict["stat"]["skew"] >= 1)]# &
+            # (suite2p_dict["stat"]["footprint"] >= 1.0) &
+            # (suite2p_dict["stat"]["npix"] >= 25)]
         # suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
 
