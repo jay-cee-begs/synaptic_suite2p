@@ -292,16 +292,16 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         updated_iscell = parent_iscell.copy()
         if update_iscell:
             for idx in nid2idx:
-                update_iscell[idx] = [1.0, update_iscell[idx][1]]
+                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
             for idxr in nid2idx_rejected:
-                update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
-            np.save(iscell_path, update_iscell)
+                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+            np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
         else:
             print("Using iscell from suite2p to classify ROIs")
 
-        synapse_key = set(synapseID)
-        suite2p_df.iloc[synapse_key, 'IsUsed'] = True
+        synapse_key = list(synapseID)
+        suite2p_df['IsUsed'] = suite2p_df.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
 
