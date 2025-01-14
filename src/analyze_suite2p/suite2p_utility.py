@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from gui_config import gui_configurations as configurations
-from analyze_suite2p import detector_utility
+from analyze_suite2p import detector_utility, analysis_utility
 from BaselineRemoval import BaselineRemoval
     #this is where all the detector functions will be used; at least initially
 import concurrent.futures
@@ -169,9 +169,9 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
 
     if not use_iscell:
         suite2p_dict["IsUsed"] = [
-            (suite2p_dict["stat"]["skew"] >= 1) &
-            (suite2p_dict["stat"]["footprint"] >= 1.0) &
-            (suite2p_dict["stat"]["npix"] >= 25)]
+            (suite2p_dict["stat"]["skew"] >= 1)]# &
+            # (suite2p_dict["stat"]["footprint"] >= 1.0) &
+            # (suite2p_dict["stat"]["npix"] >= 25)]
         # suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
 
@@ -208,7 +208,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
-    
+    suite2p_dict['file_name'] = data_folder
     return suite2p_dict
 
 
@@ -246,13 +246,17 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "DecayFrames": decay_frames,
                        "Total Frames": len(suite2p_dict["F"].T),
                        "Experimental Group": suite2p_dict['Group'],
-                       "Replicate No.": suite2p_dict['sample']
+                       "Replicate No.": suite2p_dict['sample'],
+                       "File Name": suite2p_dict['file_name']
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
     # df["IsUsed"] = False
 
     # df.fillna(0, inplace = True) potentially for decay time calculations
+    df = analysis_utility.calculate_cell_stats(df)
+
+
     return df
 
 
@@ -292,16 +296,16 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         updated_iscell = parent_iscell.copy()
         if update_iscell:
             for idx in nid2idx:
-                update_iscell[idx] = [1.0, update_iscell[idx][1]]
+                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
             for idxr in nid2idx_rejected:
-                update_iscell[idxr] = [0.0, update_iscell[idxr][1]]
-            np.save(iscell_path, update_iscell)
+                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+            np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
         else:
             print("Using iscell from suite2p to classify ROIs")
 
-        synapse_key = set(synapseID)
-        suite2p_df.iloc[synapse_key, 'IsUsed'] = True
+        synapse_key = list(synapseID)
+        suite2p_df['IsUsed'] = suite2p_df.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
 
