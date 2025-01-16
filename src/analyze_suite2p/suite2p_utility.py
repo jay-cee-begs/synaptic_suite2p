@@ -285,6 +285,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         
         suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
 
+
         ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
         # suite2p_dict = load_suite2p_output(suite2p_output, groups, input_path, use_iscell=check_for_iscell)
         # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
@@ -308,6 +309,8 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         suite2p_df['IsUsed'] = suite2p_df.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
+
+        suite2p_df = suite2p_df[suite2p_df["IsUsed"]==True]
 
         suite2p_df.to_csv(translated_path)
         print(f"csv created for {suite2p_output}")
