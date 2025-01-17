@@ -251,13 +251,21 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
-    # df["IsUsed"] = False
-
+    filtered_df = df[df['IsUsed']==True]
     # df.fillna(0, inplace = True) potentially for decay time calculations
-    df = analysis_utility.calculate_cell_stats(df)
 
+    processed_df = analysis_utility.calculate_cell_stats(filtered_df)
+    filtered_columns = processed_df.columns[0:7]
+    processed_df = processed_df.drop(filtered_columns, axis = 1)
+    agg_columns = processed_df.select_dtypes(['float64', 'int'])
+    aggregate_stats = agg_columns.agg(['mean','std','median'])
+    aggregate_stats["Experimental Group"] = suite2p_dict['Group']
+    aggregate_stats["Replicate No."] = suite2p_dict['sample']
+    aggregate_stats["File Name"] = suite2p_dict['file_name']
+    
+    # processed_df.drop("IsUsed" == False)
 
-    return df
+    return filtered_df, aggregate_stats
 
 
 def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
