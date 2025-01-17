@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from gui_config import gui_configurations as configurations
-from analyze_suite2p import detector_utility
+from analyze_suite2p import detector_utility, analysis_utility
 from BaselineRemoval import BaselineRemoval
     #this is where all the detector functions will be used; at least initially
 import concurrent.futures
@@ -79,12 +79,14 @@ def calculate_deltaF(F_file):
                     corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
         #TODO decide if mean, median or mode is best for deltaF calculations
         F_baseline = np.median(F_sample)
-        deltaF.append((corrected_trace-F_baseline)/F_baseline)
+        normalized_F = (corrected_trace-F_baseline)/F_baseline
+        baseline_correction = BaselineRemoval(normalized_F)
+        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10, repitition=20)
+        deltaF.append(ZhangFit_normalized)
+        
 
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
-    deltaF = BaselineRemoval(deltaF)
-    deltaF = deltaF.ZhangFit()
     np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
     print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
     # csv_filename = f"{F_file[len(configurations.main_folder)+1:-21]}".replace("\\", "-") ## prevents backslahes being replaced in rest of code
@@ -115,7 +117,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
         for file in files:
             if file_ending=="F.npy" and file.endswith(file_ending) and not file.endswith("deltaF.npy"):
                     file_names.append(os.path.join(root, file))
-            elif file_ending=="deltaF.npy" and file.endswith(file_ending) and not file.endswith("predictions_deltaF.npy"):
+            elif file_ending=="deltaF.npy" and file.endswith(file_ending):
                     file_names.append(os.path.join(root, file))
             elif file_ending=="samples":
                 if file.endswith("F.npy") and not file.endswith("deltaF.npy"):
@@ -136,7 +138,8 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     else:
         print("Is the file ending spelled right?")
         return other_files
-def get_sample_dict(main_folder):
+
+def get_experimental_dates(main_folder):
     """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
     well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
     date_list= []
@@ -166,12 +169,13 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
 
     if not use_iscell:
         suite2p_dict["IsUsed"] = [
-            (suite2p_dict["stat"]["skew"] >= 1) &
-            (suite2p_dict["stat"]["footprint"] >= 1.0) &
-            (suite2p_dict["stat"]["npix"] >= 25)]
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
-        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+            (suite2p_dict["stat"]["skew"] >= 1)]# &
+            # (suite2p_dict["stat"]["footprint"] >= 1.0) &
+            # (suite2p_dict["stat"]["npix"] >= 25)]
+        # suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
+
+        # suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     else:
         suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
@@ -200,29 +204,12 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
     if not found_group:
         raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
-    sample_dict = get_sample_dict(main_folder) ## creates the sample number dict
+    sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
     suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
  
-    
+    suite2p_dict['file_name'] = data_folder
     return suite2p_dict
-
-
-def get_experimental_dates(main_folder):
-    """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
-    well_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
-    date_list= []
-    sample_dict = {}
-    for well in well_folders:
-        date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
-    distinct_dates = [i for i in set(date_list)]
-    distinct_dates.sort(key=lambda x: int(x))
- 
-    for i1 in range(len(well_folders)):
-        for i2, date in enumerate(distinct_dates):
-            if date in well_folders[i1]: # if date in list
-                sample_dict[well_folders[i1]]=f"sample_{i2+1}"
-    return sample_dict
 
 
 def translate_suite2p_dict_to_df(suite2p_dict):
@@ -244,7 +231,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
         else:
             result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
         results.append(result)
-    spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
+    spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
 
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
@@ -256,13 +243,20 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
                        "Amplitudes": spike_amplitudes,
                         "DecayTimes": decay_times,
-                       "DecayFrames": decay_points_after_peaks,
-                       "Total Frames": len(suite2p_dict["F"].T)})
+                       "DecayFrames": decay_frames,
+                       "Total Frames": len(suite2p_dict["F"].T),
+                       "Experimental Group": suite2p_dict['Group'],
+                       "Replicate No.": suite2p_dict['sample'],
+                       "File Name": suite2p_dict['file_name']
+                       })
                        
     df.index.set_names("SynapseID", inplace=True)
-    df["IsUsed"] = False
+    # df["IsUsed"] = False
 
     # df.fillna(0, inplace = True) potentially for decay time calculations
+    df = analysis_utility.calculate_cell_stats(df)
+
+
     return df
 
 
@@ -274,7 +268,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
         from the baseline (the median of each trace)"""
     
-    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "folders", supress_printing=True)
+    suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
 
     output_path = input_path+r"\csv_files"
     if not os.path.exists(output_path):
@@ -286,29 +280,38 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         if os.path.exists(translated_path) and not overwrite:
             print(f"CSV file {translated_path} already exists!")
             continue
-                    #CHANGE POTENTIALLY
-        suite2p_dict = load_suite2p_output(suite2p_output)
+
+        suite2p_dict = load_suite2p_output(suite2p_output, configurations.groups, input_path)
+        
         suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
+
 
         ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
         # suite2p_dict = load_suite2p_output(suite2p_output, groups, input_path, use_iscell=check_for_iscell)
         # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
         ops = suite2p_dict["ops"]
         Img = detector_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict["stat"], Img.shape, suite2p_df)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict, Img.shape, suite2p_df, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *SUITE2P_STRUCTURE['iscell'])
+        parent_iscell = load_npy_array(iscell_path)
+        updated_iscell = parent_iscell.copy()
         if update_iscell:
-            updated_iscell = suite2p_dict['iscell']
-            for idx in nid2idx: 
-                updated_iscell[idx, 0] = 1.0
+            for idx in nid2idx:
+                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr,0] = 0.0
+                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
             np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
-        synapse_key = set(synapseID)
-        suite2p_df.loc[synapse_key, 'IsUsed'] = True
+        else:
+            print("Using iscell from suite2p to classify ROIs")
+
+        synapse_key = list(synapseID)
+        suite2p_df['IsUsed'] = suite2p_df.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
         suite2p_df['Active_Synapses'] = len(synapseID)
+
+        suite2p_df = suite2p_df[suite2p_df["IsUsed"]==True]
+
         suite2p_df.to_csv(translated_path)
         print(f"csv created for {suite2p_output}")
 
