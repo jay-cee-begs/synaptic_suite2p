@@ -99,7 +99,7 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
         output_df = calculate_cell_freq(output_df)
     if calculate_isi:
         output_df = calculate_cell_isi(output_df)
-    if calculate_spike_amplitudes:
+    if calculate_amplitudes:
         output_df = calculate_spike_amplitudes(output_df)
     if calculate_decays:
         output_df = calculate_decay_values(output_df)
