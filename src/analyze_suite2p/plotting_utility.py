@@ -1,13 +1,24 @@
-#I probably will rename these files so I can tell them apart when I have a lot of tabs open...
-
+import os
 import pandas as pd
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+import matplotlib.cm as cm
 import seaborn as sns
 import scipy.stats as stats
-import os
+from scipy.stats import norm
+from scipy.signal import find_peaks
+from scipy.ndimage import binary_dilation, binary_fill_holes
+from PIL import Image
+from BaselineRemoval import BaselineRemoval
 import pickle
 import pynapple as nap
+
+from gui_config import gui_configurations as configurations
+from analyze_suite2p import suite2p_utility
+from analyze_suite2p import detector_utility
+
 
 """
 below is an example structure for a dictionary for all the experiment files 
