@@ -252,3 +252,161 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
     for idx in my_tsd.keys():
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
         
+def getImg(ops):
+    """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
+    Img = ops["max_proj"] # Also "max_proj", "meanImg", "meanImgE"
+    mimg = Img # Use suite-2p source-code naming
+    mimg1 = np.percentile(mimg,1)
+    mimg99 = np.percentile(mimg,99)
+    mimg = (mimg - mimg1) / (mimg99 - mimg1)
+    mimg = np.maximum(0,np.minimum(1,mimg))
+    mimg *= 255
+    mimg = mimg.astype(np.uint8)
+    return mimg
+
+    #redefine locally suite2p.gui.utils import boundary
+def boundary(ypix,xpix):
+    """ returns pixels of mask that are on the exterior of the mask """
+    ypix = np.expand_dims(ypix.flatten(),axis=1)
+    xpix = np.expand_dims(xpix.flatten(),axis=1)
+    npix = ypix.shape[0]
+    if npix>0:
+        msk = np.zeros((np.ptp(ypix)+6, np.ptp(xpix)+6), bool) 
+        msk[ypix-ypix.min()+3, xpix-xpix.min()+3] = True
+        msk = binary_dilation(msk)
+        msk = binary_fill_holes(msk)
+        k = np.ones((3,3),dtype=int) # for 4-connected
+        k = np.zeros((3,3),dtype=int); k[1] = 1; k[:,1] = 1 # for 8-connected
+        out = binary_dilation(msk==0, k) & msk
+
+        yext, xext = np.nonzero(out)
+        yext, xext = yext+ypix.min()-3, xext+xpix.min()-3
+    else:
+        yext = np.zeros((0,))
+        xext = np.zeros((0,))
+    return yext, xext
+
+#gets neuronal indices
+
+def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
+    stat = suite2p_dict['stat']
+    iscell = suite2p_dict['iscell']
+    MIN_COUNT = 2 # minimum number of detected spikes for ROI inclusion
+    MIN_SKEW = 1.0
+    # min_pixel = 25
+    # min_footprint = 0
+    pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
+    scatters = dict(x=[], y=[], color=[], text=[])
+    nid2idx = {}
+    nid2idx_rejected = {}
+    synapse_ID = []
+    print(f"Number of detected ROIs: {stat.shape[0]}")
+    
+    if not use_iscell:
+
+        for n in range(stat.shape[0]):
+            peak_count = output_df.iloc[n]["PeakCount"]
+            skew = stat.iloc[n]['skew']
+            # footprint = stat.iloc[n]['footprint']
+            # npix = stat.iloc[n]['npix']
+
+            if peak_count >= MIN_COUNT and skew >=MIN_SKEW:
+                synapse_ID.append(n)
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
+            
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
+    else:
+        for n in range(stat.shape[0]):
+
+            if iscell[n,0]:
+                nid2idx[n] = len(scatters["x"]) # Assign new idx
+            else:
+                nid2idx_rejected[n] = len(scatters["x"])
+
+            ypix = stat.iloc[n]['ypix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+            xpix = stat.iloc[n]['xpix'].flatten() - 1 #[~stat.iloc[n]['overlap']] - 1
+
+            valid_idx = (xpix>=0) & (xpix < frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+            ypix = ypix[valid_idx]
+            xpix = xpix[valid_idx]
+            yext, xext = boundary(ypix, xpix)
+            scatters['x'] += [xext]
+            scatters['y'] += [yext]
+            pixel2neuron[ypix, xpix] = n
+
+    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID
+
+def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
+             pixel2neuron, F, Fneu, save_path, axs=None):
+             if axs is None:
+                fig = plt.figure(constrained_layout=True)
+                NUM_GRIDS=12
+                gs = fig.add_gridspec(NUM_GRIDS, 1)
+                ax1 = fig.add_subplot(gs[:NUM_GRIDS-2])
+                fig.set_size_inches(12,14)
+             else:
+                 ax1 = axs
+                 ax1.set_xlim(0, MaxImg.shape[0])
+                 ax1.set_ylim(MaxImg.shape[1], 0)
+             ax1.imshow(MaxImg, cmap='gist_gray')
+             ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
+                             labelbottom=False, left=False, right=False, labelleft=False)
+             print("Synapse count:", len(nid2idx))
+             norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
+             mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
+
+             def plotDict(n2d2idx_dict, override_color = None):
+                 for neuron_id, idx in n2d2idx_dict.items():
+                     color = override_color if override_color else mapper.to_rgba(scatters['color'][idx])
+                            # print(f"{idx}: {scatters['x']} - {scatters['y'][idx]}")
+                            
+                     sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
+                                      marker='.', s=1)
+             plotDict(nid2idx, 'g')
+            #  plotDict(nid2idx_rejected, 'm')
+             ax1.set_title(f"{len(nid2idx)} Synapses used (green) out of {len(nid2idx)+len(nid2idx_rejected)} potential detected (magenta - rejected)") 
+
+             plt.savefig(save_path)
+             plt.close(fig)
+
+def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
+    """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
+    #Make an empty array to contain the nid2idx masks
+    roi_masks = np.zeros(frame_shape, dtype=int)
+
+    #Iterate through the ROIs in nid2idx and fill in the masks
+    for n in nid2idx.keys():
+        ypix = stat.iloc[n]['ypix'].flatten() - 1
+        xpix = stat.iloc[n]['xpix'].flatten() - 1
+
+        #Ensure the indices are within the bounds of the frame_shape
+
+        valid_idx = (xpix >= 0) & (xpix<frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
+        ypix = ypix[valid_idx]
+        xpix = xpix[valid_idx]
+
+        #Set ROI pixels to mask
+
+        roi_masks[ypix, xpix] = 255 # n + 1 helps to differentiate masks from background
+    # plt.figure(figsize=(10, 10))
+    # plt.imshow(roi_masks, cmap='gray', interpolation='none')
+    # # plt.colorbar(label='ROI ID')
+    # plt.title('ROI Mask')
+    # plt.tight_layout()
+    # plt.show()
+    im = Image.fromarray(roi_masks)
+    im.save(output_path)
+    return im, roi_masks
+
+
