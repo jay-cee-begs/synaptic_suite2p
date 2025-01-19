@@ -1,22 +1,10 @@
-import os
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
-import matplotlib.cm as cm
-import random
 from scipy.signal import find_peaks
 import pandas as pd
-from scipy.ndimage import binary_dilation, binary_fill_holes
-import scipy.stats as stats
-import pickle
 from PIL import Image
-import seaborn as sns #needed for aggregated feature plots
-# import pynapple as nap #TODO if you need Pynapple plots, you cannot use alongside cascade as it will break the code
 import scipy.signal as signal
-from scipy.optimize import curve_fit
 from gui_config import gui_configurations as configurations
-from BaselineRemoval import BaselineRemoval
 from scipy.stats import norm
 from analyze_suite2p import suite2p_utility
 
