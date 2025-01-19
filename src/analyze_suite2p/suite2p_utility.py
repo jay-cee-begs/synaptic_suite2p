@@ -285,13 +285,14 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
     for suite2p_output in suite2p_outputs:
         output_directory = os.path.basename(suite2p_output)
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
+        processed_path = os.path.join(output_path, f"processed{output_directory}.csv")
         if os.path.exists(translated_path) and not overwrite:
             print(f"CSV file {translated_path} already exists!")
             continue
 
         suite2p_dict = load_suite2p_output(suite2p_output, configurations.groups, input_path)
         
-        suite2p_df = translate_suite2p_dict_to_df(suite2p_dict)
+        raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
 
 
         ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
@@ -299,7 +300,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
         ops = suite2p_dict["ops"]
         Img = detector_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict, Img.shape, suite2p_df, use_iscell=check_for_iscell)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *SUITE2P_STRUCTURE['iscell'])
         parent_iscell = load_npy_array(iscell_path)
         updated_iscell = parent_iscell.copy()
@@ -314,14 +315,14 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
             print("Using iscell from suite2p to classify ROIs")
 
         synapse_key = list(synapseID)
-        suite2p_df['IsUsed'] = suite2p_df.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
+        raw_data['IsUsed'] = raw_data.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
-        suite2p_df['Active_Synapses'] = len(synapseID)
+        processed_data['Active_Synapses'] = len(synapseID)
 
-        suite2p_df = suite2p_df[suite2p_df["IsUsed"]==True]
 
-        suite2p_df.to_csv(translated_path)
-        print(f"csv created for {suite2p_output}")
+        raw_data.to_csv(translated_path)
+        processed_data.to_csv(processed_path)
+        print(f"csvs created for {suite2p_output}")
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
         detector_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
