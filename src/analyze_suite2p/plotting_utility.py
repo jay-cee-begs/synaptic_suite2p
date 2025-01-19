@@ -410,3 +410,90 @@ def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
     return im, roi_masks
 
 
+
+def single_spine_peak_plotting(input_f,input_fneu):
+    
+    corrected_trace = input_f - (0.7*input_fneu) ## neuropil correction
+    # corrected_trace = remove_bleaching(corrected)
+    deltaF= []
+
+    amount = int(0.125*len(corrected_trace))
+    middle = 0.5*len(corrected_trace)
+    F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
+                corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
+    F_baseline = np.mean(F_sample)
+    deltaF.append((corrected_trace-F_baseline)/F_baseline)
+
+    iqr_noise = detector_utility.filter_outliers(deltaF) #iqr noise
+    mu, SD = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
+    threshold = mu + 3.5 * SD
+
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    # corrected_trace = deltaF
+    # deltaF_corr = remove_bleaching(deltaF)
+    deltaF_corr = BaselineRemoval(deltaF)
+    deltaF_corr = deltaF_corr.ZhangFit()
+    peaks, _ = find_peaks(deltaF, height = abs(2.5*(abs(np.median(deltaF)) + abs(deltaF.min()))), distance = 10) #frequency
+    amplitudes = deltaF[peaks] - np.median(deltaF) #amplitude
+
+    negative_points = np.where((deltaF < np.median(deltaF)))[0]
+    # print(negative_points)
+    decay_points = []
+    decay_time = []
+    for peak1, peak2 in zip(peaks[:-1], peaks[1:]):
+        negative_between_peaks = negative_points[negative_points>peak1]
+        negative_between_peaks = negative_between_peaks[negative_between_peaks<peak2]
+        if len(negative_between_peaks)>0:
+            decay_points.append(negative_between_peaks[0])
+        if len(negative_between_peaks)==0:
+            decay_points.append(np.nan)
+
+    if len(peaks)>0:
+        negative_after_last_peak = negative_points[negative_points>peaks[-1]]
+        if len(negative_after_last_peak)>0:
+            decay_points.append(negative_after_last_peak[0])
+        else:
+            decay_points.append(np.nan)
+
+    else:
+
+        decay_points = []
+
+    for peak,decay in zip(peaks, decay_points):
+        decay_time.append(np.abs(decay - peak)/20)
+
+        # scipy find_peaks function
+        #then plot the traces you generate
+    plt.figure(figsize=[24,7])
+    plt.plot(deltaF)
+    plt.plot(peaks, deltaF[peaks], "x")
+    # plt.plot(decay_points, corrected_trace[decay_points], "x")
+    plt.plot(np.full_like(deltaF, 2.5*(abs(np.median(deltaF)) + abs(deltaF.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF, 2*(abs(np.median(deltaF)) + abs(deltaF.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF, 3*(abs(np.median(deltaF)) + abs(deltaF.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF, np.median(deltaF)), "--", color = 'r')
+    print('the peak time stamps are :{}' .format(peaks))
+    print('the peak returns to baseline at frame: {}' .format(decay_points))
+    print('the decay time in seconds for each peak is: {}' .format(decay_time))
+    print('the amplitude of each peak is: {}' .format(amplitudes))
+    plt.show()
+    delta_peaks, _ = find_peaks(deltaF_corr, height = abs(2.5*(abs(np.median(deltaF_corr)) + abs(deltaF_corr.min()))), distance = 10) #frequency
+    plt.figure(figsize=[24,7])
+
+    plt.plot(deltaF_corr)
+    plt.plot(delta_peaks, deltaF_corr[delta_peaks], "x")
+    # plt.plot(decay_points, corrected_trace[decay_points], "x")
+    plt.plot(np.full_like(deltaF_corr, 2.5*(abs(np.median(deltaF_corr)) + abs(deltaF_corr.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF_corr, 2*(abs(np.median(deltaF_corr)) + abs(deltaF_corr.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF_corr, 3*(abs(np.median(deltaF_corr)) + abs(deltaF_corr.min()))), "--",color = "grey")
+    plt.plot(np.full_like(deltaF_corr, np.median(deltaF_corr)), "--", color = 'r')
+    plt.show()
+
+    plt.figure(figsize=[24,7])
+    plt.hist(deltaF_corr, bins = 1000)
+    plt.axvline(np.median(deltaF_corr), color = "red")
+    plt.axvline(SD, linestyle = '--', color = "blue")
+    plt.axvline(3*SD + np.median(deltaF_corr), color = 'green')
+    plt.legend()
+
