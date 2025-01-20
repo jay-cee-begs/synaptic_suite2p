@@ -1,20 +1,8 @@
 import os
-import numpy as np
-import tqdm
-from pathlib import Path
-from PIL import Image
 import shutil
-#import sys
-# sys.path.insert(0, 'D:/users/JC/suite2p-0.14.0')
 from suite2p import run_s2p
-
 from gui_config import gui_configurations as configurations
 from analyze_suite2p import analysis_utility, plotting_utility, detector_utility, suite2p_utility
-#potential issue here in that configurations would need to 
-#be accessed in both virtual environments if we define a directory here
-
-BASE_DIR = configurations.main_folder
-
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= configurations.data_extension):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
@@ -50,8 +38,6 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= configur
                 print(f"Skipping non-{file_ending} file: {file}")
 #Loading in suite2p settings to begin processing
 
-
-
 def get_all_image_folders_in_path(path):
     """
     Find all folders within a given path that contain exactly one .nd2 file in their deepest subfolder.
@@ -76,9 +62,6 @@ def get_all_image_folders_in_path(path):
 
     return found_image_folders
 
-# Example Usage:
-# image_folders = get_all_image_folders_in_path('/path/to/search')
-# print(image_folders)
 
 def process_files_with_suite2p(image_list):
         """
@@ -110,13 +93,11 @@ def process_files_with_suite2p(image_list):
 def main():
     main_folder = configurations.main_folder
     data_extension = configurations.data_extension
-    # export_image_files_to_suite2p_format(main_folder, file_ending = '.' + data_extension)
     img_folders = get_all_image_folders_in_path(main_folder)
     if len(img_folders) == 0:
         export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     process_files_with_suite2p(image_folders)
-    #TODO make sure this part of the code is correct for the pipeline (easier said than done)
     suite2p_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = False)
     analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
