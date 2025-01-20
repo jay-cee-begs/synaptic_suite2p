@@ -29,7 +29,38 @@ once inside you can activate the environment and run the code on the test data *
 
 ## Workflow
 
-The code is designed to run through an interactive GUI. In order for this to work, please navigate to the "Scripts" folder in src\analyze_suite2p and manually change the file string to the location of your own conda / anaconda / miniforge / python installation
+The code is designed to run through an interactive GUI. In order for this to work, please navigate to the "Scripts" folder in src\gui_config\Scripts and manually change the file string to the location of your own conda / anaconda / miniforge / python installation
+
+we will then navigate to src\gui_config and run python -m synpase_gui to launch the user interface
+
+Prior to analysis your data should be organized in the following format for the pipeline to work
+
+experiment_folder/
+    experimental_condition1:
+        individual image files
+    experimental_condition2:
+        individual image files
+    experimental_condition3:
+        individual image files
+
+
+In the user interface, we will browse for an experiment folder to analyze (main_folder)
+Then we will enter the file extension of our image files without the '.' (e.g., tif, nd2)
+We can then click "Add Experiment Conditions" to automatically add the different experimental_condition subfolders to the analysis
+
+The pipeline will keep track of which image files come from which folder. 
+
+We will also need to specify the suite2p settings that we want to use. The settings file used in the paper is included in the GUI and can be a good base for other users to base their own settings off of. 
+To create or edit the suite2p settings; please select "Open Suite2p GUI"
+
+We will then specify the frame_rate and experiment_duration for the image files provided
+
+Lastly, we will update the configurations with "Save Configurations" to update the local gui_configurations file
+
+Suite2p can now be run on synaptic imaging data with the "Process" button.
+For post-analysis, if you would like to use suite2p's ROI classification, make sure "Use iscell.npy" is checked (NOT RECOMMENDED)
+
+
 
 CONTENTS:
 
@@ -81,6 +112,3 @@ model:
   parameters:
     n_estimators: 100    # Number of estimators for Random Forest
     max_depth: 10        # Maximum depth of the trees
-
-
-To install the src
