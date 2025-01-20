@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from gui_config import gui_configurations as configurations
-from analyze_suite2p import detector_utility, analysis_utility
+from analyze_suite2p import detector_utility, analysis_utility, plotting_utility
 from BaselineRemoval import BaselineRemoval
     #this is where all the detector functions will be used; at least initially
 import concurrent.futures
@@ -159,12 +159,12 @@ def get_experimental_dates(main_folder):
 def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
     """here we define our suite2p dictionary from the SUITE2P_STRUCTURE...see above"""
     suite2p_dict = {
-        "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
-        "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
-        "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
-        "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"])).item(),
-        "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["iscell"])),
-        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["deltaF"]))
+        "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"]).replace('\\','/')),
+        "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"]).replace('\\','/')),
+        "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]).replace('\\','/'))[0].apply(pd.Series),
+        "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"]).replace('\\','/')).item(),
+        "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["iscell"]).replace('\\','/')),
+        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["deltaF"]).replace('\\','/'))
     }
 
     if not use_iscell:
@@ -252,7 +252,6 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        
     df.index.set_names("SynapseID", inplace=True)
     filtered_df = df[df['IsUsed']==True]
-    # df.fillna(0, inplace = True) potentially for decay time calculations
 
     processed_df = analysis_utility.calculate_cell_stats(filtered_df)
     filtered_columns = processed_df.columns[0:7]
@@ -265,7 +264,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     
     # processed_df.drop("IsUsed" == False)
 
-    return filtered_df, aggregate_stats
+    return df, aggregate_stats
 
 
 def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
@@ -278,7 +277,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
     
     suite2p_outputs = get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
 
-    output_path = input_path+r"\csv_files"
+    output_path = os.path.join(input_path,"csv_files")
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     
@@ -294,13 +293,9 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         
         raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
 
-
-        ###TODO CHANGE ASAP to match somatic pipeline levels of flexibility
-        # suite2p_dict = load_suite2p_output(suite2p_output, groups, input_path, use_iscell=check_for_iscell)
-        # suite2p_dict = load_suite2p_output(suite2p_output, use_iscell=False)
         ops = suite2p_dict["ops"]
-        Img = detector_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = detector_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
+        Img = plotting_utility.getImg(ops)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *SUITE2P_STRUCTURE['iscell'])
         parent_iscell = load_npy_array(iscell_path)
         updated_iscell = parent_iscell.copy()
@@ -325,6 +320,6 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         print(f"csvs created for {suite2p_output}")
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
-        detector_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
     print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
