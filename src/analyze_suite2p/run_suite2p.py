@@ -107,13 +107,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-"""To Run:
-activate suite2p
-import run_suite2p 
-if __name__ == "__main__":
-    run_suite2p.main()
-
-or simply in ipynb file: run_suite2p_main()
-    """
