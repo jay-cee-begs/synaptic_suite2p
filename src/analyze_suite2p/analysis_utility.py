@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from gui_config import gui_configurations as configurations
+from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility
+
 def calculate_cell_freq(input_df):
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
@@ -156,6 +158,22 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
     print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
+
+def create_experiment_summary(main_folder):
+    csv_file_path = os.path.join(main_folder, 'csv_files')
+    csv_files = list_all_files_of_type(csv_file_path, '.csv')
+    processed_csvs = [file for file in csv_files if file.startswith('processed')]
+    df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in processed_csvs]
+    merged_df = pd.concat(df_list, ignore_index=True)
+    agg_columns = merged_df.select_dtypes(['float64', 'int'])
+    aggregate_stats = agg_columns.groupby(merged_df['File Name']).agg(['mean', 'std', 'median']).reset_index()
+
+# Include non-numeric columns in the final aggregated dataframe
+    aggregate_stats['Experimental Group'] = merged_df.groupby('File Name')['Experimental Group'].first().values
+    aggregate_stats['Replicate No.'] = merged_df.groupby('File Name')['Replicate No.'].first().values
+    
+    # merged_df.to_csv(os.path.join(configurations.main_folder, 'experiment_summary'))
+    return aggregate_stats, merged_df
 
 def list_all_files_of_type(input_path, filetype):
     return [file for file in os.listdir(input_path) if file.endswith(filetype)]
