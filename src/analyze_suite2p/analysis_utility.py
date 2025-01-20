@@ -53,6 +53,110 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
         output_df = calculate_decay_values(output_df)
     return output_df
 
+def translate_suite2p_dict_to_df(suite2p_dict):
+    """this is the principle function in which we will create our .csv file structure; and where we will actually use
+        our detector functions for spike detection and amplitude extraction"""
+    def process_individual_synapse(deltaF):
+        peaks = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = True)
+        amplitudes = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_amplitudes=True)
+        decay_times = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_time = True)
+        peak_count = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peak_count=True)
+        decay_frames = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_frames=True)
+        return peaks, amplitudes, peak_count, decay_times, decay_frames
+
+    results = []
+
+    for idx, (is_used, deltaF) in enumerate(zip(suite2p_dict["IsUsed"],suite2p_dict["deltaF"])):
+        if is_used:
+            result = process_individual_synapse(deltaF)
+        else:
+            result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
+        results.append(result)
+    spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
+
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
+    # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
+#spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
+    df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
+                       "Skew": suite2p_dict["stat"]["skew"],
+                       "PeakTimes": spikes_per_neuron,
+                       "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
+                       "Amplitudes": spike_amplitudes,
+                        "DecayTimes": decay_times,
+                       "DecayFrames": decay_frames,
+                       "Total Frames": len(suite2p_dict["F"].T),
+                       "Experimental Group": suite2p_dict['Group'],
+                       "Replicate No.": suite2p_dict['sample'],
+                       "File Name": suite2p_dict['file_name']
+                       })
+                       
+    df.index.set_names("SynapseID", inplace=True)
+    filtered_df = df[df['IsUsed']==True]
+
+    processed_df = calculate_cell_stats(filtered_df)
+    filtered_columns = processed_df.columns[0:7]
+    processed_df = processed_df.drop(filtered_columns, axis = 1)
+
+    return df, processed_df#, aggregate_stats
+
+def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
+    """This will create .csv files for each video loaded from out data fram function below.
+        The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
+        
+        col1: ROI #, col2: IsUsed (from iscell.npy); boolean, col3: Skew (from stats.npy); could be replaced with any 
+        stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
+        from the baseline (the median of each trace)"""
+    
+    suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
+
+    output_path = os.path.join(input_path,"csv_files")
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+    
+    for suite2p_output in suite2p_outputs:
+        output_directory = os.path.basename(suite2p_output)
+        translated_path = os.path.join(output_path, f"{output_directory}.csv")
+        processed_path = os.path.join(output_path, f"processed_{output_directory}.csv")
+        if os.path.exists(translated_path) and not overwrite:
+            print(f"CSV file {translated_path} already exists!")
+            continue
+
+        suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, configurations.groups, input_path)
+        
+        raw_data, processed_data = suite2p_utility.translate_suite2p_dict_to_df(suite2p_dict)
+
+        ops = suite2p_dict["ops"]
+        Img = plotting_utility.getImg(ops)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
+        iscell_path = os.path.join(suite2p_output, *suite2p_utility.SUITE2P_STRUCTURE['iscell'])
+        parent_iscell = suite2p_utility.load_npy_array(iscell_path)
+        updated_iscell = parent_iscell.copy()
+        if update_iscell:
+            for idx in nid2idx:
+                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
+            for idxr in nid2idx_rejected:
+                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+            np.save(iscell_path, updated_iscell)
+            print(f"Updated iscell.npy saved for {suite2p_output}")
+        else:
+            print("Using iscell from suite2p to classify ROIs")
+
+        synapse_key = list(synapseID)
+        raw_data['IsUsed'] = raw_data.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
+
+        processed_data['Active_Synapses'] = len(synapseID)
+
+
+        raw_data.to_csv(translated_path)
+        processed_data.to_csv(processed_path)
+        print(f"csvs created for {suite2p_output}")
+
+        image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
+        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+
+    print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
+
 def list_all_files_of_type(input_path, filetype):
     return [file for file in os.listdir(input_path) if file.endswith(filetype)]
 
