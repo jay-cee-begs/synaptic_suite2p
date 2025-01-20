@@ -360,8 +360,8 @@ class ConfigEditor:
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
-        scripts_dir = current_dir / "Scripts" 
-        bat_file = scripts_dir / "run_suite2p.bat"
+        scripts_dir = os.path.join(current_dir, "Scripts") 
+        bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
       
 
             
