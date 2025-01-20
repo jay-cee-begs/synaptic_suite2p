@@ -97,8 +97,10 @@ def main():
     if len(img_folders) == 0:
         export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
-    process_files_with_suite2p(image_folders)
-    suite2p_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = False)
+    suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(configurations.main_folder, file_ending="samples", supress_printing=True)
+    if len(suite2p_samples) != len(image_folders) or configurations.overwrite == False:
+        process_files_with_suite2p(image_folders)
+    suite2p_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = True, check_for_iscell=False, update_iscell = True)
     analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
