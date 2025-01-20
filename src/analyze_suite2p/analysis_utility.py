@@ -4,6 +4,54 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from gui_config import gui_configurations as configurations
+def calculate_cell_freq(input_df):
+    output_df = input_df.copy()
+    output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / configurations.frame_rate)) #divide by total # of frames NOT framerate
+    output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
+    return output_df
+
+def calculate_cell_isi(input_df): #isi == interspike interval
+    output_df = input_df.copy()
+    output_df["SpikesDiff"] = output_df["PeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
+    output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
+    output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
+    output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
+    return output_df
+
+#below I will need to accurately figure out how to integrate this in, I should meet with Marti Ritter next week to do so
+
+def calculate_spike_amplitudes(input_df):
+    output_df = input_df.copy()
+    output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
+    output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
+    output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
+    return output_df
+
+def calculate_decay_fraction(row):
+    if isinstance(row["DecayTimes"], float) and isinstance(row["SpikesCount"], float):
+        return row["DecayTimes"] / row['SpikesCount']
+
+def calculate_decay_values(input_df):
+    output_df = input_df.copy()
+    output_df["DecaysCount"] = output_df["DecayTimes"].dropna().str.len()
+    output_df["DecayedFraction"] = output_df.apply(calculate_decay_fraction, axis =1)
+    output_df["AvgDecayTime"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().mean())
+    output_df["AvgDecayCV"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().std()) / output_df["AvgDecayTime"] * 100
+    return output_df
+
+
+def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calculate_amplitudes=True, calculate_decays = True):
+    output_df = input_df.copy()
+    if calculate_freq:
+        output_df = calculate_cell_freq(output_df)
+    if calculate_isi:
+        output_df = calculate_cell_isi(output_df)
+    if calculate_amplitudes:
+        output_df = calculate_spike_amplitudes(output_df)
+    if calculate_decays:
+        output_df = calculate_decay_values(output_df)
+    return output_df
 
 def list_all_files_of_type(input_path, filetype):
     return [file for file in os.listdir(input_path) if file.endswith(filetype)]
@@ -54,56 +102,6 @@ def calculate_binned_stats(input_df):
         "Frequency": population_frequency})
         
     return bin_stats
-
-
-def calculate_cell_freq(input_df):
-    output_df = input_df.copy()
-    output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / configurations.frame_rate)) #divide by total # of frames NOT framerate
-    output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
-    return output_df
-
-def calculate_cell_isi(input_df): #isi == interspike interval
-    output_df = input_df.copy()
-    output_df["SpikesDiff"] = output_df["PeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
-    output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
-    output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
-    output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
-    return output_df
-
-#below I will need to accurately figure out how to integrate this in, I should meet with Marti Ritter next week to do so
-
-def calculate_spike_amplitudes(input_df):
-    output_df = input_df.copy()
-    output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
-    output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
-    output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
-    return output_df
-
-def calculate_decay_fraction(row):
-    if isinstance(row["DecayTimes"], float) and isinstance(row["SpikesCount"], float):
-        return row["DecayTimes"] / row['SpikesCount']
-
-def calculate_decay_values(input_df):
-    output_df = input_df.copy()
-    output_df["DecaysCount"] = output_df["DecayTimes"].dropna().str.len()
-    output_df["DecayedFraction"] = output_df.apply(calculate_decay_fraction, axis =1)
-    output_df["AvgDecayTime"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().mean())
-    output_df["AvgDecayCV"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().std()) / output_df["AvgDecayTime"] * 100
-    return output_df
-
-
-def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calculate_amplitudes=True, calculate_decays = True):
-    output_df = input_df.copy()
-    if calculate_freq:
-        output_df = calculate_cell_freq(output_df)
-    if calculate_isi:
-        output_df = calculate_cell_isi(output_df)
-    if calculate_amplitudes:
-        output_df = calculate_spike_amplitudes(output_df)
-    if calculate_decays:
-        output_df = calculate_decay_values(output_df)
-    return output_df
 
 
 
