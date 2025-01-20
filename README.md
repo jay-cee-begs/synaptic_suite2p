@@ -10,28 +10,10 @@ First please download the project code or create a fork on GitHub so that you ca
 Next, follow the instructions on the suite2p Github for creating a suite2p virtual environment and installation of the suite2p software (installation of suite2p with GUI functionality is recommended)
 -(python -m) pip install suite2p[gui]
 
-If you are working with non-tiff files, you will need to install packages to allow for suite2p to access and read these files (e.g. nd2 files: pip install nd2 nd2reader)
+Additionally, you will need to install BaselineRemoval, pynapple, seaborn, (probably something else with pip)
 
-### Option 1 (Anaconda virtual environment):
+If you are working with non-tiff files, you will need to install packages to allow for suite2p to access and read these files (e.g. nd2 files: pip install nd2)
 
-In an anaconda command prompt, you will need to create a virtual environment for this project with python version 3.9
-The environment and all of its dependencies are stored in the "synaptic_suite2p.yml" file.
-
-### Option 2 (python venv) installation
-
-For those who want to use python without anaconda, please do a custom installation of python 3.9 using terminal 
-Then build the environment in a new folder you create (e.g. mkdir $py_projects$) with the code $\your\python\version\path\python -m venv synaptic_suite2p
-
-you can then install all the necessary requirements with pip install -r requirements.txt in the downloaded fork
-
-To create an environment using these requirements, enter $conda env create -n synaptic_suite2p python=3.9$. This is recommended as MouseLand's suite2p installation lacks key installables such as chardet and PyYAML which are needed to install the source code for this project (see below).
-
-to install synaptic_suite2p requirements run $conda activate suite2p$ followed by $pip install -r requirements.txt
-
-*For conda installations, the name does not really matter. -n = name, -r = requires
-
-If you would like to follow the original author's recommendations, p go to suite2p's README.md file for a full explanation of how to download their software from them and set up a virtual environment for suite2p ((https://github.com/MouseLand/suite2p).
-It is RECOMMENDED that you in 
 
 ## Part 2: Installing synaptic_suite2p source code as editable installation
 
@@ -45,6 +27,9 @@ From this point on we can now access all the code and go through examples in the
 
 once inside you can activate the environment and run the code on the test data ***YET TO BE PROVIDED
 
+## Workflow
+
+The code is designed to run through an interactive GUI. In order for this to work, please navigate to the "Scripts" folder in src\analyze_suite2p and manually change the file string to the location of your own conda / anaconda / miniforge / python installation
 
 CONTENTS:
 
