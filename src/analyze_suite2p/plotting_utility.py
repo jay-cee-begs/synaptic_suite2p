@@ -114,6 +114,7 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     fig = plt.figure(figsize=(48, 16))
     ax = fig.add_subplot()
     color_palette = sns.color_palette(palette)
+
     def get_kde(data):
         """
         Custom function to calculate the quartiles and add dashed lines to the violin plots.
@@ -164,11 +165,6 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=44)
 
     return fig
-
-
-
-
-
 
 def build_experiment_dfs(input_path, experiment_structure):
     """Function to build experiment dataframe from pickle files; currently performs for binned stats and cell stats; only need cell stats in future"""
