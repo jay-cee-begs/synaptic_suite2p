@@ -38,7 +38,7 @@ class ConfigEditor:
 
         # Load existing configurations, needs an existing file to load from
         self.config = self.load_config("gui_configurations.py")
-        
+        self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
         self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
         self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
         self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 20))
@@ -94,8 +94,6 @@ class ConfigEditor:
         tk.Entry(self.scrollable_frame, textvariable=self.bin_width_var).pack(padx=10)
 
         # Editable exp_condition
-        tk.Label(self.scrollable_frame, text="Same goes for your Groups, dont leave the brackets empty:").pack(anchor='w')
-        tk.Label(self.scrollable_frame, text="(In case your structure looks like 'TimePoint_Condition' you can remove 'TimePoint_' )").pack(anchor='w')
         self.exp_condition_frame = tk.Frame(self.scrollable_frame)
         self.exp_condition_frame.pack(padx=10, pady=5)
         self.create_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
@@ -356,7 +354,6 @@ class ConfigEditor:
 
         tk.Label(process_frame, text="Select Process:").pack(anchor='w')
 
-        self.create_bat_file_radiobuttons(process_frame)
         self.create_process_button(process_frame)
 
     
@@ -364,15 +361,8 @@ class ConfigEditor:
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts" 
-        bat_file = scripts_dir / self.selected_bat_file.get()
-        
-        if "run_sequence" in self.selected_bat_file.get():
-            file_count = self.count_files_with_ending()
-            if file_count > 0:
-                self.show_progress_bar(file_count)
-            else:
-                messagebox.showerror("Error", "No files found with the specified file ending.")
-                
+        bat_file = scripts_dir / "run_suite2p.bat"
+      
 
             
         print(f"Executing {bat_file}")
