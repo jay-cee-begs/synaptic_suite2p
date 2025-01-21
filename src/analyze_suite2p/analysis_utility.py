@@ -109,8 +109,8 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
 
 def process_spike_csvs_to_pkl(input_path, overwrite=False):
     """This will convert .csv files into pickle files which behave like dataframes; but are faster and preserve CPU RAM"""
-    csv_path = input_path + r'\csv_files'
-    output_path = input_path + r'\pkl_files'
+    csv_path = os.path.join(input_path, 'csv_files')
+    output_path = os.path.join(input_path, 'pkl_files')
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     

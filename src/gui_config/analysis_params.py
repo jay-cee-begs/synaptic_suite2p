@@ -2,7 +2,8 @@ import numpy as np
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from suite2p import default_ops
+from gui_config import gui_configurations as configurations
+#TODO update configurations to JSON file and update code accordingly
 
 class OpsEditor:
     def __init__(self, master):
@@ -10,21 +11,16 @@ class OpsEditor:
         self.master.title("Edit Operations")
 
         # Load default operations
-        self.ops = default_ops()
+        # self.config = default_ops()
         
     # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
         self.editable_params = {
-            '1Photon_Registration': self.ops.get('1Preg', False),
-
-            "Functional ROI Detection": self.ops.get('sparse_mode', 1),
-            'Threshold': self.ops.get('threshold_scaling', 1.0),
-            'Denoise': self.ops.get('denoise', 1),
-
-            "Anatomical ROI Detection": self.ops.get('anatomical_only', 1),
-            'ROI Diameter': self.ops.get('diameter', 16),
-            'CellPose_Threshold': self.ops.get('cellprob_threshold', 0.5),
-            'Flow_Threshold': self.ops.get('flow_threshold', 0.25),
-            
+            'overwrite_csv': self.ops.get('overwrite_csv', False),
+            'overwrite_pkl': self.ops.get('overwrite_pkl', 0),
+            'skew_threshold': self.ops.get('skew_threshold', 1.0),
+            'peak_threshold': self.ops.get('peak_threshold', False),
+            'Img_Overlay': self.ops.get('ImgType', 'max_proj'),
+            'use_suite2p_ROI_classifier': self.ops.get('use_iscell', False)
         }
 
         self.vars = {}
