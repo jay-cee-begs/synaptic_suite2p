@@ -3,10 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 from gui_config import gui_configurations as configurations
-from analyze_suite2p import detector_utility, analysis_utility, plotting_utility
-from BaselineRemoval import BaselineRemoval
-    #this is where all the detector functions will be used; at least initially
-import concurrent.futures
+from analyze_suite2p import detector_utility
 
 """
 SUITE2P_STRUCTURE describes the sequence of directories to traverse to arrive at the files named in the key.
@@ -61,49 +58,17 @@ def check_for_suite2p_output(folder_name_list):
     return True
 
 
-def calculate_deltaF(F_file):
-    """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
-    inputs: 
-    
-    F_file: F.npy file that serves as a template for understanding the fluorescence of individual ROIs"""
-
-    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
-    F = np.load(rf"{F_file}", allow_pickle=True)
-    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
-    deltaF= []
-    for f, fneu in zip(F, Fneu):
-        corrected_trace = f - (0.7*fneu) ## neuropil correction
-        amount = int(0.125*len(corrected_trace))
-        middle = 0.5*len(corrected_trace)
-        F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-                    corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        #TODO decide if mean, median or mode is best for deltaF calculations
-        F_baseline = np.median(F_sample)
-        normalized_F = (corrected_trace-F_baseline)/F_baseline
-        baseline_correction = BaselineRemoval(normalized_F)
-        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10, repitition=20)
-        deltaF.append(ZhangFit_normalized)
-        
-
-    deltaF = np.array(deltaF)
-    deltaF = np.squeeze(deltaF)
-    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
-    print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
-    print(f"delta F traces saved as deltaF.npy under {savepath}\n")
-    return deltaF
-
 def check_deltaF(folder_name_list):
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
         if os.path.exists(location):
             continue
         else:
-            calculate_deltaF(location.replace("deltaF.npy","F.npy"))
+            detector_utility.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
             if os.path.exists(location):
                 continue
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
-
 
 
 def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
@@ -134,6 +99,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     else:
         print("Is the file ending spelled right?")
         return other_files
+
 
 def get_experimental_dates(main_folder):
     """returns a dictionary of all wells and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
@@ -201,4 +167,3 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
  
     suite2p_dict['file_name'] = data_folder
     return suite2p_dict
-
