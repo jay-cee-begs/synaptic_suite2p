@@ -267,7 +267,7 @@ class ConfigEditor:
             return
 
         exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
-
+        groups = [os.path.join(main_folder, condition) for condition in exp_condition.keys()]
         # Construct the absolute path to the configuration file, saving uses the same logic as loading now
         script_dir = os.path.dirname(__file__)
         config_filepath = os.path.join(script_dir, 'gui_configurations.py')
@@ -304,6 +304,36 @@ class ConfigEditor:
             f.write("        groups.append(locals()[group_name])\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 
+        json_filepath = os.path.join(script_dir, 'config.json')
+        config_data = {
+            "general_settings":{
+                "main_folder": main_folder,
+                "groups": groups,
+                "group_number": len(self.groups),
+                "exp_condition": exp_condition,
+                "data_extension": data_extension,
+                "frame_rate": frame_rate,
+                "ops_path": ops_path,
+                "BIN_WIDTH": BIN_WIDTH,
+                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+                "FRAME_INTERVAL": 1 / float(frame_rate),
+                "FILTER_NEURONS": True,
+            },
+            "analysis_parameters": {
+
+            },
+            "optional_parameters":{
+                "peak_count":self.peak_threshold,
+                "skew": self.skew_threshold,
+                "compact": self.compact_threshold,
+                "overwrite_csv": self.overwrite_csv,
+                # "overwrite_pkl": self.overwrite_pkl,
+                "img_overlay": self.img_overlay,
+                "use_suite2p_ROI_classifier": self.use_iscell,
+
+            }
+                
+        }
         #reload the gui
         #self.reload_config()
 
