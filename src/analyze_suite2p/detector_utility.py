@@ -28,7 +28,7 @@ def calculate_deltaF(F_file):
         F_baseline = np.median(F_sample)
         normalized_F = (corrected_trace-F_baseline)/F_baseline
         baseline_correction = BaselineRemoval(normalized_F)
-        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10, repitition=20)
+        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 1000, repitition=50)
         deltaF.append(ZhangFit_normalized)
         
     deltaF = np.array(deltaF)
@@ -37,6 +37,7 @@ def calculate_deltaF(F_file):
     print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
     print(f"delta F traces saved as deltaF.npy under {savepath}\n")
     return deltaF
+
 
 
 def filter_outliers(trace):
