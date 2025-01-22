@@ -99,6 +99,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     processed_df = calculate_cell_stats(filtered_df)
     filtered_columns = processed_df.columns[0:7]
     processed_df = processed_df.drop(filtered_columns, axis = 1)
+    processed_df = processed_df[processed_df['SpikesCount']>=2]
 
     return df, processed_df#, aggregate_stats
 
@@ -126,7 +127,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
 
         suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, configurations.groups, input_path)
         
-        raw_data, processed_data = suite2p_utility.translate_suite2p_dict_to_df(suite2p_dict)
+        raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
 
         ops = suite2p_dict["ops"]
         Img = plotting_utility.getImg(ops)
