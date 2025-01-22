@@ -55,13 +55,14 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
                                                        return_peak_count = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
-    negative_points = np.where((deltaF < np.median(deltaF)))[0]
     iqr_noise = filter_outliers(deltaF) #iqr noise
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
-    threshold = mu + 3.5 * std
-    peaks, _ = find_peaks(deltaF, height = threshold, distance = 10)
-    amplitudes = deltaF[peaks] - np.median(deltaF) #amplitude
+    threshold = mu + 4.5 * std
+    peaks, _ = find_peaks(deltaF, height = threshold, distance = 5)
+    amplitudes = deltaF[peaks] - mu #amplitude
     peak_count = len(peaks)
+    negative_points = np.where((deltaF < mu))[0]
+
     # print(negative_points)
     decay_points = []
     decay_time = []
