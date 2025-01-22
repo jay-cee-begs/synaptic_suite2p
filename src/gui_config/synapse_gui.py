@@ -303,37 +303,37 @@ class ConfigEditor:
             f.write("    if group_name in locals():\n")
             f.write("        groups.append(locals()[group_name])\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
+#TODO convert .py output to .json output with dump
+        # json_filepath = os.path.join(script_dir, 'config.json')
+        # config_data = {
+        #     "general_settings":{
+        #         "main_folder": main_folder,
+        #         "groups": groups,
+        #         "group_number": len(self.groups),
+        #         "exp_condition": exp_condition,
+        #         "data_extension": data_extension,
+        #         "frame_rate": frame_rate,
+        #         "ops_path": ops_path,
+        #         "BIN_WIDTH": BIN_WIDTH,
+        #         "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+        #         "FRAME_INTERVAL": 1 / float(frame_rate),
+        #         "FILTER_NEURONS": True,
+        #     },
+        #     "analysis_parameters": {
 
-        json_filepath = os.path.join(script_dir, 'config.json')
-        config_data = {
-            "general_settings":{
-                "main_folder": main_folder,
-                "groups": groups,
-                "group_number": len(self.groups),
-                "exp_condition": exp_condition,
-                "data_extension": data_extension,
-                "frame_rate": frame_rate,
-                "ops_path": ops_path,
-                "BIN_WIDTH": BIN_WIDTH,
-                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
-                "FRAME_INTERVAL": 1 / float(frame_rate),
-                "FILTER_NEURONS": True,
-            },
-            "analysis_parameters": {
+        #     },
+        #     "optional_parameters":{
+        #         "peak_count":self.peak_threshold,
+        #         "skew": self.skew_threshold,
+        #         "compact": self.compact_threshold,
+        #         "overwrite_csv": self.overwrite_csv,
+        #         # "overwrite_pkl": self.overwrite_pkl,
+        #         "img_overlay": self.img_overlay,
+        #         "use_suite2p_ROI_classifier": self.use_iscell,
 
-            },
-            "optional_parameters":{
-                "peak_count":self.peak_threshold,
-                "skew": self.skew_threshold,
-                "compact": self.compact_threshold,
-                "overwrite_csv": self.overwrite_csv,
-                # "overwrite_pkl": self.overwrite_pkl,
-                "img_overlay": self.img_overlay,
-                "use_suite2p_ROI_classifier": self.use_iscell,
-
-            }
+        #     }
                 
-        }
+        # }
         #reload the gui
         #self.reload_config()
 
