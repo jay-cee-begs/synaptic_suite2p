@@ -7,18 +7,39 @@ import scipy.signal as signal
 from gui_config import gui_configurations as configurations
 from scipy.stats import norm
 from analyze_suite2p import suite2p_utility
+from BaselineRemoval import BaselineRemoval
 
+def calculate_deltaF(F_file):
+    """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
+    inputs: 
+    F_file: F.npy file that serves as a template for understanding the fluorescence of individual ROIs"""
 
-
-    
-""" https://suite2p.readthedocs.io/en/latest/outputs.html explains the code to load a video's F / Fneu files (and others)
-    With the F / Fneu files; we can iterate this function to see the outputs using the following:
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    deltaF= []
     for f, fneu in zip(F, Fneu):
-        single_spine_peak_plotting(f, fneu)
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+        amount = int(0.125*len(corrected_trace))
+        middle = 0.5*len(corrected_trace)
+        F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
+                    corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
+        #TODO decide if mean, median or mode is best for deltaF calculations
+        F_baseline = np.median(F_sample)
+        normalized_F = (corrected_trace-F_baseline)/F_baseline
+        baseline_correction = BaselineRemoval(normalized_F)
+        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 1000, repitition=50)
+        deltaF.append(ZhangFit_normalized)
         
-            corrected_trace = input_f - (0.7*input_fneu)
-    corrected_trace = BaselineRemoval(corrected_trace)
-    corrected_trace = corrected_trace.ZhangFit(repitition = 100)"""
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+    print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
+    print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    return deltaF
+
+
+
 def filter_outliers(trace):
     q1,q3 = np.percentile(trace, [25,75])
     iqr = q3-q1
@@ -26,8 +47,8 @@ def filter_outliers(trace):
     upper_bound = q3 + 1.5*iqr
     filtered_values = trace[(trace >= lower_bound) & (trace <= upper_bound)]
     return filtered_values   
-    
-#TODO make sure that deltaF conversion here actually works
+
+
 def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
@@ -35,14 +56,14 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
                                                        return_peak_count = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
-    negative_points = np.where((deltaF < np.median(deltaF)))[0]
     iqr_noise = filter_outliers(deltaF) #iqr noise
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
-    threshold = mu + 3.5 * std
-    # peaks, _ = find_peaks(deltaF, height = 2.5*(abs(np.median(deltaF)) + abs(deltaF.min())), distance = 10) #frequency
-    peaks, _ = find_peaks(deltaF, height = threshold, distance = 10)
-    amplitudes = deltaF[peaks] - np.median(deltaF) #amplitude
+    threshold = mu + 4.5 * std
+    peaks, _ = find_peaks(deltaF, height = threshold, distance = 5)
+    amplitudes = deltaF[peaks] - mu #amplitude
     peak_count = len(peaks)
+    negative_points = np.where((deltaF < mu))[0]
+
     # print(negative_points)
     decay_points = []
     decay_time = []
@@ -82,10 +103,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         return peak_count
     # if calculate_tau == True:
     #     return decay_time
- #The following are  lines of code written by Marti, who I generally trust to write cohesive and concise code
-# for coding; If you find my functions above to be inadequate you may impliment these instead
-    
-    
+
 
 def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
     median = np.median(input_trace)
@@ -105,12 +123,7 @@ def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs
     for spk in spikes:
         plt.axvline(spk, color="red")
     plt.show()
-    
-    
-    
-    
-# rolling_min / remove_bleaching are basic polynomial-based baseline corrections; this will not remove noise either
-# these can be compared to the more complicated ZhangFit iteratively-weighted approach (airPLS method)
+
 
 def rolling_min(input_series, window_size):
     r = input_series.rolling(window_size, min_periods=1)
