@@ -255,10 +255,10 @@ class ConfigEditor:
         messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
     
     def save_config(self):
-        main_folder = self.main_folder_var.get().strip()
+        main_folder = str(Path(self.main_folder_var.get().strip()).resolve())
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
-        ops_path = self.ops_path_var.get().strip()
+        ops_path = str(Path(self.ops_path_var.get().strip()).resolve())
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
@@ -333,7 +333,12 @@ class ConfigEditor:
 
         #     }
                 
-        # }
+        }
+
+        # config_data["new_groups"] = [config_data["main_folder"] + rf'\{name}' for name in exp_condition.keys()]
+
+        with open(json_filepath, 'w') as json_file:
+            json.dump(config_data, json_file, indent=1)
         #reload the gui
         #self.reload_config()
 
