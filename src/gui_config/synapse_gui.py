@@ -6,6 +6,8 @@ import os
 import subprocess
 import time
 import threading 
+import json
+import numpy as np
 
 
 class ConfigEditor:
@@ -304,21 +306,21 @@ class ConfigEditor:
             f.write("        groups.append(locals()[group_name])\n")
         messagebox.showinfo("Success", "Configurations saved successfully.")
 #TODO convert .py output to .json output with dump
-        # json_filepath = os.path.join(script_dir, 'config.json')
-        # config_data = {
-        #     "general_settings":{
-        #         "main_folder": main_folder,
-        #         "groups": groups,
-        #         "group_number": len(self.groups),
-        #         "exp_condition": exp_condition,
-        #         "data_extension": data_extension,
-        #         "frame_rate": frame_rate,
-        #         "ops_path": ops_path,
-        #         "BIN_WIDTH": BIN_WIDTH,
-        #         "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
-        #         "FRAME_INTERVAL": 1 / float(frame_rate),
-        #         "FILTER_NEURONS": True,
-        #     },
+        json_filepath = os.path.join(main_folder, 'config.json')
+        config_data = {
+            "general_settings":{
+                "main_folder": main_folder,
+                "groups": [os.path.join(main_folder, condition) for condition in self.dict_vars.keys()],
+                "group_number": len(self.groups),
+                "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
+                "data_extension": data_extension,
+                "frame_rate": frame_rate,
+                "ops_path": ops_path,
+                "BIN_WIDTH": BIN_WIDTH,
+                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+                "FRAME_INTERVAL": 1 / float(frame_rate),
+                "FILTER_NEURONS": True,
+            },
         #     "analysis_parameters": {
 
         #     },
