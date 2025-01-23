@@ -406,12 +406,12 @@ def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
         #Set ROI pixels to mask
 
         roi_masks[ypix, xpix] = 255 # n + 1 helps to differentiate masks from background
-    # plt.figure(figsize=(10, 10))
-    # plt.imshow(roi_masks, cmap='gray', interpolation='none')
-    # # plt.colorbar(label='ROI ID')
-    # plt.title('ROI Mask')
-    # plt.tight_layout()
-    # plt.show()
+    plt.figure(figsize=(10, 10))
+    plt.imshow(roi_masks, cmap='gray', interpolation='none')
+    # plt.colorbar(label='ROI ID')
+    plt.title('ROI Mask')
+    plt.tight_layout()
+    plt.show()
     im = Image.fromarray(roi_masks)
     im.save(output_path)
     return im, roi_masks
