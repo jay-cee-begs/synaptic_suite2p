@@ -458,3 +458,27 @@ def single_spine_peak_plotting(deltaF):
     plt.legend()
     plt.tight_layout
     plt.show()
+
+
+def plot_raw_deltaF_vs_airPLS_correction(deltaF, lambda_values = [100,1000], ylim = (-0.2,0.9)):
+    # Define lambda values to test
+    lambda_values = [1000, 100]
+
+    # Create a figure for visualization
+    plt.figure(figsize=(12, 6))
+    plt.plot(deltaF, label='Original dF/F Trace', color='black', linewidth=1, alpha = 0.3)
+
+    # Apply baseline correction with different lambda values and plot
+    for lam in lambda_values:
+        corrected_signal = BaselineRemoval(deltaF)
+        trace = corrected_signal.ZhangFit(lambda_=lam, repitition=100)
+        plt.plot(trace, label=f'Corrected (lambda={lam})', alpha = 0.5)
+
+    # Show plot
+    plt.legend()
+    plt.title('Effect of Lambda on Baseline Correction (ZhangFit)')
+    plt.xlabel('Time')
+    plt.ylabel('dF/F')
+    plt.ylim(ylim)
+    plt.grid()
+    plt.show()
