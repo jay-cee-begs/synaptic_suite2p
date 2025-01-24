@@ -15,7 +15,6 @@ from BaselineRemoval import BaselineRemoval
 import pickle
 import pynapple as nap
 
-from gui_config import gui_configurations as configurations
 from analyze_suite2p import suite2p_utility
 from analyze_suite2p import detector_utility
 
