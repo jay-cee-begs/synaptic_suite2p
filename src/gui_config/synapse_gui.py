@@ -39,12 +39,16 @@ class ConfigEditor:
         self.scrollbar.pack(side="right", fill="y")
 
         # Load existing configurations, needs an existing file to load from
-        self.config = self.load_config("gui_configurations.py")
+        self.config = self.load_config()
+        general_settings = self.config.get("general_settings", {})
+        analysis_params = {}
+        optional_settings = {}
+
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
-        self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
-        self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 20))
-        self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
+        self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
+        self.data_extension_var = tk.StringVar(value=general_settings.get('data_extension', ''))
+        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 10))
+        self.ops_path_var = tk.StringVar(value=general_settings.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
         self.exp_condition = {}
         self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 180))
@@ -98,7 +102,7 @@ class ConfigEditor:
         # Editable exp_condition
         self.exp_condition_frame = tk.Frame(self.scrollable_frame)
         self.exp_condition_frame.pack(padx=10, pady=5)
-        self.create_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
+        self.create_exp_condition_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
@@ -148,16 +152,13 @@ class ConfigEditor:
             self.main_folder_var.set(folder_selected)
 
 
-    def load_config(self, filepath):
-        config = {}
-        try:
-            # Get the directory of the current script
-            script_dir = os.path.dirname(__file__)
-            # Construct the absolute path to the configuration file
-            abs_filepath = os.path.join(script_dir, filepath)
-            
-            with open(abs_filepath) as f:
-                exec(f.read(), config)
+    def load_config(self):
+        try:    
+            script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+            config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+
+            with open(config_file_path, 'r')as f:
+                config = json.load(f)
         except FileNotFoundError:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
@@ -217,7 +218,7 @@ class ConfigEditor:
             messagebox.showinfo("No Groups Added", "No (sub-)folders with one or more files matching the specified extension were found.")
             
 
-    def create_dict_entries(self, master, title, dictionary):
+    def create_exp_condition_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
         tk.Label(master, text=title).pack(anchor='w', padx=10, pady=5)
         self.dict_vars = {}
@@ -234,28 +235,51 @@ class ConfigEditor:
 
 
     def update_exp_condition_entries(self):
-        """Update the entries in the exp_condition dictionary with the use of create_dict_entries"""
+        """Update the entries in the exp_condition dictionary with the use of create_exp_condition_dict_entries"""
         for widget in self.exp_condition_frame.winfo_children():
             widget.destroy()  # Remove old entries
-        self.create_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)      
+        self.create_exp_condition_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)      
         
 
-    def reload_config(self):
-        """Reload the configuration file to refresh the GUI."""
-        self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
-        # Update the GUI variables with the new values from the config
-        self.main_folder_var.set(self.config.get('main_folder', ''))
-        self.data_extension_var.set(self.config.get('data_extension', ''))
-        self.frame_rate_var.set(self.config.get('frame_rate', 10))
-        self.ops_path_var.set(self.config.get('ops_path', ''))
-        # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
-        
-        # Update the GUI components to reflect the new values
-        self.update_exp_condition_entries()
-        self.create_parameters_entries()
-        # Optionally, you can also refresh other specific widgets or labels here.
-        messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
-    
+    # def reload_config(self):
+    #     """Reload the configuration file to refresh the GUI."""
+
+    #     try: 
+    #          # Determine the absolute path to the config file using pathlib
+    #         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+    #         config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+
+    #         with open(config_file_path, 'r')as f:
+    #             self.config = json.load(f)
+    #         general_settings = self.config.get("general_settings", {})
+
+    #     # self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
+    #     # Update the GUI variables with the new values from the config
+    #         self.main_folder_var.set(general_settings.get('main_folder', ''))
+    #         self.data_extension_var.set(general_settings.get('data_extension', ''))
+    #         self.frame_rate_var.set(general_settings.get('frame_rate', 10))
+    #         self.ops_path_var.set(general_settings.get('ops_path', ''))
+    #         # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
+            
+    #         # Update the GUI components to reflect the new values
+    #         self.update_exp_condition_entries()
+    #         self.create_parameters_entries()
+    #         # Optionally, you can also refresh other specific widgets or labels here.
+    #         messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
+    #     except (FileNotFoundError, json.JSONDecodeError):
+    #         messagebox.showerror("Error", f"config.json file not found at {config_file_path}")
+    #         self.config = self.load_config("gui_configurations.py")
+    #         self.main_folder_var.set(self.config.get('main_folder', ''))
+    #         self.data_extension_var.set(self.config.get('data_extension', ''))
+    #         self.frame_rate_var.set(self.config.get('frame_rate', 10))
+    #         self.ops_path_var.set(self.config.get('ops_path', ''))
+           
+    #         # Update the GUI components to reflect the new values
+    #         self.update_exp_condition_entries()
+    #         self.create_parameters_entries()
+    #         messagebox.showinfo("Reload gui_configurations.py NOT config.json")
+
+
     def save_config(self):
         main_folder = str(Path(self.main_folder_var.get().strip()).resolve())
         data_extension = self.data_extension_var.get().strip()
@@ -268,49 +292,13 @@ class ConfigEditor:
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
-        groups = [os.path.join(main_folder, condition) for condition in exp_condition.keys()]
-        # Construct the absolute path to the configuration file, saving uses the same logic as loading now
-        script_dir = os.path.dirname(__file__)
-        config_filepath = os.path.join(script_dir, 'gui_configurations.py')
-
-        with open(config_filepath, 'w') as f:
-            f.write('import numpy as np \n')
-            f.write(f"main_folder = r'{main_folder}'\n")
-            for i, group in enumerate(self.groups, start=1):
-                f.write(f"group{i} = main_folder + r'{group}'\n")
-            f.write(f"group_number = {len(self.groups)}\n")
-            f.write(f"data_extension = '{data_extension}'\n")
-            f.write(f"frame_rate = {frame_rate}\n")
-            f.write(f"ops_path = r'{ops_path}'\n")
-            f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
-            f.write("ops['frame_rate'] = frame_rate\n")
-            f.write("ops['input_format'] = data_extension\n")
-            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
-            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("FILTER_NEURONS = True\n")
-
-
-            f.write("exp_condition = {\n")
-            for key, (key_var, value_var) in self.dict_vars.items():
-                f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
-            f.write("}\n")
-            
-            #### Add addtionals here, maybe make them editable in the gui as well
-            f.write("## Additional configurations\n")
-            f.write("groups = []\n")
-            f.write("for n in range(group_number):\n")
-            f.write("    group_name = f\"group{n + 1}\"\n")
-            f.write("    if group_name in locals():\n")
-            f.write("        groups.append(locals()[group_name])\n")
-        messagebox.showinfo("Success", "Configurations saved successfully.")
-#TODO convert .py output to .json output with dump
-        json_filepath = os.path.join(main_folder, 'config.json')
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+        
         config_data = {
             "general_settings":{
                 "main_folder": main_folder,
-                "groups": [os.path.join(main_folder, condition) for condition in self.dict_vars.keys()],
+                "groups": [str(Path(main_folder) / condition) for condition in self.dict_vars.keys()],
                 "group_number": len(self.groups),
                 "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
                 "data_extension": data_extension,
@@ -342,7 +330,8 @@ class ConfigEditor:
         with open(json_filepath, 'w') as json_file:
             json.dump(config_data, json_file, indent=1)
         #reload the gui
-        #self.reload_config()
+        messagebox.showinfo("Success", "Configurations saved successfully.")
+
 
     def get_current_dir(self):
         return self.current_dir 
