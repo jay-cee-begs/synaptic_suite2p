@@ -4,10 +4,13 @@ from scipy.signal import find_peaks
 import pandas as pd
 from PIL import Image
 import scipy.signal as signal
-from gui_config import gui_configurations as configurations
 from scipy.stats import norm
+
 from analyze_suite2p import suite2p_utility
+from analyze_suite2p.run_suite2p import load_json_config_file
 from BaselineRemoval import BaselineRemoval
+
+config = load_json_config_file()
 
 def calculate_deltaF(F_file):
     """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
@@ -34,7 +37,7 @@ def calculate_deltaF(F_file):
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
     np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
-    print(f"delta F calculated for {F_file[len(configurations.main_folder)+1:-21]}")
+    print(f"delta F calculated for {F_file[len(config.general_settings.main_folder)+1:-21]}")
     print(f"delta F traces saved as deltaF.npy under {savepath}\n")
     return deltaF
 
@@ -86,7 +89,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
             decay_points = []
 
         for peak,decay in zip(peaks, decay_points):
-            decay_time.append(np.abs(decay - peak)/configurations.frame_rate) #import framerate
+            decay_time.append(np.abs(decay - peak)/config.general_settings.frame_rate) #import framerate
 
         decay_points = np.array(decay_points) #decay frames crossing baseline
         decay_time = np.array(decay_time) #seconds after a calcium peak to return to baseline
