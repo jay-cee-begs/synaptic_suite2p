@@ -2,9 +2,6 @@
 import pandas as pd
 import numpy as np
 import os
-import json
-from types import SimpleNamespace
-from gui_config import gui_configurations as configurations
 from analyze_suite2p import detector_utility
 
 """
@@ -26,11 +23,6 @@ SUITE2P_STRUCTURE = {
 }
 """ spks is not really necessary with our current set up since the spont. events are all pretty uniform, and are below 
     AP threshold (and therefore will not need to be deconvolved into action potentials themselves)"""
-
-def load_json_config_file(json_filepath):
-    with open(json_filepath, 'r') as f:
-        config_dict = json.load(f)
-    return json.loads(json.dumps(config_dict), object_hook=lambda d: SimpleNamespace(**d))
 
 def load_npy_array(npy_path):
     """Function to load an np array from .npy file (e.g. F.npy / Fneu.npy)"""
