@@ -21,7 +21,8 @@ def load_json_dict():
     with open(json_filepath, 'r') as f:
         config_dict = json.load(f)
     return config_dict
-def export_image_files_to_suite2p_format(parent_directory, file_ending= configurations.data_extension):
+
+def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
     
     if not os.path.exists(parent_directory):
@@ -63,7 +64,7 @@ def get_all_image_folders_in_path(path):
     - check_for_single_image_file_in_folder: Checks if a given directory contains exactly one .nd2 file.
     """
 
-    def check_for_single_image_file_in_folder(current_path, file_ending = configurations.data_extension):
+    def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
         """
         Check if the specified path contains exactly one .nd2 file.
         """
@@ -103,22 +104,23 @@ def process_files_with_suite2p(image_list):
                     'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
                  }
             
-                 opsEnd = run_s2p(ops=configurations.ops, db=db)
+                 opsEnd = run_s2p(ops=config.general_settings.ops, db=db)
             except (ValueError, AssertionError, IndexError) as e:
                  print(f"Error processing {image_path}: {e}")
 
 def main():
-    main_folder = configurations.main_folder
-    data_extension = configurations.data_extension
+    config = load_json_config_file()
+    main_folder = config.general_settings.main_folder
+    data_extension = config.general_settings.data_extension
     img_folders = get_all_image_folders_in_path(main_folder)
     if len(img_folders) == 0:
         export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
-    suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(configurations.main_folder, file_ending="samples", supress_printing=True)
+    suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     if len(suite2p_samples) != len(image_folders):#TODO implement this or configurations.overwrite == False:
         process_files_with_suite2p(image_folders)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = True, check_for_iscell=False, update_iscell = True)
-    analysis_utility.create_experiment_summary(configurations.main_folder)
+    analysis_utility.create_experiment_summary(config.general_settings.main_folder)
     # analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
