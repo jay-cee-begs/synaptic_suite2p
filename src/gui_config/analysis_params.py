@@ -40,10 +40,16 @@ class OpsEditor:
             var = tk.StringVar(value=str(value))
             self.vars[param] = var
             tk.Entry(frame, textvariable=var, width=10).pack(side=tk.LEFT)
+    def load_configurations(self):
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
 
-        # Display current save location
-        self.save_location_label = tk.Label(self.master, text=f"Current save location: ../suite2p/ops/ops_1P.npy")
-        self.save_location_label.pack(pady=5)
+        if Path(config_file_path).exists():
+            with open(config_file_path, 'r')as f:
+                return json.load(f)
+        else:
+            return self.editable_params
+    
 
         # Save button
         self.save_button = tk.Button(self.master, text="Save", command=self.save_ops)
