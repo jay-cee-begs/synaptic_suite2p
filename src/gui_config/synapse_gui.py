@@ -207,7 +207,7 @@ class ConfigEditor:
     def add_group(self):
         self.groups.clear()
         main_folder = self.main_folder_var.get().strip()
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
         
@@ -288,7 +288,7 @@ class ConfigEditor:
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
@@ -328,16 +328,13 @@ class ConfigEditor:
         }
         with open(json_filepath, 'w') as json_file:
             json.dump(config_data, json_file, indent=1)
-        #reload the gui
         messagebox.showinfo("Success", "Configurations saved successfully.")
-
 
     def get_current_dir(self):
         return self.current_dir 
     
     def move_up(self, levels = 1):
         new_dir = self.current_dir
-
 
     def show_log_window(self, log_file):
         log_window = tk.Toplevel(self.master)
@@ -360,9 +357,6 @@ class ConfigEditor:
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
         bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
-      
-
-            
         print(f"Executing {bat_file}")
         #subprocess.call([str(bat_file)])  # Execute sequence.bat
         threading.Thread(target=self.run_subprocess, args=(bat_file,)).start()
