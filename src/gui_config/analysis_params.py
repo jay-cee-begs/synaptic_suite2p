@@ -11,19 +11,22 @@ from pathlib import Path
 class OpsEditor:
     def __init__(self, master):
         self.master = master
-        self.master.title("Edit Operations")
+        self.master.title("Edit Analysis Parameters")
 
         # Load default operations
-        # self.config = default_ops()
         
     # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
-        self.editable_params = {
-            'overwrite_csv': self.ops.get('overwrite_csv', False),
-            'overwrite_pkl': self.ops.get('overwrite_pkl', 0),
-            'skew_threshold': self.ops.get('skew_threshold', 1.0),
-            'peak_threshold': self.ops.get('peak_threshold', False),
-            'Img_Overlay': self.ops.get('ImgType', 'max_proj'),
-            'use_suite2p_ROI_classifier': self.ops.get('use_iscell', False)
+        self.editable_params = { #self.default_analysis_parameters
+            'overwrite_csv': False,
+            'overwrite_pkl': False,
+            'skew_threshold': 1.0,
+            'compactness_threshold': 1.4,
+            "peak_detection_threshold": 4.5,
+            'peak_count_threshold': 2,
+            'Img_Overlay': 'max_proj',
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'return_decay_times': False,
         }
 
         self.vars = {}
