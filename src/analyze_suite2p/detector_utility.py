@@ -58,7 +58,8 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
     iqr_noise = filter_outliers(deltaF) #iqr noise
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
-    threshold = mu + 4.5 * std
+    peak_detection_multiplier = float(config.analysis_params.peak_detection_threshold)
+    threshold = mu + (peak_detection_multiplier * std)
     peaks, _ = find_peaks(deltaF, height = threshold, distance = 5)
     amplitudes = deltaF[peaks] - mu #amplitude
     peak_count = len(peaks)
