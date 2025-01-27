@@ -1,26 +1,11 @@
 import os
 import shutil
-import json
-from types import SimpleNamespace
-from pathlib import Path
 from suite2p import run_s2p
-from analyze_suite2p import analysis_utility, plotting_utility, detector_utility, suite2p_utility
+from analyze_suite2p import analysis_utility, suite2p_utility, config_loader
 
-def load_json_config_file():
-    script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
-    json_filepath = (script_dir / "../../config/config.json").resolve()
-    with open(json_filepath, 'r') as f:
-        config_dict = json.load(f)
-    return json.loads(json.dumps(config_dict), object_hook=lambda d: SimpleNamespace(**d))
+config = config_loader.load_json_config_file()
 
-config = load_json_config_file()
 
-def load_json_dict():
-    script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
-    json_filepath = (script_dir / "../../config/config.json").resolve()
-    with open(json_filepath, 'r') as f:
-        config_dict = json.load(f)
-    return config_dict
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
     """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
@@ -109,7 +94,7 @@ def process_files_with_suite2p(image_list):
                  print(f"Error processing {image_path}: {e}")
 
 def main():
-    config = load_json_config_file()
+    config = config_loader.load_json_config_file()
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
     img_folders = get_all_image_folders_in_path(main_folder)
