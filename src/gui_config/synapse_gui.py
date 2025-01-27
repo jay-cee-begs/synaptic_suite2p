@@ -104,12 +104,9 @@ class ConfigEditor:
         self.exp_condition_frame.pack(padx=10, pady=5)
         self.create_exp_condition_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
 
+
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
-
-        # Use native suite2p ROI classifications
-        self.skip_iscell_var = tk.BooleanVar()
-        tk.Checkbutton(self.scrollable_frame, text = "Use iscell.npy", variable=self.skip_iscell_var).pack(anchor='w', padx = 10, pady = 5)
 
         # Processing button
         tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
@@ -121,7 +118,7 @@ class ConfigEditor:
         # Setup the UI components in here in the future
         # order is the order of appearance in the gui
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
-        self.create_process_buttons()
+        self.create_process_button()
 
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
@@ -240,46 +237,6 @@ class ConfigEditor:
             widget.destroy()  # Remove old entries
         self.create_exp_condition_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)      
         
-
-    # def reload_config(self):
-    #     """Reload the configuration file to refresh the GUI."""
-
-    #     try: 
-    #          # Determine the absolute path to the config file using pathlib
-    #         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
-    #         config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
-
-    #         with open(config_file_path, 'r')as f:
-    #             self.config = json.load(f)
-    #         general_settings = self.config.get("general_settings", {})
-
-    #     # self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
-    #     # Update the GUI variables with the new values from the config
-    #         self.main_folder_var.set(general_settings.get('main_folder', ''))
-    #         self.data_extension_var.set(general_settings.get('data_extension', ''))
-    #         self.frame_rate_var.set(general_settings.get('frame_rate', 10))
-    #         self.ops_path_var.set(general_settings.get('ops_path', ''))
-    #         # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
-            
-    #         # Update the GUI components to reflect the new values
-    #         self.update_exp_condition_entries()
-    #         self.create_parameters_entries()
-    #         # Optionally, you can also refresh other specific widgets or labels here.
-    #         messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
-    #     except (FileNotFoundError, json.JSONDecodeError):
-    #         messagebox.showerror("Error", f"config.json file not found at {config_file_path}")
-    #         self.config = self.load_config("gui_configurations.py")
-    #         self.main_folder_var.set(self.config.get('main_folder', ''))
-    #         self.data_extension_var.set(self.config.get('data_extension', ''))
-    #         self.frame_rate_var.set(self.config.get('frame_rate', 10))
-    #         self.ops_path_var.set(self.config.get('ops_path', ''))
-           
-    #         # Update the GUI components to reflect the new values
-    #         self.update_exp_condition_entries()
-    #         self.create_parameters_entries()
-    #         messagebox.showinfo("Reload gui_configurations.py NOT config.json")
-
-
     def save_config(self):
         main_folder = str(Path(self.main_folder_var.get().strip()).resolve())
         data_extension = self.data_extension_var.get().strip()
@@ -354,35 +311,8 @@ class ConfigEditor:
 
         tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
 
-    def create_bat_file_radiobuttons(self, parent_frame):
-        bat_files = [
-            ("Skip Suite2p", "run_cascade.bat"),
-            ("Use_iscell", "analyze_suite2p.bat"),
-            ("Run Full Process", "run_sequence.bat")
-        ]
-
-        for text, value in bat_files:
-            tk.Radiobutton(parent_frame, text=text, variable=self.selected_bat_file, value=value).pack(anchor='w')
-    
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Process", command=self.proceed).pack(pady=5)
-
-
-    def create_process_buttons(self):
-        """
-        Create buttons for selecting and executing different processing options.
-
-        This method creates a frame containing radio buttons for selecting different 
-        .bat files to run, and a button to start the processing based on the selected option.
-        """
-        process_frame = tk.Frame(self.scrollable_frame)
-        process_frame.pack(pady=10)
-
-        tk.Label(process_frame, text="Select Process:").pack(anchor='w')
-
-        self.create_process_button(process_frame)
-
-    
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
