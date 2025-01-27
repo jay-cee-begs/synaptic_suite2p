@@ -13,7 +13,7 @@ import numpy as np
 class ConfigEditor:
     def __init__(self, master):
         self.master = master
-        self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
+        self.master.title("Synaptic suite2P Analysis Configurations Editor")
         self.master.geometry("450x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
@@ -47,7 +47,7 @@ class ConfigEditor:
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
         self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
         self.data_extension_var = tk.StringVar(value=general_settings.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 10))
+        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 20))
         self.ops_path_var = tk.StringVar(value=general_settings.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
         self.exp_condition = {}
@@ -84,7 +84,7 @@ class ConfigEditor:
         tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
         # Option c: Create new ops file
-        tk.Button(self.scrollable_frame, text="Open Suite2p GUI", command=self.create_new_ops_file).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Open Suite2p GUI", command=self.launch_suite2p_gui).pack(pady=5)
        
         tk.Label(self.scrollable_frame, text="Open Suite2p GUI to create a new ops file").pack(anchor='w', padx=30, pady=5)
         # Frame rate input
@@ -133,7 +133,7 @@ class ConfigEditor:
         bat_file = scripts_dir / "run_default_ops.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
 
-    def create_new_ops_file(self):
+    def launch_suite2p_gui(self):
         """Call the function to create new ops file"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
