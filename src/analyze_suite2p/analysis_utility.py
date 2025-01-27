@@ -160,7 +160,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
         plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(suite2p_outputs)} .csv files were saved under {config.general_settings.main_folder+r'/csv_files'}")
+    print(f"{len(suite2p_outputs)} .csv files were saved under {Path(config.general_settings.main_folder) / 'csv_files'}")
 
 def create_experiment_summary(main_folder):
     csv_file_path = os.path.join(main_folder, 'csv_files')
@@ -175,7 +175,7 @@ def create_experiment_summary(main_folder):
     aggregate_stats['Experimental Group'] = merged_df.groupby('File Name')['Experimental Group'].first().values
     aggregate_stats['Replicate No.'] = merged_df.groupby('File Name')['Replicate No.'].first().values
     
-    # merged_df.to_csv(os.path.join(configurations.main_folder, 'experiment_summary'))
+    merged_df.to_csv(os.path.join(config.general_settings.main_folder, 'experiment_summary.csv'))
     return aggregate_stats, merged_df
 
 def list_all_files_of_type(input_path, filetype):
