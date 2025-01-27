@@ -229,23 +229,35 @@ def single_spine_peak_plotting(input_f,input_fneu):
     ax3.legend()
     plt.show()
 
+
+
     #---calculate noise standard deviations--_#
-    rolling_min_deltaF_sd = 3*rolling_min_sd(deltaF_corr, window_size=int(len(deltaF_corr)/50)) #smallest SD throughout trace
+    # rolling_min_deltaF_sd = 3*rolling_min_sd(deltaF_corr, window_size=int(len(deltaF_corr)/50)) #smallest SD throughout trace
     iqr_noise = filter_outliers(bleached_deltaF) #iqr noise
     negative_points = np.where((deltaF_corr < np.median(deltaF_corr)))[0] #points less than median; flipped to make positive
     SD = 3*abs(np.std((bleached_deltaF[negative_points]))) + np.median(bleached_deltaF)
+    baseline = np.median(iqr_noise)
+
+    num_bins = 100
+    deltaF_bin_edge = np.linspace(deltaF.min().astype('int64'), deltaF.max().astype('int64'), num_bins + 1)
+    int_deltaF = deltaF.astype('int64')
+    bin_idx = np.digitize(int_deltaF, deltaF_bin_edge)
+    unique_bins, counts = np.unique(bin_idx, return_counts=True)
+    most_populated_bin = unique_bins[np.argmax(counts)]
+    most_populated_bin_mask = bin_idx == most_populated_bin
+    bin_median = np.mean(deltaF[most_populated_bin_mask])
     #---histogram of all frames with iqr noise; gaussian curve and threshold over
     plt.figure(figsize=[15,5])
     mu, std = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
     plt.hist(bleached_deltaF, bins = 1000)
-    threshold = np.median(bleached_deltaF) + 4 * std
+    threshold = mu + 4.5 * std
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax, 100)
     p = norm.pdf(x, mu, std) #gaussian fit over histograpm
     plt.plot(x, p, 'k', linewidth=2, label='Gaussian fit') #plt gaussian curve
-    plt.axvline(x=np.median(bleached_deltaF), color='red', linewidth = 2, label = f'Median: {np.median(bleached_deltaF):.2f}')
+    plt.axvline(x=bin_median, color='red', linewidth = 2, label = f'Median: {bin_median:.2f}')
     plt.axvline(x=threshold, color='r', linestyle='--', linewidth=2, label=f'IQR_Threshold: {threshold:.2f}') #threshold for peak detection 3 SD away
-    plt.axvline(x=rolling_min_deltaF_sd + np.median(bleached_deltaF), color = 'green',linestyle='--', linewidth=2, label=f'Rolling_min_SD: {rolling_min_deltaF_sd:.2f}')
+    # # plt.axvline(x=rolling_min_deltaF_sd + np.median(bleached_deltaF), color = 'green',linestyle='--', linewidth=2, label=f'Rolling_min_SD: {rolling_min_deltaF_sd:.2f}')
     plt.axvline(x=SD, color = 'blue',linestyle='--', linewidth=2, label=f'negative_points_SD: {SD:.2f}')
     plt.legend()
     plt.show()
@@ -290,7 +302,7 @@ def single_spine_peak_plotting(input_f,input_fneu):
     # plt.plot(peaks, bleached_deltaF[peaks], "x")
     # # plt.plot(decay_points, corrected_trace[decay_points], "x")
     # # plt.plot(np.full_like(bleached_deltaF, SD), "--",color = "black")
-    # # plt.plot(np.full_like(bleached_deltaF, rolling_min_deltaF_sd), "--",color = "magenta")
+    # plt.plot(np.full_like(bleached_deltaF, rolling_min_deltaF_sd), "--",color = "magenta")
     # plt.plot(np.full_like(bleached_deltaF, np.median(bleached_deltaF)), "--", color = 'r')
     # plt.plot(np.full_like(bleached_deltaF, threshold), "--", color = 'red')
     # plt.ylabel("dF/F")
@@ -303,7 +315,7 @@ def single_spine_peak_plotting(input_f,input_fneu):
     plt.figure(figsize=[20,20])
     # mu, std = norm.fit(filter_outliers(deltaF_corr)) #median and sd of noise of trace based on IQR
 
-    d_peaks, _ = find_peaks(deltaF_corr, height = d_mu + 3.5*d_std, distance = 10) #frequency; 3*SD + abs(np.median(deltaF_corr))
+    d_peaks, _ = find_peaks(deltaF_corr, height = d_mu + 3.5*d_std, distance = 5) #frequency; 3*SD + abs(np.median(deltaF_corr))
 
     plt.plot(deltaF_corr)
     # plt.hist(deltaF_corr, bins = 1000)

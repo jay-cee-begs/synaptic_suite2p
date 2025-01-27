@@ -1,0 +1,12 @@
+{
+    "overwrite_csv": true,
+    "overwrite_pkl": false,
+    "skew_threshold": "1.0",
+    "compactness_threshold": "1.4",
+    "peak_detection_threshold": "4.5",
+    "peak_count_threshold": "2",
+    "Img_Overlay": "max_proj",
+    "use_suite2p_ROI_classifier": false,
+    "update_suite2p_iscell": true,
+    "return_decay_times": false
+}

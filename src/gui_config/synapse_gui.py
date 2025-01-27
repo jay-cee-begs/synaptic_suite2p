@@ -6,12 +6,14 @@ import os
 import subprocess
 import time
 import threading 
+import json
+import numpy as np
 
 
 class ConfigEditor:
     def __init__(self, master):
         self.master = master
-        self.master.title("Ultimate Suite2P + Cascade Configuration Editor")
+        self.master.title("Synaptic suite2P Analysis Configurations Editor")
         self.master.geometry("450x750")  # Set initial window size
 
         # Create a canvas and a scrollbar
@@ -37,12 +39,15 @@ class ConfigEditor:
         self.scrollbar.pack(side="right", fill="y")
 
         # Load existing configurations, needs an existing file to load from
-        self.config = self.load_config("gui_configurations.py")
+        self.config = self.load_config()
+        general_settings = self.config.get("general_settings", {})
+        # analysis_params = {self.config.get("analysis_params", {})}
+
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
-        self.main_folder_var = tk.StringVar(value=self.config.get('main_folder', ''))
-        self.data_extension_var = tk.StringVar(value=self.config.get('data_extension', ''))
-        self.frame_rate_var = tk.IntVar(value=self.config.get('frame_rate', 20))
-        self.ops_path_var = tk.StringVar(value=self.config.get('ops_path', ''))
+        self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
+        self.data_extension_var = tk.StringVar(value=general_settings.get('data_extension', ''))
+        self.frame_rate_var = tk.IntVar(value=general_settings.get('frame_rate', 20))
+        self.ops_path_var = tk.StringVar(value=general_settings.get('ops_path', ''))
         self.groups = self.config.get('groups', [])
         self.exp_condition = {}
         self.exp_dur_var = tk.IntVar(value=self.config.get("EXPERIMENT_DURATION", 180))
@@ -78,7 +83,7 @@ class ConfigEditor:
         tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
 
         # Option c: Create new ops file
-        tk.Button(self.scrollable_frame, text="Open Suite2p GUI", command=self.create_new_ops_file).pack(pady=5)
+        tk.Button(self.scrollable_frame, text="Open Suite2p GUI", command=self.launch_suite2p_gui).pack(pady=5)
        
         tk.Label(self.scrollable_frame, text="Open Suite2p GUI to create a new ops file").pack(anchor='w', padx=30, pady=5)
         # Frame rate input
@@ -96,14 +101,13 @@ class ConfigEditor:
         # Editable exp_condition
         self.exp_condition_frame = tk.Frame(self.scrollable_frame)
         self.exp_condition_frame.pack(padx=10, pady=5)
-        self.create_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
+        self.create_exp_condition_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
+
+        # Edit analysis_params.json
+        tk.Button(self.scrollable_frame, text="Edit Analysis Parameters", command=self.edit_analysis_params).pack(pady=5)
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
-
-        # Use native suite2p ROI classifications
-        self.skip_iscell_var = tk.BooleanVar()
-        tk.Checkbutton(self.scrollable_frame, text = "Use iscell.npy", variable=self.skip_iscell_var).pack(anchor='w', padx = 10, pady = 5)
 
         # Processing button
         tk.Button(self.scrollable_frame, text="Process", command=self.proceed).pack(pady=10)
@@ -115,19 +119,61 @@ class ConfigEditor:
         # Setup the UI components in here in the future
         # order is the order of appearance in the gui
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
-        self.create_process_buttons()
+        self.create_process_button()
 
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
-    def edit_default_ops(self):
+    def edit_analysis_params(self):
         """Call the function to edit default ops"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
-        bat_file = scripts_dir / "run_default_ops.bat"
+        bat_file = scripts_dir / "edit_analysis_params.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_analysis_params()
 
-    def create_new_ops_file(self):
+    def merge_analysis_params(self):
+        script_dir = Path(__file__).resolve().parent
+        analysis_params_file = script_dir / "../../config/analysis_params.json"
+        config_file_path = script_dir / "../../config/config.json"
+
+        if Path(analysis_params_file).exists():
+            with open(analysis_params_file, 'r') as f:
+                analysis_params = json.load(f)
+        
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['analysis_params'] = analysis_params
+            with open(config_file_path, 'w') as f:
+                json.dump(config_data, f, indent=1)
+
+            messagebox.showinfo("Success","Editable parameters updated! \n Merged with config.json was successful!")
+        else:
+            messagebox.showerror("Error", "No analysis parameters found;\n using default parameters")
+            
+            analysis_params = {
+                "peak_count":self.peak_threshold,
+                "skew": self.skew_threshold,
+                "compact": self.compact_threshold,
+                "overwrite_csv": self.overwrite_csv,
+                "overwrite_pkl": self.overwrite_pkl,
+                "img_overlay": self.img_overlay,
+                "use_suite2p_ROI_classifier": self.use_iscell,
+            },
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['analysis_params'] = analysis_params
+
+
+    def launch_suite2p_gui(self):
         """Call the function to create new ops file"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
@@ -146,16 +192,13 @@ class ConfigEditor:
             self.main_folder_var.set(folder_selected)
 
 
-    def load_config(self, filepath):
-        config = {}
-        try:
-            # Get the directory of the current script
-            script_dir = os.path.dirname(__file__)
-            # Construct the absolute path to the configuration file
-            abs_filepath = os.path.join(script_dir, filepath)
-            
-            with open(abs_filepath) as f:
-                exec(f.read(), config)
+    def load_config(self):
+        try:    
+            script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+            config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+
+            with open(config_file_path, 'r')as f:
+                config = json.load(f)
         except FileNotFoundError:
             messagebox.showerror("Error", "Configuration file not found. Starting with default settings.")
             return {}
@@ -164,7 +207,7 @@ class ConfigEditor:
     def add_group(self):
         self.groups.clear()
         main_folder = self.main_folder_var.get().strip()
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
         
@@ -215,7 +258,7 @@ class ConfigEditor:
             messagebox.showinfo("No Groups Added", "No (sub-)folders with one or more files matching the specified extension were found.")
             
 
-    def create_dict_entries(self, master, title, dictionary):
+    def create_exp_condition_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
         tk.Label(master, text=title).pack(anchor='w', padx=10, pady=5)
         self.dict_vars = {}
@@ -232,117 +275,66 @@ class ConfigEditor:
 
 
     def update_exp_condition_entries(self):
-        """Update the entries in the exp_condition dictionary with the use of create_dict_entries"""
+        """Update the entries in the exp_condition dictionary with the use of create_exp_condition_dict_entries"""
         for widget in self.exp_condition_frame.winfo_children():
             widget.destroy()  # Remove old entries
-        self.create_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)      
+        self.create_exp_condition_dict_entries(self.exp_condition_frame, "exp_condition", self.exp_condition)      
         
-
-    def reload_config(self):
-        """Reload the configuration file to refresh the GUI."""
-        self.config = self.load_config("gui_configurations.py")  # Reload the configuration file
-        # Update the GUI variables with the new values from the config
-        self.main_folder_var.set(self.config.get('main_folder', ''))
-        self.data_extension_var.set(self.config.get('data_extension', ''))
-        self.frame_rate_var.set(self.config.get('frame_rate', 10))
-        self.ops_path_var.set(self.config.get('ops_path', ''))
-        # self.exp_condition = {key: value for key, value in self.config.get('exp_condition', {}).items()}
-        
-        # Update the GUI components to reflect the new values
-        self.update_exp_condition_entries()
-        self.create_parameters_entries()
-        # Optionally, you can also refresh other specific widgets or labels here.
-        messagebox.showinfo("Config Reloaded", "Configuration file has been reloaded successfully.")
-    
     def save_config(self):
-        main_folder = self.main_folder_var.get().strip()
+        main_folder = str(Path(self.main_folder_var.get().strip()).resolve())
         data_extension = self.data_extension_var.get().strip()
         frame_rate = self.frame_rate_var.get()
-        ops_path = self.ops_path_var.get().strip()
+        ops_path = str(Path(self.ops_path_var.get().strip()).resolve())
         BIN_WIDTH = self.bin_width_var.get()
         EXPERIMENT_DURATION = self.exp_dur_var.get()
 
-        if not os.path.exists(main_folder):
+        if not Path(main_folder).exists():
             messagebox.showerror("Error", "Main folder does not exist.")
             return
 
-        exp_condition = {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()} ### ????????????? is this still needed?? 
-        groups = [os.path.join(main_folder, condition) for condition in exp_condition.keys()]
-        # Construct the absolute path to the configuration file, saving uses the same logic as loading now
-        script_dir = os.path.dirname(__file__)
-        config_filepath = os.path.join(script_dir, 'gui_configurations.py')
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
+        analysis_params_path = (script_dir / "../../config/analysis_params.json")
+        if analysis_params_path.exists():
+            with open(analysis_params_path, 'r') as f:
+                analysis_params = json.load(f)
+        else:
+            analysis_params = {'overwrite_csv': False,
+            'overwrite_pkl': False,
+            'skew_threshold': 1.0,
+            'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
+            "peak_detection_threshold": 4.5,
+            'peak_count_threshold': 2,
+            'Img_Overlay': 'max_proj',
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'return_decay_times': False,}
 
-        with open(config_filepath, 'w') as f:
-            f.write('import numpy as np \n')
-            f.write(f"main_folder = r'{main_folder}'\n")
-            for i, group in enumerate(self.groups, start=1):
-                f.write(f"group{i} = main_folder + r'{group}'\n")
-            f.write(f"group_number = {len(self.groups)}\n")
-            f.write(f"data_extension = '{data_extension}'\n")
-            f.write(f"frame_rate = {frame_rate}\n")
-            f.write(f"ops_path = r'{ops_path}'\n")
-            f.write("ops = np.load(ops_path, allow_pickle=True).item()\n")
-            f.write("ops['frame_rate'] = frame_rate\n")
-            f.write("ops['input_format'] = data_extension\n")
-            f.write(f"BIN_WIDTH = {BIN_WIDTH}\n")
-            f.write(f"EXPERIMENT_DURATION = {EXPERIMENT_DURATION}\n")
-            f.write("FRAME_INTERVAL = 1 / frame_rate\n")
-            f.write("FILTER_NEURONS = True\n")
-
-
-            f.write("exp_condition = {\n")
-            for key, (key_var, value_var) in self.dict_vars.items():
-                f.write(f"    '{key_var.get()}': '{value_var.get()}',\n")
-            f.write("}\n")
-            
-            #### Add addtionals here, maybe make them editable in the gui as well
-            f.write("## Additional configurations\n")
-            f.write("groups = []\n")
-            f.write("for n in range(group_number):\n")
-            f.write("    group_name = f\"group{n + 1}\"\n")
-            f.write("    if group_name in locals():\n")
-            f.write("        groups.append(locals()[group_name])\n")
+        config_data = {
+            "general_settings":{
+                "main_folder": main_folder,
+                "groups": [str(Path(main_folder) / condition) for condition in self.dict_vars.keys()],
+                "group_number": len(self.groups),
+                "exp_condition": {key_var.get(): value_var.get() for key_var, (key_var, value_var) in self.dict_vars.items()},
+                "data_extension": data_extension,
+                "frame_rate": frame_rate,
+                "ops_path": ops_path,
+                "BIN_WIDTH": BIN_WIDTH,
+                "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
+                "FRAME_INTERVAL": 1 / float(frame_rate),
+                "FILTER_NEURONS": True,
+            },
+            "analysis_params": analysis_params
+        }
+        with open(json_filepath, 'w') as json_file:
+            json.dump(config_data, json_file, indent=1)
         messagebox.showinfo("Success", "Configurations saved successfully.")
-#TODO convert .py output to .json output with dump
-        # json_filepath = os.path.join(script_dir, 'config.json')
-        # config_data = {
-        #     "general_settings":{
-        #         "main_folder": main_folder,
-        #         "groups": groups,
-        #         "group_number": len(self.groups),
-        #         "exp_condition": exp_condition,
-        #         "data_extension": data_extension,
-        #         "frame_rate": frame_rate,
-        #         "ops_path": ops_path,
-        #         "BIN_WIDTH": BIN_WIDTH,
-        #         "EXPERIMENT_DURATION": EXPERIMENT_DURATION,
-        #         "FRAME_INTERVAL": 1 / float(frame_rate),
-        #         "FILTER_NEURONS": True,
-        #     },
-        #     "analysis_parameters": {
-
-        #     },
-        #     "optional_parameters":{
-        #         "peak_count":self.peak_threshold,
-        #         "skew": self.skew_threshold,
-        #         "compact": self.compact_threshold,
-        #         "overwrite_csv": self.overwrite_csv,
-        #         # "overwrite_pkl": self.overwrite_pkl,
-        #         "img_overlay": self.img_overlay,
-        #         "use_suite2p_ROI_classifier": self.use_iscell,
-
-        #     }
-                
-        # }
-        #reload the gui
-        #self.reload_config()
 
     def get_current_dir(self):
         return self.current_dir 
     
     def move_up(self, levels = 1):
         new_dir = self.current_dir
-
 
     def show_log_window(self, log_file):
         log_window = tk.Toplevel(self.master)
@@ -358,43 +350,13 @@ class ConfigEditor:
 
         tk.Button(log_window, text="Close", command=log_window.destroy).pack(pady=5)
 
-    def create_bat_file_radiobuttons(self, parent_frame):
-        bat_files = [
-            ("Skip Suite2p", "run_cascade.bat"),
-            ("Use_iscell", "analyze_suite2p.bat"),
-            ("Run Full Process", "run_sequence.bat")
-        ]
-
-        for text, value in bat_files:
-            tk.Radiobutton(parent_frame, text=text, variable=self.selected_bat_file, value=value).pack(anchor='w')
-    
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Process", command=self.proceed).pack(pady=5)
-
-
-    def create_process_buttons(self):
-        """
-        Create buttons for selecting and executing different processing options.
-
-        This method creates a frame containing radio buttons for selecting different 
-        .bat files to run, and a button to start the processing based on the selected option.
-        """
-        process_frame = tk.Frame(self.scrollable_frame)
-        process_frame.pack(pady=10)
-
-        tk.Label(process_frame, text="Select Process:").pack(anchor='w')
-
-        self.create_process_button(process_frame)
-
-    
 
     def proceed(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
         bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
-      
-
-            
         print(f"Executing {bat_file}")
         #subprocess.call([str(bat_file)])  # Execute sequence.bat
         threading.Thread(target=self.run_subprocess, args=(bat_file,)).start()

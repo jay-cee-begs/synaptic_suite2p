@@ -3,13 +3,15 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from gui_config import gui_configurations as configurations
-from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility
+from pathlib import Path
+from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility, config_loader
+
+config = config_loader.load_json_config_file()
 
 def calculate_cell_freq(input_df):
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / configurations.frame_rate)) #divide by total # of frames NOT framerate
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
     return output_df
 
@@ -125,7 +127,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
             print(f"CSV file {translated_path} already exists!")
             continue
 
-        suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, configurations.groups, input_path)
+        suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, config.general_settings.groups, input_path)
         
         raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
 
@@ -158,7 +160,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
         plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
 
-    print(f"{len(suite2p_outputs)} .csv files were saved under {configurations.main_folder+r'/csv_files'}")
+    print(f"{len(suite2p_outputs)} .csv files were saved under {Path(config.general_settings.main_folder) / 'csv_files'}")
 
 def create_experiment_summary(main_folder):
     csv_file_path = os.path.join(main_folder, 'csv_files')
@@ -173,7 +175,7 @@ def create_experiment_summary(main_folder):
     aggregate_stats['Experimental Group'] = merged_df.groupby('File Name')['Experimental Group'].first().values
     aggregate_stats['Replicate No.'] = merged_df.groupby('File Name')['Replicate No.'].first().values
     
-    # merged_df.to_csv(os.path.join(configurations.main_folder, 'experiment_summary'))
+    merged_df.to_csv(os.path.join(config.general_settings.main_folder, 'experiment_summary.csv'))
     return aggregate_stats, merged_df
 
 def list_all_files_of_type(input_path, filetype):
@@ -187,7 +189,7 @@ def spike_list_translator(input_string):
     """This funciton is nested in the next. It is designed to convert the time stamp of each event into a time
         during the experiment (e.g. frame 2 = 1.1 seconds into the recording)"""
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * configurations.FRAME_INTERVAL
+    return np.array(string_list).astype(int) * config.general_settings.FRAME_INTERVAL
 
 def amplitude_list_translator(input_string):
     amp_string_list = string_to_list_translator(input_string)
@@ -197,7 +199,7 @@ def amplitude_list_translator(input_string):
 
 def decay_frame_list_translator(input_string):
      decay_frame_list = string_to_list_translator(input_string)
-     return np.array(decay_frame_list).astype(float)*configurations.FRAME_INTERVAL
+     return np.array(decay_frame_list).astype(float)*config.general_settings.FRAME_INTERVAL
 
 def decay_time_list_translator(input_string):
     decay_time_list = string_to_list_translator(input_string) 
@@ -215,9 +217,9 @@ def spike_df_iterator(input_path, return_name=True):
 def calculate_binned_stats(input_df):
     local_df = input_df.copy()
 
-    bins = np.arange(0, configurations.EXPERIMENT_DURATION + configurations.BIN_WIDTH, configurations.BIN_WIDTH) 
+    bins = np.arange(0, config.general_settings.EXPERIMENT_DURATION + config.general_settings.BIN_WIDTH, config.general_settings.BIN_WIDTH) 
     population_spikes, _ = np.histogram(np.hstack(local_df["PeakTimes"].values), bins=bins)
-    population_frequency = population_spikes / configurations.BIN_WIDTH
+    population_frequency = population_spikes / config.general_settings.BIN_WIDTH
 
     bin_stats = pd.DataFrame.from_dict({
         "Bin_Limits": [(bins[bin_index], bins[bin_index + 1]) for bin_index in range(len(bins) - 1)],
@@ -238,15 +240,15 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
     for spike_df, file_name in spike_df_iterator(csv_path):
             processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
-                                        f"Dur{int(configurations.EXPERIMENT_DURATION)}s"
-                                        f"Int{int(configurations.FRAME_INTERVAL*1000)}ms"
+                                        f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
+                                        f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
 
             if os.path.exists(processed_path) and not overwrite:
                 print(f"Processed file {processed_path} already exists!")
                 continue
                 
-            if configurations.FILTER_NEURONS:
+            if config.general_settings.FILTER_NEURONS:
                 spike_df = spike_df[spike_df["IsUsed"]]
                 
             processed_dict = {
