@@ -1,8 +1,11 @@
 import numpy as np
+import os
 import sys
+import json
 import tkinter as tk
-from tkinter import filedialog, messagebox
-from gui_config import gui_configurations as configurations
+from tkinter import filedialog, messagebox, ttk
+from pathlib import Path
+# from analyze_suite2p.config_loader import load_json_config_file
 #TODO update configurations to JSON file and update code accordingly
 
 class OpsEditor:
