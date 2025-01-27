@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility
-from analyze_suite2p.run_suite2p import load_json_config_file
+from pathlib import Path
+from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility, config_loader
 
-config = load_json_config_file()
+config = config_loader.load_json_config_file()
 
 def calculate_cell_freq(input_df):
     output_df = input_df.copy()

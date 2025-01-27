@@ -2,7 +2,9 @@
 import pandas as pd
 import numpy as np
 import os
-from analyze_suite2p import detector_utility
+from analyze_suite2p import detector_utility, config_loader
+
+config = config_loader.load_json_config_file()
 
 """
 SUITE2P_STRUCTURE describes the sequence of directories to traverse to arrive at the files named in the key.

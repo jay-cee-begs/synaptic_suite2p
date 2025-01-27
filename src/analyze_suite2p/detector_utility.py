@@ -2,15 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 import pandas as pd
-from PIL import Image
 import scipy.signal as signal
 from scipy.stats import norm
-
-from analyze_suite2p import suite2p_utility
-from analyze_suite2p.run_suite2p import load_json_config_file
+from analyze_suite2p import config_loader
 from BaselineRemoval import BaselineRemoval
 
-config = load_json_config_file()
+config = config_loader.load_json_config_file()
 
 def calculate_deltaF(F_file):
     """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
