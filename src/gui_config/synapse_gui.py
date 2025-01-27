@@ -131,6 +131,48 @@ class ConfigEditor:
         scripts_dir = current_dir / "Scripts"
         bat_file = scripts_dir / "edit_analysis_params.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
+        self.merge_analysis_params()
+
+    def merge_analysis_params(self):
+        script_dir = Path(__file__).resolve().parent
+        analysis_params_file = script_dir / "../../config/analysis_params.json"
+        config_file_path = script_dir / "../../config/config.json"
+
+        if Path(analysis_params_file).exists():
+            with open(analysis_params_file, 'r') as f:
+                analysis_params = json.load(f)
+        
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['analysis_params'] = analysis_params
+            with open(config_file_path, 'w') as f:
+                json.dump(config_data, f, indent=1)
+
+            messagebox.showinfo("Success","Editable parameters updated! \n Merged with config.json was successful!")
+        else:
+            messagebox.showerror("Error", "No analysis parameters found;\n using default parameters")
+            
+            analysis_params = {
+                "peak_count":self.peak_threshold,
+                "skew": self.skew_threshold,
+                "compact": self.compact_threshold,
+                "overwrite_csv": self.overwrite_csv,
+                "overwrite_pkl": self.overwrite_pkl,
+                "img_overlay": self.img_overlay,
+                "use_suite2p_ROI_classifier": self.use_iscell,
+            },
+            if Path(config_file_path).exists():
+                with open(config_file_path, 'r') as f:
+                    config_data = json.load(f)
+            else:
+                config_data = {}
+            
+            config_data['analysis_params'] = analysis_params
+
 
     def launch_suite2p_gui(self):
         """Call the function to create new ops file"""
