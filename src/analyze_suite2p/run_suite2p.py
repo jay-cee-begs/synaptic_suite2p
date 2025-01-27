@@ -104,8 +104,10 @@ def main():
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     if len(suite2p_samples) != len(image_folders):#TODO implement this or configurations.overwrite == False:
         process_files_with_suite2p(image_folders)
-    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = True, check_for_iscell=False, update_iscell = True)
-    analysis_utility.create_experiment_summary(config.general_settings.main_folder)
+    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = config.analysis_params.overwrite_csv, 
+                                                      check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
+                                                      update_iscell = config.analysis_params.update_suite2p_iscell)
+    analysis_utility.create_experiment_summary(main_folder)
     # analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
