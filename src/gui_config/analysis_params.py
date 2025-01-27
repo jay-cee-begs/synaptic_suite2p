@@ -32,14 +32,6 @@ class OpsEditor:
         self.vars = {}
         self.create_widgets()
 
-        # Create input fields for each parameter
-        for param, value in self.editable_params.items():
-            frame = tk.Frame(self.master)
-            frame.pack(pady=5)
-            tk.Label(frame, text=param).pack(side=tk.LEFT)
-            var = tk.StringVar(value=str(value))
-            self.vars[param] = var
-            tk.Entry(frame, textvariable=var, width=10).pack(side=tk.LEFT)
     def load_configurations(self):
         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
         config_file_path = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
@@ -50,20 +42,26 @@ class OpsEditor:
         else:
             return self.editable_params
     
+    def save_analysis_params(self):
+        analysis_params = Path(__file__).resolve().parent / "../../config/analysis_params.json"
+        updated_params = {}
 
-        # Save button
-        self.save_button = tk.Button(self.master, text="Save", command=self.save_ops)
-        self.save_button.pack(pady=10)
-
-    def save_ops(self):
-        # Get the modified values
-        for param in self.vars:
-            if param in self.ops:
-                value = self.vars[param].get()
-                if value.lower() in ['true', 'false']:
-                    self.ops[param] = value.lower() == 'true'
-                else:
-                    self.ops[param] = float(value) if value.replace('.', '', 1).isdigit() else value
+        # Create input fields for each parameter
+        for param, var in self.vars.items():
+            if isinstance (var, tk.BooleanVar):
+                updated_params[param] = var.get()
+            elif isinstance(var, tk.StringVar):
+                updated_params[param] = var.get()
+            else:
+                try:
+                    updated_params[param] = float(var.get())
+                except ValueError:
+                    messagebox.showerror("Error", f"Invalid value for {param}")
+        
+        with open(analysis_params, 'w') as f:
+            json.dump(updated_params, f, indent = 4)
+        
+        self.master.quit()
 
     def create_widgets(self):
         for idx, (param, value) in enumerate(self.editable_params.items()):
@@ -92,10 +90,7 @@ class OpsEditor:
                 tk.Entry(self.master, textvariable=var, width=20).grid(row=idx, column=1, padx=10, pady=5)
             self.vars[param] = var
 
-        if save_path:
-            np.save(save_path, self.ops)
-            messagebox.showinfo("Success", f"Saved operations to: {save_path}")
-            self.master.quit()
+        tk.Button(self.master, text="Save Configurations", command=self.save_analysis_params).grid(row=len(self.editable_params), column=0, columnspan=2, pady=20)
 
 if __name__ == "__main__":
     root = tk.Tk()
