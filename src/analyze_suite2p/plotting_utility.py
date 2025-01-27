@@ -261,7 +261,7 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
-    Img = ops["max_proj"] # Also "max_proj", "meanImg", "meanImgE"
+    Img = ops[config.analysis_params.Img_Overlay] # Also "max_proj", "meanImg", "meanImgE"
     mimg = Img # Use suite-2p source-code naming
     mimg1 = np.percentile(mimg,1)
     mimg99 = np.percentile(mimg,99)
@@ -298,8 +298,8 @@ def boundary(ypix,xpix):
 def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
-    MIN_COUNT = 2 # minimum number of detected spikes for ROI inclusion
-    MIN_SKEW = 1.0
+    MIN_COUNT = int(config.analysis_params.peak_count_threshold) # minimum number of detected spikes for ROI inclusion
+    MIN_SKEW = float(config.analysis_params.skew_threshold)
     # min_pixel = 25
     # min_footprint = 0
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
