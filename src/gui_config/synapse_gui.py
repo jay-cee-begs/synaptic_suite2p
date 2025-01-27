@@ -104,6 +104,8 @@ class ConfigEditor:
         self.exp_condition_frame.pack(padx=10, pady=5)
         self.create_exp_condition_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
 
+        # Edit analysis_params.json
+        tk.Button(self.scrollable_frame, text="Edit Analysis Parameters", command=self.edit_analysis_params).pack(pady=5)
 
         # Save button
         tk.Button(self.scrollable_frame, text="Save Configurations", command=self.save_config).pack(pady=10)
@@ -123,11 +125,11 @@ class ConfigEditor:
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
-    def edit_default_ops(self):
+    def edit_analysis_params(self):
         """Call the function to edit default ops"""
         current_dir = Path(__file__).parent
         scripts_dir = current_dir / "Scripts"
-        bat_file = scripts_dir / "run_default_ops.bat"
+        bat_file = scripts_dir / "edit_analysis_params.bat"
         subprocess.call([str(bat_file)])  # Execute run_default_ops.bat
 
     def launch_suite2p_gui(self):
@@ -251,7 +253,22 @@ class ConfigEditor:
 
         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
         json_filepath = (script_dir / "../../config/config.json").resolve()  # Navigate to config folder
-        
+        analysis_params_path = (script_dir / "../../config/analysis_params.json")
+        if analysis_params_path.exists():
+            with open(analysis_params_path, 'r') as f:
+                analysis_params = json.load(f)
+        else:
+            analysis_params = {'overwrite_csv': False,
+            'overwrite_pkl': False,
+            'skew_threshold': 1.0,
+            'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
+            "peak_detection_threshold": 4.5,
+            'peak_count_threshold': 2,
+            'Img_Overlay': 'max_proj',
+            'use_suite2p_ROI_classifier': False,
+            'update_suite2p_iscell': True,
+            'return_decay_times': False,}
+
         config_data = {
             "general_settings":{
                 "main_folder": main_folder,
