@@ -41,8 +41,7 @@ class ConfigEditor:
         # Load existing configurations, needs an existing file to load from
         self.config = self.load_config()
         general_settings = self.config.get("general_settings", {})
-        analysis_params = {}
-        optional_settings = {}
+        # analysis_params = {self.config.get("analysis_params", {})}
 
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
         self.main_folder_var = tk.StringVar(value=general_settings.get('main_folder', ''))
@@ -325,24 +324,8 @@ class ConfigEditor:
                 "FRAME_INTERVAL": 1 / float(frame_rate),
                 "FILTER_NEURONS": True,
             },
-        #     "analysis_parameters": {
-
-        #     },
-        #     "optional_parameters":{
-        #         "peak_count":self.peak_threshold,
-        #         "skew": self.skew_threshold,
-        #         "compact": self.compact_threshold,
-        #         "overwrite_csv": self.overwrite_csv,
-        #         # "overwrite_pkl": self.overwrite_pkl,
-        #         "img_overlay": self.img_overlay,
-        #         "use_suite2p_ROI_classifier": self.use_iscell,
-
-        #     }
-                
+            "analysis_params": analysis_params
         }
-
-        # config_data["new_groups"] = [config_data["main_folder"] + rf'\{name}' for name in exp_condition.keys()]
-
         with open(json_filepath, 'w') as json_file:
             json.dump(config_data, json_file, indent=1)
         #reload the gui
