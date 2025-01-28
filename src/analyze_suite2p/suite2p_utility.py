@@ -132,7 +132,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
 #TODO need to update if not use_iscell to include dictionary items within my json dictionary
     if not use_iscell:
         suite2p_dict["IsUsed"] = [
-            (suite2p_dict["stat"]["skew"] >= 1)]
+            (suite2p_dict["stat"]["skew"] >= float(config.analysis_params.skew_threshold))]
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
 
     else:
