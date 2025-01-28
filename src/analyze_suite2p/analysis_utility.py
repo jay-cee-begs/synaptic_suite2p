@@ -139,9 +139,9 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         updated_iscell = parent_iscell.copy()
         if update_iscell:
             for idx in nid2idx:
-                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
+                updated_iscell[idx,0] = 1.0
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+                updated_iscell[idxr,0] = 0.0
             np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
         else:
