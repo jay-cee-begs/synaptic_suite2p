@@ -141,7 +141,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     if not groups:
-        raise ValueError("The 'groups' list is empty. Please provide valid gorup names...")
+        raise ValueError("The 'groups' list is empty. Please provide valid group names...")
 
     print(f"Data folder: {data_folder}")
     print(f"Groups: {groups}")
