@@ -392,7 +392,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2i
                                       marker='.', s=1)
              plotDict(nid2idx_synapse, 'indian_red')
              plotDict(nid2idx_dendrite, 'gold')
-             ax1.set_title(f"{len(nid2idx_synapse)} Synaptic Puncta (red) and {len(nid2idx_dendrite)} Dendritic Events; {len(nid2idx)} Total ROIs") 
+             ax1.set_title(f"{len(nid2idx_synapse)} Synaptic Puncta (red) and {len(nid2idx_dendrite)} Dendritic Events (gold); {len(nid2idx)} Total ROIs") 
 
              plt.savefig(save_path)
              plt.close(fig)
