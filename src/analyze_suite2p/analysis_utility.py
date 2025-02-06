@@ -77,7 +77,6 @@ def translate_suite2p_dict_to_df(suite2p_dict):
             result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
         results.append(result)
     spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
-
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
     # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
@@ -96,6 +95,16 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
+    Img = plotting_utility.getImg(suite2p_dict["ops"])
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df)
+    
+    df['classification'] = 'none'
+    for n in range(len(df)):
+        if n in nid2dx_dendrite:
+            df.at[n,"classification"] = 'dendritic_event'
+        elif n in nid2idx_synapse:
+            df.at[n,"classification"] = 'synaptic_event'
+    
     filtered_df = df[df['IsUsed']==True]
 
     processed_df = calculate_cell_stats(filtered_df)
