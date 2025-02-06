@@ -261,7 +261,7 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
-    Img = ops[config.analysis_params.Img_Overlay] # Also "max_proj", "meanImg", "meanImgE"
+    Img = ops[config.analysis_params.Img_Overlay] # Option of  "max_proj" or "meanImg"
     mimg = Img # Use suite-2p source-code naming
     mimg1 = np.percentile(mimg,1)
     mimg99 = np.percentile(mimg,99)
@@ -363,7 +363,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2idx_synapse,
-             pixel2neuron, F, Fneu, save_path, axs=None):
+             pixel2neuron, F, Fneu, save_path, fill_ROIs=False, axs=None):
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
                 NUM_GRIDS=12
@@ -387,11 +387,13 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2i
                  for neuron_id, idx in n2d2idx_dict.items():
                      color = override_color if override_color else mapper.to_rgba(scatters['color'][idx])
                             # print(f"{idx}: {scatters['x']} - {scatters['y'][idx]}")
-                            
-                     sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
-                                      marker='.', s=1)
-             plotDict(nid2idx_synapse, 'indian_red')
-             plotDict(nid2idx_dendrite, 'gold')
+                     if fill_ROIs:
+                        ax1.fill(scatters["x"][idx], scatters["y"][idx], color = color, alpha = 0.5)     
+                     else:
+                        sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
+                                      marker='.', s=5)
+             plotDict(nid2idx_synapse, 'teal')
+             plotDict(nid2idx_dendrite, 'orange')
              ax1.set_title(f"{len(nid2idx_synapse)} Synaptic Puncta (red) and {len(nid2idx_dendrite)} Dendritic Events (gold); {len(nid2idx)} Total ROIs") 
 
              plt.savefig(save_path)
