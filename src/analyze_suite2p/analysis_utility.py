@@ -33,12 +33,15 @@ def calculate_spike_amplitudes(input_df):
     return output_df
 
 def calculate_decay_fraction(row):
-    if isinstance(row["DecayTimes"], float) and isinstance(row["SpikesCount"], float):
-        return row["DecayTimes"] / row['SpikesCount']
+    if row["SpikesCount"] != 0:
+        return row['DecayCount'] / row["SpikesCount"]
+    else:
+        return []
+        
 
 def calculate_decay_values(input_df):
     output_df = input_df.copy()
-    output_df["DecaysCount"] = output_df["DecayTimes"].dropna().str.len()
+    output_df["DecayCount"] = output_df["DecayTimes"].apply(lambda arr: (len([x for x in arr if not pd.isna(x)])))
     output_df["DecayedFraction"] = output_df.apply(calculate_decay_fraction, axis =1)
     output_df["AvgDecayTime"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().mean())
     output_df["AvgDecayCV"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().std()) / output_df["AvgDecayTime"] * 100
