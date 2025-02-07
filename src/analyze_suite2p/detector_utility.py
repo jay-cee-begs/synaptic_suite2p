@@ -63,7 +63,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
     peaks, _ = find_peaks(deltaF, height = threshold, distance = 5)
     amplitudes = deltaF[peaks] - mu #amplitude
     peak_count = len(peaks)
-    negative_points = np.where((deltaF < mu))[0]
+    negative_points = np.where((deltaF < threshold))[0]
 
     # print(negative_points)
     decay_points = []

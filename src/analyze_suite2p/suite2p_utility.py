@@ -132,7 +132,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
 #TODO need to update if not use_iscell to include dictionary items within my json dictionary
     if not use_iscell:
         suite2p_dict["IsUsed"] = [
-            (suite2p_dict["stat"]["skew"] >= 1)]
+            (suite2p_dict["stat"]["skew"] >= float(config.analysis_params.skew_threshold))]
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
 
     else:
@@ -141,7 +141,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     if not groups:
-        raise ValueError("The 'groups' list is empty. Please provide valid gorup names...")
+        raise ValueError("The 'groups' list is empty. Please provide valid group names...")
 
     print(f"Data folder: {data_folder}")
     print(f"Groups: {groups}")

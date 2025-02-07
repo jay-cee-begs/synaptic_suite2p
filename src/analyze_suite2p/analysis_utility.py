@@ -33,12 +33,15 @@ def calculate_spike_amplitudes(input_df):
     return output_df
 
 def calculate_decay_fraction(row):
-    if isinstance(row["DecayTimes"], float) and isinstance(row["SpikesCount"], float):
-        return row["DecayTimes"] / row['SpikesCount']
+    if row["SpikesCount"] != 0:
+        return row['DecayCount'] / row["SpikesCount"]
+    else:
+        return []
+        
 
 def calculate_decay_values(input_df):
     output_df = input_df.copy()
-    output_df["DecaysCount"] = output_df["DecayTimes"].dropna().str.len()
+    output_df["DecayCount"] = output_df["DecayTimes"].apply(lambda arr: (len([x for x in arr if not pd.isna(x)])))
     output_df["DecayedFraction"] = output_df.apply(calculate_decay_fraction, axis =1)
     output_df["AvgDecayTime"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().mean())
     output_df["AvgDecayCV"] = output_df["DecayTimes"].apply(lambda x: pd.Series(x).dropna().std()) / output_df["AvgDecayTime"] * 100
@@ -77,7 +80,6 @@ def translate_suite2p_dict_to_df(suite2p_dict):
             result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
         results.append(result)
     spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
-
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
     # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
@@ -96,6 +98,16 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
+    Img = plotting_utility.getImg(suite2p_dict["ops"])
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df)
+    
+    df['classification'] = 'none'
+    for n in range(len(df)):
+        if n in nid2dx_dendrite:
+            df.at[n,"classification"] = 'dendritic_event'
+        elif n in nid2idx_synapse:
+            df.at[n,"classification"] = 'synaptic_event'
+    
     filtered_df = df[df['IsUsed']==True]
 
     processed_df = calculate_cell_stats(filtered_df)
@@ -139,9 +151,9 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         updated_iscell = parent_iscell.copy()
         if update_iscell:
             for idx in nid2idx:
-                updated_iscell[idx] = [1.0, updated_iscell[idx][1]]
+                updated_iscell[idx,0] = 1.0
             for idxr in nid2idx_rejected:
-                updated_iscell[idxr] = [0.0, updated_iscell[idxr][1]]
+                updated_iscell[idxr,0] = 0.0
             np.save(iscell_path, updated_iscell)
             print(f"Updated iscell.npy saved for {suite2p_output}")
         else:

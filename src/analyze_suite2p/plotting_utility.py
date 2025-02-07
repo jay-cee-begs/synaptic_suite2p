@@ -261,7 +261,7 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
-    Img = ops[config.analysis_params.Img_Overlay] # Also "max_proj", "meanImg", "meanImgE"
+    Img = ops[config.analysis_params.Img_Overlay] # Option of  "max_proj" or "meanImg"
     mimg = Img # Use suite-2p source-code naming
     mimg1 = np.percentile(mimg,1)
     mimg99 = np.percentile(mimg,99)
@@ -300,12 +300,15 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     iscell = suite2p_dict['iscell']
     MIN_COUNT = int(config.analysis_params.peak_count_threshold) # minimum number of detected spikes for ROI inclusion
     MIN_SKEW = float(config.analysis_params.skew_threshold)
+    MIN_COMPACT = float(config.analysis_params.compactness_threshold)
     # min_pixel = 25
     # min_footprint = 0
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
     nid2idx_rejected = {}
+    nid2dx_dendrite = {}
+    nid2idx_synapse = {}
     synapse_ID = []
     print(f"Number of detected ROIs: {stat.shape[0]}")
     
@@ -315,11 +318,16 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
             peak_count = output_df.iloc[n]["PeakCount"]
             skew = stat.iloc[n]['skew']
             # footprint = stat.iloc[n]['footprint']
-            # npix = stat.iloc[n]['npix']
+            compact = stat.iloc[n]['compact']
 
             if peak_count >= MIN_COUNT and skew >=MIN_SKEW:
                 synapse_ID.append(n)
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
+
+                if compact >= MIN_COMPACT:
+                    nid2dx_dendrite[n] = len(scatters["x"])
+                else:
+                    nid2idx_synapse[n] = len(scatters["x"])
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
             
@@ -352,10 +360,10 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
             scatters['y'] += [yext]
             pixel2neuron[ypix, xpix] = n
 
-    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID
+    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse
 
-def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
-             pixel2neuron, F, Fneu, save_path, axs=None):
+def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2idx_synapse,
+             pixel2neuron, F, Fneu, save_path, fill_ROIs=False, axs=None):
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
                 NUM_GRIDS=12
@@ -369,7 +377,9 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
              ax1.imshow(MaxImg, cmap='gist_gray')
              ax1.tick_params(axis='both', which='both', bottom=False, top=False, 
                              labelbottom=False, left=False, right=False, labelleft=False)
-             print("Synapse count:", len(nid2idx))
+             print("Total ROI count: ", len(nid2idx))
+             print("Synaptic Puncta: ", len(nid2idx_synapse))
+             print("Dendritic Events: ", len(nid2idx_dendrite))
              norm = matplotlib.colors.Normalize(vmin=0, vmax=1, clip=True) 
              mapper = cm.ScalarMappable(norm=norm, cmap=cm.gist_rainbow) 
 
@@ -377,12 +387,14 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,
                  for neuron_id, idx in n2d2idx_dict.items():
                      color = override_color if override_color else mapper.to_rgba(scatters['color'][idx])
                             # print(f"{idx}: {scatters['x']} - {scatters['y'][idx]}")
-                            
-                     sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
-                                      marker='.', s=1)
-             plotDict(nid2idx, 'g')
-            #  plotDict(nid2idx_rejected, 'm')
-             ax1.set_title(f"{len(nid2idx)} Synapses used (green) out of {len(nid2idx)+len(nid2idx_rejected)} potential detected (magenta - rejected)") 
+                     if fill_ROIs:
+                        ax1.fill(scatters["x"][idx], scatters["y"][idx], color = color, alpha = 0.5)     
+                     else:
+                        sc = ax1.scatter(scatters["x"][idx], scatters['y'][idx], color = color, 
+                                      marker='.', s=5)
+             plotDict(nid2idx_synapse, 'teal')
+             plotDict(nid2idx_dendrite, 'orange')
+             ax1.set_title(f"{len(nid2idx_synapse)} Synaptic Puncta (red) and {len(nid2idx_dendrite)} Dendritic Events (gold); {len(nid2idx)} Total ROIs") 
 
              plt.savefig(save_path)
              plt.close(fig)
