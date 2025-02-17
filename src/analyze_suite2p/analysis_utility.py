@@ -145,7 +145,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
 
         ops = suite2p_dict["ops"]
         Img = plotting_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID, nid2idx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *suite2p_utility.SUITE2P_STRUCTURE['iscell'])
         parent_iscell = suite2p_utility.load_npy_array(iscell_path)
         updated_iscell = parent_iscell.copy()
@@ -170,7 +170,8 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         print(f"csvs created for {suite2p_output}")
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
-        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, nid2idx_dendrite, nid2idx_synapse,
+                                   pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path, fill_ROIs=True)
 
     print(f"{len(suite2p_outputs)} .csv files were saved under {Path(config.general_settings.main_folder) / 'csv_files'}")
 
