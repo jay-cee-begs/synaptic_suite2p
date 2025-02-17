@@ -66,7 +66,7 @@ def get_all_image_folders_in_path(path):
     return found_image_folders
 
 
-def process_files_with_suite2p(image_list):
+def process_files_with_suite2p(image_list, ops):
         """
         Processes a list of image paths using the run_s2p function, applying specified configurations.
 
@@ -89,21 +89,26 @@ def process_files_with_suite2p(image_list):
                     'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
                  }
             
-                 opsEnd = run_s2p(ops=config.general_settings.ops, db=db)
+                 opsEnd = run_s2p(ops=ops, db=db)
             except (ValueError, AssertionError, IndexError) as e:
                  print(f"Error processing {image_path}: {e}")
 
 def main():
+    import numpy as np
     config = config_loader.load_json_config_file()
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
+    ops_path = config.general_settings.ops_path
+    ops = np.load(ops_path, allow_pickle=True).item()
+    ops['frame_rate'] = config.general_settings.frame_rate
+    ops['input_format'] = data_extension
     img_folders = get_all_image_folders_in_path(main_folder)
-    if len(img_folders) == 0:
-        export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
+    # if len(img_folders) == 0:
+    export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     if len(suite2p_samples) != len(image_folders):#TODO implement this or configurations.overwrite == False:
-        process_files_with_suite2p(image_folders)
+        process_files_with_suite2p(image_folders,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = config.analysis_params.overwrite_csv, 
                                                       check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
