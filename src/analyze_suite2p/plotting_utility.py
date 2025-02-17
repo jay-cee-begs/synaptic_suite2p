@@ -307,7 +307,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
     nid2idx_rejected = {}
-    nid2dx_dendrite = {}
+    nid2idx_dendrite = {}
     nid2idx_synapse = {}
     synapse_ID = []
     print(f"Number of detected ROIs: {stat.shape[0]}")
@@ -325,7 +325,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
 
                 if compact >= MIN_COMPACT:
-                    nid2dx_dendrite[n] = len(scatters["x"])
+                    nid2idx_dendrite[n] = len(scatters["x"])
                 else:
                     nid2idx_synapse[n] = len(scatters["x"])
             else:
@@ -360,7 +360,7 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
             scatters['y'] += [yext]
             pixel2neuron[ypix, xpix] = n
 
-    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse
+    return scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2idx_dendrite, nid2idx_synapse
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2idx_synapse,
              pixel2neuron, F, Fneu, save_path, fill_ROIs=False, axs=None):
