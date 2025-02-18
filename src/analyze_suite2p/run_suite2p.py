@@ -107,12 +107,24 @@ def main():
     export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
-    if len(suite2p_samples) != len(image_folders):#TODO implement this or configurations.overwrite == False:
-        process_files_with_suite2p(image_folders,ops)
+    for image in image_folders:
+        if image not in suite2p_samples:
+            process_files_with_suite2p(image,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = config.analysis_params.overwrite_csv, 
                                                       check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
     analysis_utility.create_experiment_summary(main_folder)
+    import json
+    config_dict = config_loader.load_json_dict()
+    with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+        json.dump(config_dict, f, indent = 4)
+    print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+    from datetime import datetime
+
+    now = datetime.now()
+
+    current_time = now.strftime("%H:%M:%S")
+    print("Current Time =", current_time)
     # analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
