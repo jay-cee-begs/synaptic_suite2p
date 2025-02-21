@@ -32,7 +32,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 destination = os.path.join(folder_path, file)
 
                 try:
-                    shutil.copy(source, destination)
+                    shutil.copy2(source, destination)
                     os.remove(source)
                     print(f"Processed and moved {file} to {folder_path}")
                 except Exception as e:
