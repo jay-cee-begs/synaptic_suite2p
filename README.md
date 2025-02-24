@@ -2,7 +2,7 @@
 
 A semi-automated calcium imaging detection (using suite2p) and deconvolution (using cascade) pipeline for primary neuronal culture calcium imaging using widefield microscopy
 
-This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting NMDA synaptic puncta in 0mM Mg2+ solutions with TTX. I DO NOT OWN OR CLAIM RIGHTS TO ANY OF THE CODE PRODUCED BY Carsen Stringer and MouseLand Labs
+This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting NMDA synaptic puncta in 0mM Mg2+ solutions with TTX. 
 
 ## Setup and Installation 
 You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.9, etc)
