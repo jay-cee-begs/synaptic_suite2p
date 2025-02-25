@@ -159,8 +159,7 @@ class ConfigEditor:
                 "peak_count":self.peak_threshold,
                 "skew": self.skew_threshold,
                 "compact": self.compact_threshold,
-                "overwrite_csv": self.overwrite_csv,
-                "overwrite_pkl": self.overwrite_pkl,
+                "overwrite_suite2p": self.overwrite_suite2p,
                 "img_overlay": self.img_overlay,
                 "use_suite2p_ROI_classifier": self.use_iscell,
             },
@@ -299,8 +298,7 @@ class ConfigEditor:
             with open(analysis_params_path, 'r') as f:
                 analysis_params = json.load(f)
         else:
-            analysis_params = {'overwrite_csv': False,
-            'overwrite_pkl': False,
+            analysis_params = {'overwritesuite2p': False,
             'skew_threshold': 1.0,
             'compactness_threshold': 1.4, #TODO implement cutoff / filter to rule out compact failing ROIs
             "peak_detection_threshold": 4.5,
