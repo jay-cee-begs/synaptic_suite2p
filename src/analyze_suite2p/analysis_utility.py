@@ -117,7 +117,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
 
     return df, processed_df#, aggregate_stats
 
-def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
+def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_iscell = True):
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -135,10 +135,7 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         output_directory = os.path.basename(suite2p_output)
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
         processed_path = os.path.join(output_path, f"processed_{output_directory}.csv")
-        if os.path.exists(translated_path) and not overwrite:
-            print(f"CSV file {translated_path} already exists!")
-            continue
-
+        
         suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, config.general_settings.groups, input_path)
         
         raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
@@ -243,7 +240,7 @@ def calculate_binned_stats(input_df):
 
 
 
-def process_spike_csvs_to_pkl(input_path, overwrite=False):
+def process_spike_csvs_to_pkl(input_path):
     """This will convert .csv files into pickle files which behave like dataframes; but are faster and preserve CPU RAM"""
     csv_path = os.path.join(input_path, 'csv_files')
     output_path = os.path.join(input_path, 'pkl_files')
@@ -256,10 +253,6 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
                                         f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
-
-            if os.path.exists(processed_path) and not overwrite:
-                print(f"Processed file {processed_path} already exists!")
-                continue
                 
             if config.general_settings.FILTER_NEURONS:
                 spike_df = spike_df[spike_df["IsUsed"]]

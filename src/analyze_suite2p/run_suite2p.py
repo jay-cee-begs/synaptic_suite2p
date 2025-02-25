@@ -110,8 +110,7 @@ def main():
     for image in image_folders:
         if image not in suite2p_samples:
             process_files_with_suite2p(image,ops)
-    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = config.analysis_params.overwrite_csv, 
-                                                      check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
+    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
     analysis_utility.create_experiment_summary(main_folder)
     import json
