@@ -17,8 +17,7 @@ class OpsEditor:
         
     # Define the parameters you want to allow editing, optionally have all be editable? CHANGE TO RELEVANT PARAMETERS
         self.editable_params = { #self.default_analysis_parameters
-            'overwrite_csv': False,
-            'overwrite_pkl': False,
+            'overwrite_suite2p': False,
             'skew_threshold': 1.0,
             'compactness_threshold': 1.4,
             "peak_detection_threshold": 4.5,
