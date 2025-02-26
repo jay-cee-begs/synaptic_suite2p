@@ -303,11 +303,14 @@ def boundary(ypix,xpix):
 def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
+    F = suite2p_dict['F']
+    Fneu = suite2p_dict['Fneu']
     MIN_COUNT = int(config.analysis_params.peak_count_threshold) # minimum number of detected spikes for ROI inclusion
     MIN_SKEW = float(config.analysis_params.skew_threshold)
     MIN_COMPACT = float(config.analysis_params.compactness_threshold)
-    # min_pixel = 25
-    # min_footprint = 0
+    MIN_PIXEL = 25 #int(config.analysis_params.pixel_threshold)
+    # MAX_PIXEL = 100
+    # MIN_FOOTPRINT = 0
     pixel2neuron = np.full(frame_shape, fill_value=np.nan, dtype=float)
     scatters = dict(x=[], y=[], color=[], text=[])
     nid2idx = {}
@@ -322,17 +325,23 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
         for n in range(stat.shape[0]):
             peak_count = output_df.iloc[n]["PeakCount"]
             skew = stat.iloc[n]['skew']
-            # footprint = stat.iloc[n]['footprint']
+            footprint = stat.iloc[n]['footprint']
             compact = stat.iloc[n]['compact']
+            npix = stat.iloc[n]['npix']
+            f = F[n]
+            fneu = Fneu[n]
 
-            if peak_count >= MIN_COUNT and skew >=MIN_SKEW:
+            if peak_count >= MIN_COUNT and skew >=MIN_SKEW and npix > MIN_PIXEL and np.median(f) > np.median(fneu) and np.mean(f) > np.mean(fneu):
                 synapse_ID.append(n)
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
 
-                if compact >= MIN_COMPACT:
-                    nid2idx_dendrite[n] = len(scatters["x"])
-                else:
+                if compact <= MIN_COMPACT:
                     nid2idx_synapse[n] = len(scatters["x"])
+                else:
+                    if npix > 50:
+                        nid2idx_dendrite[n] = len(scatters["x"])
+                    else:
+                        nid2idx_rejected[n] = len(scatters["x"])
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
             
