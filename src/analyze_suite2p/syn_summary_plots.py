@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
 
 
-def plot_with_stats(data, metric, plot_type="violin"):
+def plot_with_stats(data, metric, plot_type="violin", groups = None):
     """
     Plots the specified metric for all groups in the 'Group' column and adds statistical annotations.
 
@@ -14,9 +14,10 @@ def plot_with_stats(data, metric, plot_type="violin"):
     - plot_type: str, the type of plot (e.g., "violin", "box", "swarm", "bar", "point").
     """
     # Dynamically fetch all groups from the 'Group' column
-    
-    groups = data["Experimental Group"].unique().tolist()
-
+    if groups is None:
+        groups = data["Experimental Group"].unique().tolist()
+    else:
+        groups = groups
     # Filter the data for the specified groups (in case you want to look at only a few of the groups)
     filtered_data = data[data["Experimental Group"].isin(groups)]
 
@@ -68,7 +69,7 @@ def load_experiment_csv(file_path):
 
     return groups, metrics, data
 
-if __name__ == "__main__":
+def main():
     file_path = input("Please enter .csv file path: \n")
     graph_type = input("Please choose the type of graph to plot\n(e.g. violin, box, swarm,bar, point)\n")
     accepted_types = ["violin","box","swarm","bar","point"]
@@ -79,3 +80,6 @@ if __name__ == "__main__":
     groups, metrics, data = load_experiment_csv(file_path)
     for metric in metrics:
         plot_with_stats(data, metric = metric, plot_type=graph_type) 
+
+if __name__ == "__main__":
+    main()
