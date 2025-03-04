@@ -331,17 +331,17 @@ def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
             f = F[n]
             fneu = Fneu[n]
 
-            if peak_count >= MIN_COUNT and skew >=MIN_SKEW and npix > MIN_PIXEL and np.median(f) > np.median(fneu) and np.mean(f) > np.mean(fneu):
+            if peak_count >= MIN_COUNT and skew >=MIN_SKEW:
                 synapse_ID.append(n)
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
 
                 if compact <= MIN_COMPACT:
                     nid2idx_synapse[n] = len(scatters["x"])
                 else:
-                    if npix > 50:
+                    # if npix > 50:
                         nid2idx_dendrite[n] = len(scatters["x"])
-                    else:
-                        nid2idx_rejected[n] = len(scatters["x"])
+                    # else:
+                    #     nid2idx_rejected[n] = len(scatters["x"])
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
             
