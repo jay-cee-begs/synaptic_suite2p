@@ -109,6 +109,14 @@ def get_experimental_dates(main_folder):
     sample_dict = {}
     for well in well_folders:
         date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
+    i = 0
+    for date in date_list:
+        if type(date) != int:
+            i=1
+    if i == 1:
+        date_list = []
+        for well in well_folders:
+            date_list.append(os.path.basename(well)[0:4])
     distinct_dates = [i for i in set(date_list)]
     distinct_dates.sort(key=lambda x: int(x))
  
