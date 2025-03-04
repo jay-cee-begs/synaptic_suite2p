@@ -91,10 +91,10 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "Amplitudes": spike_amplitudes,
                         "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
-                       "Total Frames": len(suite2p_dict["F"].T),
-                       "Experimental Group": suite2p_dict['Group'],
-                       "Replicate No.": suite2p_dict['sample'],
-                       "File Name": suite2p_dict['file_name']
+                       "Total_Frames": len(suite2p_dict["F"].T),
+                       "Experimental_Group": suite2p_dict['Group'],
+                       "Replicate_No.": suite2p_dict['sample'],
+                       "File_Name": suite2p_dict['file_name']
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
@@ -117,7 +117,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
 
     return df, processed_df#, aggregate_stats
 
-def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_iscell=False, update_iscell = True):
+def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_iscell = True):
     """This will create .csv files for each video loaded from out data fram function below.
         The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
         
@@ -135,17 +135,14 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         output_directory = os.path.basename(suite2p_output)
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
         processed_path = os.path.join(output_path, f"processed_{output_directory}.csv")
-        if os.path.exists(translated_path) and not overwrite:
-            print(f"CSV file {translated_path} already exists!")
-            continue
-
+        
         suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, config.general_settings.groups, input_path)
         
         raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
 
         ops = suite2p_dict["ops"]
         Img = plotting_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID, nid2idx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *suite2p_utility.SUITE2P_STRUCTURE['iscell'])
         parent_iscell = suite2p_utility.load_npy_array(iscell_path)
         updated_iscell = parent_iscell.copy()
@@ -170,7 +167,8 @@ def translate_suite2p_outputs_to_csv(input_path, overwrite=False, check_for_isce
         print(f"csvs created for {suite2p_output}")
 
         image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
-        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path)
+        plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, nid2idx_dendrite, nid2idx_synapse,
+                                   pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path, fill_ROIs=True)
 
     print(f"{len(suite2p_outputs)} .csv files were saved under {Path(config.general_settings.main_folder) / 'csv_files'}")
 
@@ -181,11 +179,11 @@ def create_experiment_summary(main_folder):
     df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in processed_csvs]
     merged_df = pd.concat(df_list, ignore_index=True)
     agg_columns = merged_df.select_dtypes(['float64', 'int'])
-    aggregate_stats = agg_columns.groupby(merged_df['File Name']).agg(['mean', 'std', 'median']).reset_index()
+    aggregate_stats = agg_columns.groupby(merged_df['File_Name']).agg(['mean', 'std', 'median']).reset_index()
 
 # Include non-numeric columns in the final aggregated dataframe
-    aggregate_stats['Experimental Group'] = merged_df.groupby('File Name')['Experimental Group'].first().values
-    aggregate_stats['Replicate No.'] = merged_df.groupby('File Name')['Replicate No.'].first().values
+    aggregate_stats['Experimental_Group'] = merged_df.groupby('File_Name')['Experimental_Group'].first().values
+    aggregate_stats['Replicate_No.'] = merged_df.groupby('File_Name')['Replicate_No.'].first().values
     
     merged_df.to_csv(os.path.join(config.general_settings.main_folder, 'experiment_summary.csv'))
     return aggregate_stats, merged_df
@@ -242,7 +240,7 @@ def calculate_binned_stats(input_df):
 
 
 
-def process_spike_csvs_to_pkl(input_path, overwrite=False):
+def process_spike_csvs_to_pkl(input_path):
     """This will convert .csv files into pickle files which behave like dataframes; but are faster and preserve CPU RAM"""
     csv_path = os.path.join(input_path, 'csv_files')
     output_path = os.path.join(input_path, 'pkl_files')
@@ -255,10 +253,6 @@ def process_spike_csvs_to_pkl(input_path, overwrite=False):
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
                                         f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
-
-            if os.path.exists(processed_path) and not overwrite:
-                print(f"Processed file {processed_path} already exists!")
-                continue
                 
             if config.general_settings.FILTER_NEURONS:
                 spike_df = spike_df[spike_df["IsUsed"]]

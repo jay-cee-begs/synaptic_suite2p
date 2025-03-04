@@ -32,7 +32,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 destination = os.path.join(folder_path, file)
 
                 try:
-                    shutil.copy(source, destination)
+                    shutil.copy2(source, destination)
                     os.remove(source)
                     print(f"Processed and moved {file} to {folder_path}")
                 except Exception as e:
@@ -66,7 +66,7 @@ def get_all_image_folders_in_path(path):
     return found_image_folders
 
 
-def process_files_with_suite2p(image_list):
+def process_files_with_suite2p(image_list, ops):
         """
         Processes a list of image paths using the run_s2p function, applying specified configurations.
 
@@ -89,25 +89,49 @@ def process_files_with_suite2p(image_list):
                     'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
                  }
             
-                 opsEnd = run_s2p(ops=config.general_settings.ops, db=db)
-            except (ValueError, AssertionError, IndexError) as e:
+                 opsEnd = run_s2p(ops=ops, db=db)
+            except (ValueError, AssertionError, IndexError, Exception) as e:
                  print(f"Error processing {image_path}: {e}")
 
-def main():
-    config = config_loader.load_json_config_file()
+def main(config_file = None):
+    import numpy as np
+    if config_file is not None:
+        config = config_loader.load_json_config_file(config_file)
+    else:
+        config = config_loader.load_json_config_file()
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
+    ops_path = config.general_settings.ops_path
+    ops = np.load(ops_path, allow_pickle=True).item()
+    ops['frame_rate'] = config.general_settings.frame_rate
+    ops['input_format'] = data_extension
     img_folders = get_all_image_folders_in_path(main_folder)
-    if len(img_folders) == 0:
-        export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
+    # if len(img_folders) == 0:
+    export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
-    if len(suite2p_samples) != len(image_folders):#TODO implement this or configurations.overwrite == False:
-        process_files_with_suite2p(image_folders)
-    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, overwrite = config.analysis_params.overwrite_csv, 
-                                                      check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
+    unprocessed_files = []
+    if config.analysis_params.overwrite_suite2p:
+        process_files_with_suite2p(image_folders, ops)
+    else:
+        for image in image_folders:
+            if image not in suite2p_samples:
+                unprocessed_files.append(image)
+    process_files_with_suite2p(unprocessed_files,ops)
+    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
     analysis_utility.create_experiment_summary(main_folder)
+    import json
+    config_dict = config_loader.load_json_dict()
+    with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+        json.dump(config_dict, f, indent = 4)
+    print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+    from datetime import datetime
+
+    now = datetime.now()
+
+    current_time = now.strftime("%H:%M:%S")
+    print("Current Time =", current_time)
     # analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
