@@ -91,10 +91,10 @@ def translate_suite2p_dict_to_df(suite2p_dict):
                        "Amplitudes": spike_amplitudes,
                         "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
-                       "Total Frames": len(suite2p_dict["F"].T),
-                       "Experimental Group": suite2p_dict['Group'],
-                       "Replicate No.": suite2p_dict['sample'],
-                       "File Name": suite2p_dict['file_name']
+                       "Total_Frames": len(suite2p_dict["F"].T),
+                       "Experimental_Group": suite2p_dict['Group'],
+                       "Replicate_No.": suite2p_dict['sample'],
+                       "File_Name": suite2p_dict['file_name']
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
@@ -179,11 +179,11 @@ def create_experiment_summary(main_folder):
     df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in processed_csvs]
     merged_df = pd.concat(df_list, ignore_index=True)
     agg_columns = merged_df.select_dtypes(['float64', 'int'])
-    aggregate_stats = agg_columns.groupby(merged_df['File Name']).agg(['mean', 'std', 'median']).reset_index()
+    aggregate_stats = agg_columns.groupby(merged_df['File_Name']).agg(['mean', 'std', 'median']).reset_index()
 
 # Include non-numeric columns in the final aggregated dataframe
-    aggregate_stats['Experimental Group'] = merged_df.groupby('File Name')['Experimental Group'].first().values
-    aggregate_stats['Replicate No.'] = merged_df.groupby('File Name')['Replicate No.'].first().values
+    aggregate_stats['Experimental_Group'] = merged_df.groupby('File_Name')['Experimental_Group'].first().values
+    aggregate_stats['Replicate_No.'] = merged_df.groupby('File_Name')['Replicate_No.'].first().values
     
     merged_df.to_csv(os.path.join(config.general_settings.main_folder, 'experiment_summary.csv'))
     return aggregate_stats, merged_df
