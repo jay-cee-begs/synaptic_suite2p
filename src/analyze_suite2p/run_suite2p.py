@@ -93,9 +93,12 @@ def process_files_with_suite2p(image_list, ops):
             except (ValueError, AssertionError, IndexError, Exception) as e:
                  print(f"Error processing {image_path}: {e}")
 
-def main():
+def main(config_file = None):
     import numpy as np
-    config = config_loader.load_json_config_file()
+    if config_file is not None:
+        config = config_loader.load_json_config_file(config_file)
+    else:
+        config = config_loader.load_json_config_file()
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
     ops_path = config.general_settings.ops_path
@@ -109,7 +112,7 @@ def main():
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     unprocessed_files = []
     if config.analysis_params.overwrite_suite2p:
-        process_files_with_suite2p(image_folders)
+        process_files_with_suite2p(image_folders, ops)
     else:
         for image in image_folders:
             if image not in suite2p_samples:
