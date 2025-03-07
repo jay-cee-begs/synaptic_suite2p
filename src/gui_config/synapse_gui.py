@@ -306,7 +306,8 @@ class ConfigEditor:
             'Img_Overlay': 'max_proj',
             'use_suite2p_ROI_classifier': False,
             'update_suite2p_iscell': True,
-            'return_decay_times': False,}
+            'return_decay_times': True,
+            }
 
         config_data = {
             "general_settings":{

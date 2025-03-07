@@ -11,7 +11,7 @@ config = config_loader.load_json_config_file()
 def calculate_cell_freq(input_df):
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
     return output_df
 
@@ -159,8 +159,9 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
         synapse_key = list(synapseID)
         raw_data['IsUsed'] = raw_data.index.isin(synapse_key)# .loc[synapse_key, 'IsUsed'] = True
 
-        processed_data['Active_Synapses'] = len(synapseID)
-
+        processed_data['synapse_ROI'] = len(nid2idx_synapse)
+        processed_data['dendrite_ROI'] = len(nid2idx_dendrite)
+        processed_data['total_ROIs'] = len(nid2idx)
 
         raw_data.to_csv(translated_path)
         processed_data.to_csv(processed_path)
@@ -179,13 +180,15 @@ def create_experiment_summary(main_folder):
     df_list = [pd.read_csv(os.path.join(csv_file_path, csv)) for csv in processed_csvs]
     merged_df = pd.concat(df_list, ignore_index=True)
     agg_columns = merged_df.select_dtypes(['float64', 'int'])
-    aggregate_stats = agg_columns.groupby(merged_df['File_Name']).agg(['mean', 'std', 'median']).reset_index()
+    aggregate_stats = agg_columns.groupby([merged_df['File_Name'], merged_df['classification']]).agg(['mean', 'std', 'median']).reset_index()
 
 # Include non-numeric columns in the final aggregated dataframe
-    aggregate_stats['Experimental_Group'] = merged_df.groupby('File_Name')['Experimental_Group'].first().values
-    aggregate_stats['Replicate_No.'] = merged_df.groupby('File_Name')['Replicate_No.'].first().values
+    aggregate_stats['Experimental_Group'] = merged_df.groupby(['File_Name', 'classification'])['Experimental_Group'].first().values
+    aggregate_stats['Replicate_No.'] = merged_df.groupby(['File_Name', 'classification'])['Replicate_No.'].first().values
+    main_group = config.general_settings.main_folder.split('\\')[-1]
+    merged_df.to_csv(os.path.join(config.general_settings.main_folder, f'{main_group}_experiment_summary.csv'))
+    aggregate_stats.to_csv(os.path.join(config.general_settings.main_folder, f'{main_group}_aggregate_summary.csv'))
     
-    merged_df.to_csv(os.path.join(config.general_settings.main_folder, 'experiment_summary.csv'))
     return aggregate_stats, merged_df
 
 def list_all_files_of_type(input_path, filetype):
