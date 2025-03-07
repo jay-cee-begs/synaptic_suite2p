@@ -99,14 +99,14 @@ def main(config_file = None):
         config = config_loader.load_json_config_file(config_file)
     else:
         config = config_loader.load_json_config_file()
+    config_dict = config_loader.load_json_dict()
+
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension
     ops_path = config.general_settings.ops_path
     ops = np.load(ops_path, allow_pickle=True).item()
     ops['frame_rate'] = config.general_settings.frame_rate
     ops['input_format'] = data_extension
-    img_folders = get_all_image_folders_in_path(main_folder)
-    # if len(img_folders) == 0:
     export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
@@ -120,9 +120,8 @@ def main(config_file = None):
     process_files_with_suite2p(unprocessed_files,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
-    analysis_utility.create_experiment_summary(main_folder)
+    analysis_utility.create_experiment_summary(main_folder) 
     import json
-    config_dict = config_loader.load_json_dict()
     with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
         json.dump(config_dict, f, indent = 4)
     print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
