@@ -15,39 +15,39 @@ def plot_with_stats(data, metric, plot_type="violin", groups = None):
     """
     # Dynamically fetch all groups from the 'Group' column
     if groups is None:
-        groups = data["Experimental Group"].unique().tolist()
+        groups = data["Experimental_Group"].unique().tolist()
     else:
         groups = groups
     # Filter the data for the specified groups (in case you want to look at only a few of the groups)
-    filtered_data = data[data["Experimental Group"].isin(groups)]
+    filtered_data = data[data["Experimental_Group"].isin(groups)]
 
     # Create the plot
     plt.figure(figsize=(10, 6))
     ax = None
 
     if plot_type == "violin":
-        ax = sns.violinplot(data=filtered_data, x="Experimental Group", y=metric, inner="quartile", palette="muted")
+        ax = sns.violinplot(data=filtered_data, x="Experimental_Group", y=metric, inner="quartile", palette="muted")
     elif plot_type == "box":
-        ax = sns.boxplot(data=filtered_data, x="Experimental Group", y=metric, palette="muted")
+        ax = sns.boxplot(data=filtered_data, x="Experimental_Group", y=metric, palette="muted")
     elif plot_type == "swarm":
-        ax = sns.swarmplot(data=filtered_data, x="Experimental Group", y=metric, palette="muted", dodge=True)
+        ax = sns.swarmplot(data=filtered_data, x="Experimental_Group", y=metric, palette="muted", dodge=True)
     elif plot_type == "bar":
-        ax = sns.barplot(data=filtered_data, x="Experimental Group", y=metric, ci="sd", palette="muted")
+        ax = sns.barplot(data=filtered_data, x="Experimental_Group", y=metric, ci="sd", palette="muted")
     elif plot_type == "point":
-        ax = sns.pointplot(data=filtered_data, x="Experimental Group", y=metric, ci="sd", palette="muted", dodge=True)
+        ax = sns.pointplot(data=filtered_data, x="Experimental_Group", y=metric, ci="sd", palette="muted", dodge=True)
 
     # Define pairwise comparisons dynamically from the groups
     pairs = [(groups[i], groups[j]) for i in range(len(groups)) for j in range(i + 1, len(groups))]
 
     # Add annotations
-    annotator = Annotator(ax, pairs, data=filtered_data, x="Experimental Group", y=metric)
+    annotator = Annotator(ax, pairs, data=filtered_data, x="Experimental_Group", y=metric)
     annotator.configure(test="Kruskal", text_format="star", loc="inside", verbose=2)
     annotator.apply_and_annotate()
 
     # Customize and show the plot
     plt.title(f"{metric.replace('_', ' ')} ({plot_type.capitalize()} Plot)", fontsize=14)
     plt.ylabel(metric.replace('_', ' '), fontsize=12)
-    plt.xlabel("Experimental Group", fontsize=12)
+    plt.xlabel("Experimental_Group", fontsize=12)
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
@@ -63,9 +63,9 @@ def load_experiment_csv(file_path):
         "SpikesFreq",
         "AvgAmplitude",
         "AvgDecayTime",
-        "Active_Synapses"
+        "total_ROIs"
     ]
-    groups = data["Experimental Group"].unique().tolist()
+    groups = data["Experimental_Group"].unique().tolist()
 
     return groups, metrics, data
 
