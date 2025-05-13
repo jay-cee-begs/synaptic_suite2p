@@ -109,14 +109,14 @@ def get_experimental_dates(main_folder):
     sample_dict = {}
     for well in well_folders:
         date_list.append(os.path.basename(well)[0:6]) ## append dates; should change if the date is not in the beginning of the file name usually [:6]
-    i = 0
-    for date in date_list:
-        if type(date) != int:
-            i=1
-    if i == 1:
-        date_list = []
-        for well in well_folders:
-            date_list.append(os.path.basename(well)[0:4])
+    # i = 0
+    # for date in date_list:
+    #     if type(date) != int:
+    #         i=1
+    # if i == 1:
+    #     date_list = []
+    #     for well in well_folders:
+    #         date_list.append(os.path.basename(well)[0:4])
     distinct_dates = [i for i in set(date_list)]
     distinct_dates.sort(key=lambda x: int(x))
  
@@ -149,6 +149,7 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     if not groups:
+        pass
         raise ValueError("The 'groups' list is empty. Please provide valid group names...")
 
     print(f"Data folder: {data_folder}")
@@ -165,10 +166,10 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-    if "Group" not in suite2p_dict:
-        raise KeyError("'Group' key not found in suite2p_dict.")
-    if not found_group:
-        raise KeyError(f"No group found in the data_folder path: {data_folder}")
+    # if "Group" not in suite2p_dict:
+    #     raise KeyError("'Group' key not found in suite2p_dict.")
+    # if not found_group:
+    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
     sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
