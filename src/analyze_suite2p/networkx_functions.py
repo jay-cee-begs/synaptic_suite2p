@@ -3,12 +3,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import networkx as nx
-from run_cascade import functions_data_transformation as transform
-from batch_process import gui_configurations as configurations
+from analyze_suite2p import suite2p_utility as transform
+from analyze_suite2p.config_loader import load_json_config_file
+
+configurations = load_json_config_file()
 
 
 
-from run_cascade import functions_data_transformation as transform
 import numpy as np
 import matplotlib.pyplot as plt
 import os
