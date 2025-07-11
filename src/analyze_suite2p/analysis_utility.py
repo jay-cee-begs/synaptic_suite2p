@@ -167,7 +167,7 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
         processed_data.to_csv(processed_path)
         print(f"csvs created for {suite2p_output}")
 
-        image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO explore changing "input path" to "suite2p_output" to save the processing in the same 
+        image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO add GUI config for choosing image type to save default should be .png and fix svg output so text is scaled correctly
         plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, nid2idx_dendrite, nid2idx_synapse,
                                    pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path, fill_ROIs=True)
 
@@ -261,8 +261,8 @@ def process_spike_csvs_to_pkl(input_path):
                 spike_df = spike_df[spike_df["IsUsed"]]
                 
             processed_dict = {
-                "cell_stats": calculate_cell_stats(spike_df),#, #consider removing binned_stats for now unless there becomes a need for synapse synchronization / congruence
-                "binned_stats": calculate_binned_stats(spike_df)}
+                "cell_stats": calculate_cell_stats(spike_df)}#,#, #consider removing binned_stats for now unless there becomes a need for synapse synchronization / congruence
+                # "binned_stats": calculate_binned_stats(spike_df)}
             
 
             pd.to_pickle(processed_dict, processed_path)
