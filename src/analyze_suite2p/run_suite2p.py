@@ -107,6 +107,7 @@ def main(config_file = None):
     ops = np.load(ops_path, allow_pickle=True).item()
     ops['frame_rate'] = config.general_settings.frame_rate
     ops['input_format'] = data_extension
+    ops['max_iterations'] = 20
     export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
