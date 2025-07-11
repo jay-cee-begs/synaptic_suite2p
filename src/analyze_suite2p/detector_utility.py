@@ -28,7 +28,7 @@ def calculate_deltaF(F_file):
         F_baseline = np.median(F_sample)
         normalized_F = (corrected_trace-F_baseline)/F_baseline
         baseline_correction = BaselineRemoval(normalized_F)
-        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 1000, repitition=50)
+        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10)
         deltaF.append(ZhangFit_normalized)
         
     deltaF = np.array(deltaF)
