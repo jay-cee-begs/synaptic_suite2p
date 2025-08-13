@@ -25,7 +25,7 @@ def calculate_deltaF(F_file):
         F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
                     corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
         #TODO decide if mean, median or mode is best for deltaF calculations
-        F_baseline = np.median(F_sample)
+        F_baseline = F_baseline = np.percentile(F_sample, 10)
         normalized_F = (corrected_trace-F_baseline)/F_baseline
         baseline_correction = BaselineRemoval(normalized_F)
         ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10)
