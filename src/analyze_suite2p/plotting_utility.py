@@ -235,7 +235,7 @@ def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_l
 #     
         # plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
         spike_times = df_cell_stats[df_cell_stats['SynapseID'] == idx]['PeakTimes'].values[0]
-        plt.scatter(spike_times, [i]*len(spike_times), color = f'C{idx}', linewidths=0.2, s=8, alpha=0.8) #"#4e4d4d" edgecolors='black'
+        plt.scatter(spike_times, [i]*len(spike_times), color = "#4e4d4d", linewidths=0.2, s=8, alpha=0.8) #"#4e4d4d" edgecolors='black' f'C{idx}'
 
         plt.ylabel('SynapseID')
         plt.xlabel('Time (s)')
