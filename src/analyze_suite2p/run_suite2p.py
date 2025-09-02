@@ -121,7 +121,10 @@ def main(config_file = None):
     process_files_with_suite2p(unprocessed_files,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
-    analysis_utility.process_spike_csvs_to_pkl(config.main_folder)
+    try:
+        analysis_utility.process_spike_csvs_to_pkl(main_folder)
+    except KeyError as e:
+        print("created pkl files from csv, but error occurred, please check manually")
     analysis_utility.create_experiment_summary(main_folder) 
     import json
     with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
