@@ -419,7 +419,7 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2i
              ax1.set_title(f"{len(nid2idx_synapse)} Synaptic Puncta (red) and {len(nid2idx_dendrite)} Dendritic Events (gold); {len(nid2idx)} Total ROIs") 
 
              plt.savefig(save_path)
-            #  plt.close(fig)
+             plt.close(fig)
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
     """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
