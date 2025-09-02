@@ -166,10 +166,10 @@ def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
-    # if "Group" not in suite2p_dict:
-    #     raise KeyError("'Group' key not found in suite2p_dict.")
-    # if not found_group:
-    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
+    if "Group" not in suite2p_dict:
+        raise KeyError("'Group' key not found in suite2p_dict.")
+    if not found_group:
+        raise KeyError(f"No group found in the data_folder path: {data_folder}")
 
     sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
    
