@@ -14,21 +14,20 @@ Alternatively you should download a zip file of the code and save it somewhere y
 
 ### INSTALLING SUITE2P
 
-1. Navigate to the local copy you have of the synaptic_suite2p repository in a terminal window using the `cd` command and the path to the copied repository
+1. Make a fork of this online repository to your personal Github; set up to track this repo to get all future updates
 
-2. Create a virtual environment in anaconda / miniforge for suite2p using python 3.9 by running the command `conda create -n suite2p python=3.9`
+2. Make a local copy of the synaptic suite2p repository on your computer saved in \Documents\Github\synaptic_suite2p
 
-3. Next move into the folder requirements_txt_files using the command `cd requirements_txt_files`
+3. Navigate to the local directory where your clone of the repository is saved. Do this in an anaconda or miniforge terminal window using the `cd` command and the path to the copied repository
 
-4. Run the command `pip install -r syn-suite2p-req.txt` to install all necessary packages for analysis
+4. Create a virtual environment in anaconda / miniforge for suite2p using python 3.9 by running the command `conda create -n suite2p python=3.9`
 
-5. To confirm suite2p installed correctly, you can also run the command `python -m pip install suite2p[gui]` to make sure you have access to the suite2p user interface
+5. To confirm suite2p installed correctly, follow Mouseland's guidelines and run the command `python -m pip install suite2p[gui]` to make sure you have access to the suite2p user interface. The version used for this project was suite2p==0.14.0
 
-6. Lastly, please run `pip install -e ..` from the requirements_txt_files folder to install the setup.py file (or run `pip install -e .` from the main project folder of synaptic_suite2p)
+6. Lastly, please run `pip install -e .` from the main project folder of synaptic_suite2p
 
-Note: Some packages for different image file type imports to suite2p might need to be installed manually (e.g. for Nikon ND2 files, `pip install nd2`)
 
-**NOTE**: some additional packages will need to be installed (e.g.`pip install networkx leidenalg`)
+**NOTE**: some additional packages will need to be installed (e.g.`pip install nd2 seaborn BaselineRemoval`)
 
 # Workflow
 
