@@ -3,19 +3,25 @@ import sys
 
 import pandas as pd
 import numpy as np
-folder = r'C:\Users\jcbeg\Desktop\004 - Cell Profiler TroubleShooting\sults'
+folder = r'C:\NMDA_skeletons'
 
-def merge_cellprofiler_csvs(folder, summary_file_name):
+def merge_cellprofiler_csvs(folder, summary_file_name = 'NMDA_synapse_experiment_summary.csv'):
     img_data = pd.read_csv(folder + r'\GCaMP6f_SkeletonizationImageArea.csv')
     skele_data = pd.read_csv(folder + r'\GCaMP6f_SkeletonizationImage.csv')
+    pix2micron = 3.0769
 
     merged_df = skele_data.merge(img_data, on="FileName_Originals")
 
     merged_df['FileName_Originals'] = merged_df['FileName_Originals'].str[4:-4]
     merged_df['Total Area'] = merged_df['AreaShape_BoundingBoxMaximum_Y'] * merged_df['AreaShape_BoundingBoxMaximum_X']
+    merged_df['Total Area um'] = (merged_df['AreaShape_BoundingBoxMaximum_Y']/pix2micron) * (merged_df['AreaShape_BoundingBoxMaximum_X']/pix2micron)
+
     merged_df['Normalized Skeleton Coverage'] = merged_df['AreaOccupied_AreaOccupied_Neurites_Skeleton']
+    merged_df["um Skeleton Coverage"] = merged_df['AreaOccupied_AreaOccupied_Neurites_Skeleton'] / pix2micron
     merged_df['Normalized Neurite Area'] = merged_df['AreaOccupied_AreaOccupied_Thresholded_Neurites']
-    merged_df = merged_df[['Normalized Neurite Area', "Normalized Skeleton Coverage", 'FileName_Originals']]
+    merged_df['um Neurite Area'] = merged_df['AreaOccupied_AreaOccupied_Thresholded_Neurites'] / pix2micron
+
+    merged_df = merged_df[['Normalized Neurite Area','um Neurite Area', "Normalized Skeleton Coverage",'um Skeleton Coverage', 'FileName_Originals']]
     sorted_skeletons = merged_df.sort_values(by="FileName_Originals").reset_index(drop=True)
     # print(sorted_skeletons)
     
@@ -38,4 +44,4 @@ def merge_cellprofiler_csvs(folder, summary_file_name):
 
 if __name__ == "__main__":
     df = merge_cellprofiler_csvs(folder)
-    print(df)
+    df.to_csv(os.path.join(folder, 'normalized_data.csv'))

@@ -204,7 +204,7 @@ def get_all_pkl_outputs_in_path(path):
     return processed_files, file_names[0]
 
 
-def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
+def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_label):
     """raster plot function for all graphs; also can plot event amplitude"""
     
     import warnings
@@ -230,24 +230,29 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
     
     #Make the figure
     plt.figure(figsize=(6,6))
-    plt.subplot(2,1,1)
+    plt.subplot(1,1,1)
     for i, idx in enumerate(df_cell_stats['SynapseID']):
 #     
-        plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
-#     
+        # plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
+        spike_times = df_cell_stats[df_cell_stats['SynapseID'] == idx]['PeakTimes'].values[0]
+        plt.scatter(spike_times, [i]*len(spike_times), color = "#4e4d4d", linewidths=0.2, s=8, alpha=0.8) #"#4e4d4d" edgecolors='black' f'C{idx}'
+
         plt.ylabel('SynapseID')
         plt.xlabel('Time (s)')
+        plt.ylim(0,2300)
         plt.tight_layout()
-    plt.subplot(2,1,2)
-    for i in range(1): #change range for multiple intervals
-        # plt.title(file_path)
-        # plt.title(f'interval {i+1}')
-        for idx in my_tsd.keys():
-            plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
-        plt.ylabel('Amplitude')
-        plt.ylim(0,max_amplitude)
-        plt.xlabel('Spike time (s)')
-        plt.tight_layout()
+
+        plt.gca().spines[['top', 'right']].set_visible(False)  # cleaner plot
+    # plt.subplot(2,1,2)
+    # for i in range(1): #change range for multiple intervals
+    #     # plt.title(file_path)
+    #     # plt.title(f'interval {i+1}')
+    #     for idx in my_tsd.keys():
+    #         plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
+    #     plt.ylabel('Amplitude')
+    #     plt.ylim(0,max_amplitude)
+    #     plt.xlabel('Spike time (s)')
+    #     plt.tight_layout()
 
     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
     
@@ -255,8 +260,11 @@ def pynapple_plots(file_path, output_directory, max_amplitude):#, video_label):
         os.makedirs(output_directory)
     
     figure_output_path = os.path.join(output_directory, f'{base_file_name}_figure.png')
+    figure_output_path2 = os.path.join(output_directory, f'{base_file_name}_figure.svg')
 
-    plt.savefig(figure_output_path)
+    plt.savefig(figure_output_path, dpi = 300)
+    plt.savefig(figure_output_path2)
+
     plt.show()
 
 
@@ -448,23 +456,23 @@ def single_spine_peak_plotting(deltaF):
     
     iqr_noise = detector_utility.filter_outliers(deltaF) #iqr noise
     mu, SD = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
-    threshold = mu + 3.5 * SD
-    threshold2 = mu + 4*SD
+    # threshold = mu + 3.5 * SD
+    # threshold2 = mu + 4*SD
     threshold3 = mu + 4.5*SD
-    threshold4 = mu+5*SD
-    peaks, _ = find_peaks(deltaF, height = threshold, distance = 5) #frequency
+    # threshold4 = mu+5*SD
+    peaks, _ = find_peaks(deltaF, height = threshold3, distance = 5) #frequency
     amplitudes = deltaF[peaks] - mu #amplitude change baseline to mu instead
     plt.figure(figsize=[10,10])
     plt.plot(deltaF)
     plt.plot(peaks, deltaF[peaks], "x")
     # plt.plot(decay_points, corrected_trace[decay_points], "x")
-    plt.plot(np.full_like(deltaF, threshold), "--",color = "green")
-    plt.plot(np.full_like(deltaF, threshold2), "--",color = "blue")
+    # plt.plot(np.full_like(deltaF, threshold), "--",color = "green")
+    # plt.plot(np.full_like(deltaF, threshold2), "--",color = "blue")
     plt.plot(np.full_like(deltaF, threshold3), "--",color = "orange")
-    plt.plot(np.full_like(deltaF, threshold4), "--", color = 'red')
-    plt.plot(np.full_like(deltaF, mu), "--", color = 'r')
-    plt.plot(np.full_like(deltaF, np.median(deltaF)), "--", color = 'black')
-    plt.ylim(-0.1,0.5)
+    # plt.plot(np.full_like(deltaF, threshold4), "--", color = 'red')
+    plt.plot(np.full_like(deltaF, mu), "--", color = 'black')
+    # plt.plot(np.full_like(deltaF, np.median(deltaF)), "--", color = 'black')
+    # plt.ylim(-0.1,0.5)
     print('the peak time stamps are :{}' .format(peaks))
     print('the amplitude of each peak is: {}' .format(amplitudes))
     plt.legend()
@@ -475,10 +483,10 @@ def single_spine_peak_plotting(deltaF):
     print(f"DeltaF Trace Mode: {stats.mode(deltaF)}")
     plt.figure(figsize=[10,7])
     plt.hist(deltaF, bins = 1000)
-    plt.axvline(np.median(deltaF), color = "red")
+    # plt.axvline(np.median(deltaF), color = "red")
     plt.axvline(mu, color = "orange")
-    plt.axvline(SD, linestyle = '--', color = "blue")
-    plt.axvline(3.5*SD + mu, color = 'green')
+    # plt.axvline(SD, linestyle = '--', color = "blue")
+    plt.axvline(4.5*SD + mu, color = 'green')
     plt.xlabel("dF/F Normalized Fluorescence", fontsize = 20)
     plt.ylabel("Number of Frames per bin", fontsize = 20)
     plt.legend()

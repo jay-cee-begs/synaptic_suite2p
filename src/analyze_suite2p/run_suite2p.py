@@ -107,6 +107,7 @@ def main(config_file = None):
     ops = np.load(ops_path, allow_pickle=True).item()
     ops['frame_rate'] = config.general_settings.frame_rate
     ops['input_format'] = data_extension
+    ops['max_iterations'] = 20
     export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
     image_folders = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
@@ -120,6 +121,10 @@ def main(config_file = None):
     process_files_with_suite2p(unprocessed_files,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
+    try:
+        analysis_utility.process_spike_csvs_to_pkl(main_folder)
+    except KeyError as e:
+        print("created pkl files from csv, but error occurred, please check manually")
     analysis_utility.create_experiment_summary(main_folder) 
     import json
     with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
