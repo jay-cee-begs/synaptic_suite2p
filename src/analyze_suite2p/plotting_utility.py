@@ -107,10 +107,10 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     if feature not in numeric_df.columns:
         raise ValueError(f"The specified feature '{feature}' is not numeric")
 
-    grouped_df = experiment_df.groupby(["Experimental Group", "File Name"]).agg(agg_function).reset_index(drop=False) #"dataset",
+    grouped_df = experiment_df.groupby(["Experimental_Group", "File Name"]).agg(agg_function).reset_index(drop=False) #"dataset",
 
     if control_group is not None:
-        control_avg = grouped_df[grouped_df['Experimental Group'] == control_group][feature].agg(comparison_function)
+        control_avg = grouped_df[grouped_df['Experimental_Group'] == control_group][feature].agg(comparison_function)
 
         grouped_df[feature] = grouped_df[feature].apply(lambda x: (x / control_avg) * 100)
     else:
@@ -131,7 +131,7 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
         return sns.kdeplot(data, color="black", ax=ax, bw_adjust=0.5, clip=(0, 1))
 
     # Use 'group_order' in the sns.violinplot call to control the order of groups on the x-axis.
-    sns.violinplot(x="Experimental Group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order,
+    sns.violinplot(x="Experimental_Group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order,
                     inner="quartile", width=0.5) #, scale = 'area' inner="quartile",   get_kde=get_kde, , fontsize=44
     # Use 'group_order' in the sns.violinplot call to control the order of groups on the x-axis.
     # sns.violinplot(x="group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order) #hue="dataset"
@@ -154,8 +154,8 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
         sub_checks = [significance_check] if not any(isinstance(element, list) for element in significance_check) else significance_check
         for sub_check in sub_checks:
             add_significance_bar_to_axis(ax, 
-                                 grouped_df[grouped_df["Experimental Group"] == sub_check[0]][feature], 
-                                 grouped_df[grouped_df["Experimental Group"] == sub_check[1]][feature],
+                                 grouped_df[grouped_df["Experimental_Group"] == sub_check[0]][feature], 
+                                 grouped_df[grouped_df["Experimental_Group"] == sub_check[1]][feature],
                                 (tick_positions[sub_check[0]] + tick_positions[sub_check[1]]) / 2,
                                 abs(tick_positions[sub_check[0]] - tick_positions[sub_check[1]]))
 
