@@ -204,23 +204,31 @@ def get_all_pkl_outputs_in_path(path):
     return processed_files, file_names[0]
 
 
-def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_label):
+def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, vid_length = None, plot_amplitudes = False, 
+                   plot_shape = 'square'):#, max_amplitude = 4):#, video_label):
     """raster plot function for all graphs; also can plot event amplitude"""
-    
+    import os
     import warnings
+    import pickle
+    import pynapple as nap
+    import matplotlib.pyplot as plt
+    import matplotlib
+
     warnings.filterwarnings('ignore')
     
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
     df_cell_stats = data['cell_stats']
     
-    
+    color = "#4e4d4d"
     my_tsd = {}
     for idx in df_cell_stats['SynapseID'][0:]:
         my_tsd[idx] = nap.Tsd(t=df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'][idx],
                             d=df_cell_stats[df_cell_stats['SynapseID']==idx]['Amplitudes'][idx],time_units='s')
-        
-    Interval_1 = nap.IntervalSet(0,180)
+    if vid_length is not None:
+        Inverval_1 = nap.IntervalSet(0, vid_length)
+    else:
+        Interval_1 = nap.IntervalSet(0,540)
 
     # Interval_2 = nap.IntervalSet(250,290)
     # Interval_3 = nap.IntervalSet(290,450)
@@ -229,38 +237,68 @@ def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_l
                 #Interval_2]
     
     #Make the figure
-    plt.figure(figsize=(6,6))
-    plt.subplot(1,1,1)
+    plot_shapes = ['square','rectangle', "rectangle_skinny"]
+    if plot_shape not in plot_shapes:
+        print(f"Acceptable Plot shapes are {plot_shapes}")
+        
+    if plot_shape =='square':
+        plt.figure(figsize = (6,6))
+    if plot_shape == 'rectangle_skinny':
+        plt.figure(figsize=(12,4))
+    if plot_shape == 'rectangle':
+        plt.figure(figsize=(12,6))
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ["Arial"]
+    if plot_amplitudes:
+        plt.subplot(2,1,1) #
+    else:
+        plt.subplot(1,1,1)
     for i, idx in enumerate(df_cell_stats['SynapseID']):
 #     
         # plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
         spike_times = df_cell_stats[df_cell_stats['SynapseID'] == idx]['PeakTimes'].values[0]
-        plt.scatter(spike_times, [i]*len(spike_times), color = "#4e4d4d", linewidths=0.2, s=8, alpha=0.8) #"#4e4d4d" edgecolors='black' f'C{idx}'
+        plt.scatter(spike_times, [i]*len(spike_times), color = '#4e4d4d', linewidths=0.1, s=1, alpha=0.6) #"#4e4d4d" edgecolors='black'f'C{idx}'
+        if treatment_vid:
+            if treatment_no == 0:
+                pass
+            if treatment_no == 1:
+                plt.axvline(180, linestyle = 'dashed', color = 'red', linewidth = 0.1)
+            if treatment_no == 2:
+                plt.axvline(180, linestyle = 'dashed', color = 'red', linewidth = 0.1)
+                plt.axvline(360, linestyle = 'dashed', color = 'red', linewidth = 0.1)
 
         plt.ylabel('SynapseID')
         plt.xlabel('Time (s)')
-        plt.ylim(0,2300)
+        if synapse_count is not None:
+            plt.ylim(0,synapse_count)
+        else:
+            plt.ylim(0,1000)
         plt.tight_layout()
 
         plt.gca().spines[['top', 'right']].set_visible(False)  # cleaner plot
-    # plt.subplot(2,1,2)
-    # for i in range(1): #change range for multiple intervals
-    #     # plt.title(file_path)
-    #     # plt.title(f'interval {i+1}')
-    #     for idx in my_tsd.keys():
-    #         plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
-    #     plt.ylabel('Amplitude')
-    #     plt.ylim(0,max_amplitude)
-    #     plt.xlabel('Spike time (s)')
-    #     plt.tight_layout()
+
+        ##OLD plots to show amplitude for each individual event, uncomment to read
+    if plot_amplitudes:
+        plt.subplot(2,1,2)
+        for i in range(1): #change range for multiple intervals
+            # plt.title(file_path)
+            # plt.title(f'interval {i+1}')
+            for idx in my_tsd.keys():
+                plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
+            plt.ylabel('Amplitude')
+            plt.ylim(0,max_amplitude)
+            plt.xlabel('Spike time (s)')
+            plt.tight_layout()
 
     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
-    
+    base_file_name = base_file_name.split("Dur180s")[0]
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
+        
     
-    figure_output_path = os.path.join(output_directory, f'{base_file_name}_figure.png')
-    figure_output_path2 = os.path.join(output_directory, f'{base_file_name}_figure.svg')
+    figure_output_path = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.png')
+    figure_output_path2 = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.svg')
 
     plt.savefig(figure_output_path, dpi = 300)
     plt.savefig(figure_output_path2)
@@ -271,6 +309,7 @@ def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_l
     transient_count = []
     for idx in my_tsd.keys():
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
+
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
