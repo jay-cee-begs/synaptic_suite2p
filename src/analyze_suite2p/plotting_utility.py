@@ -310,6 +310,76 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
     for idx in my_tsd.keys():
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
 
+def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, save_fig = False):
+    # Get boolean mask of valid cells
+    # Apply mask to deltaF
+    iscell_mask = suite2p_dict['iscell'][:,0] == 1
+  
+
+    masked_dF = suite2p_dict['deltaF'][iscell_mask]
+
+    
+    if treatment_vid:
+         if treatment_no ==1:
+              treatment1 = 180
+         if treatment_no ==2:
+              treatment1 = 180
+              treatment2 = 360
+    if list is None:
+        lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
+    else:
+        lst = list
+    
+    print(lst)
+
+    plt.figure(figsize = (10,7))
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ["Arial"]
+    ax = plt.gca()
+    # --- Colorblind-friendly palette ---
+    colors = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', 
+            '#0072B2', '#D55E00', '#CC79A7', '#999999', '#000000', '#999933']
+    
+    frame_rate = 20
+    time = np.arange(deltaF.shape[1]) / frame_rate
+    print("time range (s):", time[0], "->", time[-1])
+    # print("treatment(s) (s):", treatment1, treatment2)    
+    plt_traces = masked_dF[lst]
+    for i, trace in enumerate(plt_traces):
+        offset_trace = trace + i * trace_offset
+        ax.plot(time, offset_trace, color='black', alpha=0.6)
+    if treatment_vid is True and treatment_no is  1:
+         ax.axvline(treatment1, color='red', linestyle='--')
+    if treatment_vid is True and treatment_no is 2:
+         ax.axvline(treatment1, color='red', linestyle='--')
+         ax.axvline(treatment2, color='red', linestyle='--')
+
+    scalebar_time = 10  # seconds
+    scalebar_df = 2     # dF/F units
+    x0 = time[-1] + 2
+    y0 = -2
+
+    # Horizontal and vertical bars
+    ax.plot([x0, x0 + scalebar_time], [y0, y0], 'k', lw=2)
+    ax.plot([x0 + scalebar_time, x0 + scalebar_time], [y0, y0 + scalebar_df], 'k', lw=2)
+
+    # Scale bar labels
+    ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
+    
+    ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
+    
+    # --- Minimalist figure: no axes ---
+    ax.axis('off')
+
+    # --- Optional: save to file ---
+    if save_fig:
+            plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.svg'))
+            plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.png'))
+    # ax.set_xlim([0, time[-1]])
+
+    plt.tight_layout()
+    plt.show()
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
