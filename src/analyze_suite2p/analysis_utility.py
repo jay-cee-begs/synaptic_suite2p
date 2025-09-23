@@ -265,3 +265,57 @@ def process_spike_csvs_to_pkl(input_path):
 
             pd.to_pickle(processed_dict, processed_path)
 
+
+def generate_synapse_counts_and_summary_stats(experiment_folder):
+    import os
+    from analyze_suite2p import config_loader
+    config = config_loader.load_json_config_file(os.path.join(experiment_folder, 'analysis_config.json'))
+    experiment_name = str(config.general_settings.main_folder.split('\\')[-1])
+    file_path = os.path.join(config.general_settings.main_folder,f"{experiment_name}_experiment_summary.csv")
+    data = pd.read_csv(file_path)
+    # synapses = data[["Experimental_Group", 
+    #                  "File_Name", 
+    #                  'synapse_ROI', 
+    #                  "dendrite_ROI",
+    #                  "total_ROIs",
+    #                  "SpikesFreq",
+    #                  "AvgAmplitude",
+    #                  "AvgDecayTime" ]].drop_duplicates()
+    # syanpses = synapses.groupby("File_Name").agg({"Experimental_Group": "first",
+    #                                           "synapse_ROI":["mean"],
+    #                                           "dendrite_ROI": ["mean"],
+    #                                           "total_ROIs": ["mean"],
+    #                                           "SpikesFreq": ["mean"],
+    #                                           "AvgAmplitude": ["mean"],
+    #                                           "AvgDecayTime": ["mean"]})
+    synapses = data[["Experimental_Group", 
+                     "Replicate_No.",
+                     "File_Name",
+                     "SpikesFreq", 
+                     'synapse_ROI', 
+                     "dendrite_ROI",
+                     "total_ROIs"]].dropna()
+    syanpses = synapses.groupby("File_Name").agg({"Experimental_Group": "first",
+                                                  "Replicate_No.": "first",
+                                                  "synapse_ROI":["mean"],
+                                                  "dendrite_ROI": ["mean"],
+                                                  "total_ROIs": ["mean"],
+                                                  "SpikesFreq": ["mean"]})
+    groups = synapses["Experimental_Group"].unique().tolist()
+    mapped_groups = synapses["Experimental_Group"]
+    # Metrics and grouping
+    metrics = [
+        "synapse_ROI",
+        "dendrite_ROI",
+        "total_ROIs",
+        "SpikesFreq",
+    #     "AvgAmplitude",
+    #     "AvgDecayTime"
+    ]
+    save_path = file_path.split("\\")[0:-1]
+    save_path = '\\'.join(save_path)
+    experiment = file_path.split("\\")[-1]
+    experiment = experiment.split(".csv")[0]
+
+    return groups, metrics, syanpses
+
