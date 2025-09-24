@@ -126,10 +126,12 @@ def main(config_file = None):
     except KeyError as e:
         print("created pkl files from csv, but error occurred, please check manually")
     analysis_utility.create_experiment_summary(main_folder) 
+
     import json
     with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
         json.dump(config_dict, f, indent = 4)
     print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+    analysis_utility.generate_synapse_counts_and_summary_stats(main_folder)
     from datetime import datetime
 
     now = datetime.now()

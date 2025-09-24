@@ -107,10 +107,10 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     if feature not in numeric_df.columns:
         raise ValueError(f"The specified feature '{feature}' is not numeric")
 
-    grouped_df = experiment_df.groupby(["Experimental Group", "File Name"]).agg(agg_function).reset_index(drop=False) #"dataset",
+    grouped_df = experiment_df.groupby(["Experimental_Group", "File Name"]).agg(agg_function).reset_index(drop=False) #"dataset",
 
     if control_group is not None:
-        control_avg = grouped_df[grouped_df['Experimental Group'] == control_group][feature].agg(comparison_function)
+        control_avg = grouped_df[grouped_df['Experimental_Group'] == control_group][feature].agg(comparison_function)
 
         grouped_df[feature] = grouped_df[feature].apply(lambda x: (x / control_avg) * 100)
     else:
@@ -131,7 +131,7 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
         return sns.kdeplot(data, color="black", ax=ax, bw_adjust=0.5, clip=(0, 1))
 
     # Use 'group_order' in the sns.violinplot call to control the order of groups on the x-axis.
-    sns.violinplot(x="Experimental Group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order,
+    sns.violinplot(x="Experimental_Group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order,
                     inner="quartile", width=0.5) #, scale = 'area' inner="quartile",   get_kde=get_kde, , fontsize=44
     # Use 'group_order' in the sns.violinplot call to control the order of groups on the x-axis.
     # sns.violinplot(x="group", y=feature, data=grouped_df, ax=ax, palette=palette, order=group_order) #hue="dataset"
@@ -154,8 +154,8 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
         sub_checks = [significance_check] if not any(isinstance(element, list) for element in significance_check) else significance_check
         for sub_check in sub_checks:
             add_significance_bar_to_axis(ax, 
-                                 grouped_df[grouped_df["Experimental Group"] == sub_check[0]][feature], 
-                                 grouped_df[grouped_df["Experimental Group"] == sub_check[1]][feature],
+                                 grouped_df[grouped_df["Experimental_Group"] == sub_check[0]][feature], 
+                                 grouped_df[grouped_df["Experimental_Group"] == sub_check[1]][feature],
                                 (tick_positions[sub_check[0]] + tick_positions[sub_check[1]]) / 2,
                                 abs(tick_positions[sub_check[0]] - tick_positions[sub_check[1]]))
 
@@ -204,23 +204,31 @@ def get_all_pkl_outputs_in_path(path):
     return processed_files, file_names[0]
 
 
-def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_label):
+def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, vid_length = None, plot_amplitudes = False, 
+                   plot_shape = 'square'):#, max_amplitude = 4):#, video_label):
     """raster plot function for all graphs; also can plot event amplitude"""
-    
+    import os
     import warnings
+    import pickle
+    import pynapple as nap
+    import matplotlib.pyplot as plt
+    import matplotlib
+
     warnings.filterwarnings('ignore')
     
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
     df_cell_stats = data['cell_stats']
     
-    
+    color = "#4e4d4d"
     my_tsd = {}
     for idx in df_cell_stats['SynapseID'][0:]:
         my_tsd[idx] = nap.Tsd(t=df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'][idx],
                             d=df_cell_stats[df_cell_stats['SynapseID']==idx]['Amplitudes'][idx],time_units='s')
-        
-    Interval_1 = nap.IntervalSet(0,180)
+    if vid_length is not None:
+        Inverval_1 = nap.IntervalSet(0, vid_length)
+    else:
+        Interval_1 = nap.IntervalSet(0,540)
 
     # Interval_2 = nap.IntervalSet(250,290)
     # Interval_3 = nap.IntervalSet(290,450)
@@ -229,38 +237,68 @@ def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_l
                 #Interval_2]
     
     #Make the figure
-    plt.figure(figsize=(6,6))
-    plt.subplot(1,1,1)
+    plot_shapes = ['square','rectangle', "rectangle_skinny"]
+    if plot_shape not in plot_shapes:
+        print(f"Acceptable Plot shapes are {plot_shapes}")
+        
+    if plot_shape =='square':
+        plt.figure(figsize = (6,6))
+    if plot_shape == 'rectangle_skinny':
+        plt.figure(figsize=(12,4))
+    if plot_shape == 'rectangle':
+        plt.figure(figsize=(12,6))
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ["Arial"]
+    if plot_amplitudes:
+        plt.subplot(2,1,1) #
+    else:
+        plt.subplot(1,1,1)
     for i, idx in enumerate(df_cell_stats['SynapseID']):
 #     
         # plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
         spike_times = df_cell_stats[df_cell_stats['SynapseID'] == idx]['PeakTimes'].values[0]
-        plt.scatter(spike_times, [i]*len(spike_times), color = "#4e4d4d", linewidths=0.2, s=8, alpha=0.8) #"#4e4d4d" edgecolors='black' f'C{idx}'
+        plt.scatter(spike_times, [i]*len(spike_times), color = '#4e4d4d', linewidths=0.1, s=1, alpha=0.6) #"#4e4d4d" edgecolors='black'f'C{idx}'
+        if treatment_vid:
+            if treatment_no == 0:
+                pass
+            if treatment_no == 1:
+                plt.axvline(180, linestyle = 'dashed', color = 'red', linewidth = 0.1)
+            if treatment_no == 2:
+                plt.axvline(180, linestyle = 'dashed', color = 'red', linewidth = 0.1)
+                plt.axvline(360, linestyle = 'dashed', color = 'red', linewidth = 0.1)
 
         plt.ylabel('SynapseID')
         plt.xlabel('Time (s)')
-        plt.ylim(0,2300)
+        if synapse_count is not None:
+            plt.ylim(0,synapse_count)
+        else:
+            plt.ylim(0,1000)
         plt.tight_layout()
 
         plt.gca().spines[['top', 'right']].set_visible(False)  # cleaner plot
-    # plt.subplot(2,1,2)
-    # for i in range(1): #change range for multiple intervals
-    #     # plt.title(file_path)
-    #     # plt.title(f'interval {i+1}')
-    #     for idx in my_tsd.keys():
-    #         plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
-    #     plt.ylabel('Amplitude')
-    #     plt.ylim(0,max_amplitude)
-    #     plt.xlabel('Spike time (s)')
-    #     plt.tight_layout()
+
+        ##OLD plots to show amplitude for each individual event, uncomment to read
+    if plot_amplitudes:
+        plt.subplot(2,1,2)
+        for i in range(1): #change range for multiple intervals
+            # plt.title(file_path)
+            # plt.title(f'interval {i+1}')
+            for idx in my_tsd.keys():
+                plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
+            plt.ylabel('Amplitude')
+            plt.ylim(0,max_amplitude)
+            plt.xlabel('Spike time (s)')
+            plt.tight_layout()
 
     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
-    
+    base_file_name = base_file_name.split("Dur180s")[0]
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
+        
     
-    figure_output_path = os.path.join(output_directory, f'{base_file_name}_figure.png')
-    figure_output_path2 = os.path.join(output_directory, f'{base_file_name}_figure.svg')
+    figure_output_path = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.png')
+    figure_output_path2 = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.svg')
 
     plt.savefig(figure_output_path, dpi = 300)
     plt.savefig(figure_output_path2)
@@ -271,6 +309,77 @@ def pynapple_plots(file_path, output_directory):#, max_amplitude = 4):#, video_l
     transient_count = []
     for idx in my_tsd.keys():
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
+
+def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, save_fig = False):
+    # Get boolean mask of valid cells
+    # Apply mask to deltaF
+    iscell_mask = suite2p_dict['iscell'][:,0] == 1
+  
+
+    masked_dF = suite2p_dict['deltaF'][iscell_mask]
+
+    
+    if treatment_vid:
+         if treatment_no ==1:
+              treatment1 = 180
+         if treatment_no ==2:
+              treatment1 = 180
+              treatment2 = 360
+    if list is None:
+        lst = np.random.choice(masked_dF.shape[0], size=10, replace=False)
+    else:
+        lst = list
+    
+    print(lst)
+
+    plt.figure(figsize = (10,7))
+    plt.rcParams['svg.fonttype'] = 'none'
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ["Arial"]
+    ax = plt.gca()
+    # --- Colorblind-friendly palette ---
+    colors = ['#E69F00', '#56B4E9', '#009E73', '#F0E442', 
+            '#0072B2', '#D55E00', '#CC79A7', '#999999', '#000000', '#999933']
+    
+    frame_rate = 20
+    time = np.arange(deltaF.shape[1]) / frame_rate
+    print("time range (s):", time[0], "->", time[-1])
+    # print("treatment(s) (s):", treatment1, treatment2)    
+    plt_traces = masked_dF[lst]
+    for i, trace in enumerate(plt_traces):
+        offset_trace = trace + i * trace_offset
+        ax.plot(time, offset_trace, color='black', alpha=0.6)
+    if treatment_vid is True and treatment_no is  1:
+         ax.axvline(treatment1, color='red', linestyle='--')
+    if treatment_vid is True and treatment_no is 2:
+         ax.axvline(treatment1, color='red', linestyle='--')
+         ax.axvline(treatment2, color='red', linestyle='--')
+
+    scalebar_time = 10  # seconds
+    scalebar_df = 2     # dF/F units
+    x0 = time[-1] + 2
+    y0 = -2
+
+    # Horizontal and vertical bars
+    ax.plot([x0, x0 + scalebar_time], [y0, y0], 'k', lw=2)
+    ax.plot([x0 + scalebar_time, x0 + scalebar_time], [y0, y0 + scalebar_df], 'k', lw=2)
+
+    # Scale bar labels
+    ax.text(x0 + scalebar_time / 2, y0 - 0.3, fr"{scalebar_time}$\ s$", ha='center', va='top')
+    
+    ax.text(x0 + scalebar_time + 1, y0 + scalebar_df / 3,  fr"{scalebar_df} $\Delta F / F_0$", va='center', ha='left')
+    
+    # --- Minimalist figure: no axes ---
+    ax.axis('off')
+
+    # --- Optional: save to file ---
+    if save_fig:
+            plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.svg'))
+            plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.png'))
+    # ax.set_xlim([0, time[-1]])
+
+    plt.tight_layout()
+    plt.show()
         
 def getImg(ops):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
