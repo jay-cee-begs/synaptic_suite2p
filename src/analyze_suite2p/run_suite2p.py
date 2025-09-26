@@ -94,50 +94,64 @@ def process_files_with_suite2p(image_list, ops):
                  print(f"Error processing {image_path}: {e}")
 
 def main(config_file = None):
-    import numpy as np
-    if config_file is not None:
-        config = config_loader.load_json_config_file(config_file)
-    else:
-        config = config_loader.load_json_config_file()
-    config_dict = config_loader.load_json_dict()
-
-    main_folder = config.general_settings.main_folder
-    data_extension = config.general_settings.data_extension
-    ops_path = config.general_settings.ops_path
-    ops = np.load(ops_path, allow_pickle=True).item()
-    ops['frame_rate'] = config.general_settings.frame_rate
-    ops['input_format'] = data_extension
-    ops['max_iterations'] = 20
-    export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
-    image_folders = get_all_image_folders_in_path(main_folder)
-    suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
-    unprocessed_files = []
-    if config.analysis_params.overwrite_suite2p:
-        process_files_with_suite2p(image_folders, ops)
-    else:
-        for image in image_folders:
-            if image not in suite2p_samples:
-                unprocessed_files.append(image)
-    process_files_with_suite2p(unprocessed_files,ops)
-    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
-                                                      update_iscell = config.analysis_params.update_suite2p_iscell)
     try:
-        analysis_utility.process_spike_csvs_to_pkl(main_folder)
-    except KeyError as e:
-        print("created pkl files from csv, but error occurred, please check manually")
-    analysis_utility.create_experiment_summary(main_folder) 
+        import numpy as np
+        if config_file is not None:
+            config = config_loader.load_json_config_file(config_file)
+        else:
+            config = config_loader.load_json_config_file()
+        config_dict = config_loader.load_json_dict()
 
-    import json
-    with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
-        json.dump(config_dict, f, indent = 4)
-    print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
-    analysis_utility.generate_synapse_counts_and_summary_stats(main_folder)
-    from datetime import datetime
+        main_folder = config.general_settings.main_folder
+        data_extension = config.general_settings.data_extension
+        ops_path = config.general_settings.ops_path
+        ops = np.load(ops_path, allow_pickle=True).item()
+        ops['frame_rate'] = config.general_settings.frame_rate
+        ops['input_format'] = data_extension
+        ops['max_iterations'] = 20
+        export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
+        image_folders = get_all_image_folders_in_path(main_folder)
+        suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
+        unprocessed_files = []
+        if config.analysis_params.overwrite_suite2p:
+            process_files_with_suite2p(image_folders, ops)
+        else:
+            for image in image_folders:
+                if image not in suite2p_samples:
+                    unprocessed_files.append(image)
+        process_files_with_suite2p(unprocessed_files,ops)
+        analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
+                                                        update_iscell = config.analysis_params.update_suite2p_iscell)
+        try:
+            analysis_utility.process_spike_csvs_to_pkl(main_folder)
+        except KeyError as e:
+            print("created pkl files from csv, but error occurred, please check manually")
+        analysis_utility.create_experiment_summary(main_folder) 
 
-    now = datetime.now()
+        import json
+        with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+        analysis_utility.generate_synapse_counts_and_summary_stats(main_folder)
+        from datetime import datetime
 
-    current_time = now.strftime("%H:%M:%S")
-    print("Current Time =", current_time)
+        now = datetime.now()
+
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time =", current_time)
+    except KeyboardInterrupt:
+        experiment_title = main_folder.split("_")[-1]
+        print(f"Aborting {experiment_title} processing")
+    finally:
+        import json
+        with open(os.path.join(main_folder, 'analysis_config.json'), 'w') as f:
+            json.dump(config_dict, f, indent = 4)
+        print(f"Analysis parameters saved in {main_folder} as analysis_config.json")
+        analysis_utility.generate_synapse_counts_and_summary_stats(main_folder)
+        from datetime import datetime
+
+        now = datetime.now()
+
     # analysis_utility.process_spike_csvs_to_pkl(main_folder, overwrite = True)
 
 
