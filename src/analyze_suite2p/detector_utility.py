@@ -39,6 +39,67 @@ def calculate_deltaF(F_file):
     return deltaF
 
 
+def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_baseline_sec = 10):
+    """
+    Estimate noise sigma from baseline-only windows using MAD.
+    
+    Parameters
+    ----------
+    F : 1D numpy array
+        Baseline-corrected ΔF/F trace.
+    frame_rate : float
+        Sampling rate (Hz).
+    event_thresh : float
+        Threshold (in MAD units) to detect obvious events. Default is 3; 
+        less produces too few baseline points
+    min_baseline_sec : float
+        Minimum duration (seconds) of a baseline window.
+        Default: 10 s
+
+    Returns
+    -------
+    sigma : float
+        Estimated noise standard deviation.
+    baseline_mask : boolean array
+        Mask of samples classified as baseline.
+    """
+
+    trace_median = np.median(F_trace)
+    mad = np.median(np.abs(F_trace - trace_median))
+    sigma = 1.4826 * mad
+    event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma()
+
+    trace_baseline = ~event_mask
+    min_baseline_length = int(np.ceil(min_baseline_sec * frame_rate))
+    baseline_mask = np.zeros_like(trace_baseline, dtype=bool)
+
+    start = None
+    for i, val in enumerate(trace_baseline):
+        if val and start is None:
+            start = i
+        elif not val and start is not None:
+            end = i
+            if (end - start) >= min_baseline_length:
+                baseline_mask[start:end] = True
+            start = None
+    
+    if start is not None:
+        end = len(trace_baseline)
+        if (end - start) >= min_baseline_length:
+            baseline_mask[start:end] = True
+
+    baseline_samples = F_trace[baseline_mask]
+
+    if len(baseline_samples) < 10:
+        print("Not enough points to produce reliable baseline for synapse trace...please check manually")
+        
+        baseline_samples = F_trace
+    
+    baseline_median = np.median(baseline_samples)
+    baseline_mad = np.median(np.abs(baseline_samples - baseline_median))
+    sigma = 1.4826 * baseline_mad
+    
+    return sigma, baseline_mask
 
 def filter_outliers(trace):
     q1,q3 = np.percentile(trace, [25,75])
