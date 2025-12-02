@@ -12,6 +12,7 @@ def calculate_cell_freq(input_df):
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
     output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+    #CHECK CV CALCULATION
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
     return output_df
 
@@ -185,9 +186,9 @@ def create_experiment_summary(main_folder):
 # Include non-numeric columns in the final aggregated dataframe
     aggregate_stats['Experimental_Group'] = merged_df.groupby(['File_Name', 'classification'])['Experimental_Group'].first().values
     aggregate_stats['Replicate_No.'] = merged_df.groupby(['File_Name', 'classification'])['Replicate_No.'].first().values
-    main_group = config.general_settings.main_folder.split('\\')[-1]
-    merged_df.to_csv(os.path.join(config.general_settings.main_folder, f'{main_group}_experiment_summary.csv'))
-    aggregate_stats.to_csv(os.path.join(config.general_settings.main_folder, f'{main_group}_aggregate_summary.csv'))
+    main_group = main_folder.split('\\')[-1]
+    merged_df.to_csv(os.path.join(main_folder, f'{main_group}_experiment_summary.csv'))
+    aggregate_stats.to_csv(os.path.join(main_folder, f'{main_group}_aggregate_summary.csv'))
     
     return aggregate_stats, merged_df
 
