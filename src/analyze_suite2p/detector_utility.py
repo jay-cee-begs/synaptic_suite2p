@@ -10,9 +10,26 @@ from BaselineRemoval import BaselineRemoval
 config = config_loader.load_json_config_file()
 
 def calculate_deltaF(F_file, event_threshold = 3):
-    """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
-    inputs: 
-    F_file: F.npy file that serves as a template for understanding the fluorescence of individual ROIs"""
+    """
+    Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
+
+    Parameters:
+    -----------
+    F_file : 1D numpy array
+        Raw flourescence (F.npy) trace from suite2p.
+    
+    event_threshold: float
+        Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
+        The Default value is 3; smaller values will limit the number of baseline points used for correction.
+
+    Returns:
+    --------
+    deltaF : 1D numpy array
+        dF/F0 normalized fluorescence
+        MAD baseline estimated
+        ZhangFit / airPLS automated baseline correction
+        deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
+    """
 
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
     F = np.load(rf"{F_file}", allow_pickle=True)
@@ -49,21 +66,23 @@ def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_ba
     """
     Estimate noise sigma from baseline-only windows using MAD.
     
-    Parameters
-    ----------
+    Parameters:
+    -----------
     F : 1D numpy array
         Baseline-corrected ΔF/F trace.
     frame_rate : float
         Sampling rate (Hz).
-    event_thresh : float
-        Threshold (in MAD units) to detect obvious events. Default is 3; 
-        less produces too few baseline points
+    event_threshold: float
+        Preserved from calculate_deltaF function above.
+        Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
+        Default: 3
+        Smaller values will limit the number of baseline points used for correction.
     min_baseline_sec : float
         Minimum duration (seconds) of a baseline window.
         Default: 10 s
 
-    Returns
-    -------
+    Returns:
+    --------
     sigma : float
         Estimated noise standard deviation.
     baseline_mask : boolean array
@@ -108,6 +127,19 @@ def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_ba
     return sigma, baseline_mask
 
 def filter_outliers(trace):
+    """
+    Filter outliers (peaks) from calcium trace using the trace IQR
+
+    Parameters:
+    -----------
+    trace : 1D numpy array
+        Fluorescence trace (e.g., F.npy) from suite2p output.
+    
+    Returns:
+    --------
+    filtered_values : 1D array
+        values from 1D array that fall within the original trace IQR.
+    """
     q1,q3 = np.percentile(trace, [25,75])
     iqr = q3-q1
     lower_bound = q1 - 1.5*iqr
@@ -122,8 +154,23 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
                                                        return_decay_time = False,
                                                        return_peak_count = False, 
                                                        extract_peaks = False):
-    """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
-    the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
+    """
+    Identify time stamps and metrics of individual calcium spikes for a single ROI.
+    Parameters:
+    -----------
+    deltaF: 1D numpy array
+        Normalized fluroescence trace 
+
+    Returns:
+    --------
+    IF any==True:
+        return_peaks: returns calcium spike time_stamps
+        return_decay_frames: returns number of frames for calcium spike to decay to threshold
+        return_amplitudes: returns amplitude of calcium spike in relation to baseline fluorescence (F0)
+        return_decay_time: returns decay time in seconds (converts number of frames into seconds)
+        return_peak_count: returns the total number of calcium spikes for the ROI fluorescence trace
+        extract_peaks: returns deltaF window around calcium spike for calcium spike library 
+    """
     
     sigma, deltaF_baseline = estimate_baseline_noise_mad(deltaF, frame_rate = 20, event_threshold=3, min_baseline_sec=10)
     
