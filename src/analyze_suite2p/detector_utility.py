@@ -9,7 +9,7 @@ from BaselineRemoval import BaselineRemoval
 
 config = config_loader.load_json_config_file()
 
-def calculate_deltaF(F_file):
+def calculate_deltaF(F_file, event_threshold = 3):
     """Function to calculated dF from F and Fneu of suite2p based on Sun & Sudhof, 2019 dF/F calculations
     inputs: 
     F_file: F.npy file that serves as a template for understanding the fluorescence of individual ROIs"""
@@ -120,7 +120,8 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
-                                                       return_peak_count = False):
+                                                       return_peak_count = False, 
+                                                       extract_peaks = False):
     """this function takes a single time series data series and converts into deltaF / F; it then will return, frames where peaks occurred, amplitudes of peaks
     the number of peaks detected, the decay frames (TBD) and the decay time converted into sections"""
     
@@ -172,8 +173,12 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         return decay_time
     if return_peak_count == True:
         return peak_count
-    # if calculate_tau == True:
-    #     return decay_time
+    if extract_peaks:
+        peak_dict = {}
+        for peak in peaks:
+            peak_dict.update(f'peak_{peak}': deltaF[peak-10:peak+30])
+        
+        return peak_dict
 
 
 def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
