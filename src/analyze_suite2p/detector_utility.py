@@ -131,7 +131,7 @@ def filter_outliers(trace):
     return filtered_values   
 
 
-def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = False, 
+def single_synapse_peak_detection(deltaF, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
@@ -205,8 +205,9 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         return peak_count
     if extract_peaks:
         peak_dict = {}
-        for peak in peaks:
-            peak_dict.update(f'peak_{peak}': deltaF[peak:peak+30])
+        #TODO fix up these points for peak library
+        # for peak in peaks:
+        #     peak_dict.update(f'peak_{peak}': 'deltaF[peak:peak+30]')
         
         return peak_dict
 

@@ -65,11 +65,11 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     """this is the principle function in which we will create our .csv file structure; and where we will actually use
         our detector functions for spike detection and amplitude extraction"""
     def process_individual_synapse(deltaF):
-        peaks = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = True)
-        amplitudes = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_amplitudes=True)
-        decay_times = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_time = True)
-        peak_count = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_peak_count=True)
-        decay_frames = detector_utility.single_synapse_baseline_correction_and_peak_return(deltaF, return_decay_frames=True)
+        peaks = detector_utility.single_synapse_peak_detection(deltaF, return_peaks = True)
+        amplitudes = detector_utility.single_synapse_peak_detection(deltaF, return_amplitudes=True)
+        decay_times = detector_utility.single_synapse_peak_detection(deltaF, return_decay_time = True)
+        peak_count = detector_utility.single_synapse_peak_detection(deltaF, return_peak_count=True)
+        decay_frames = detector_utility.single_synapse_peak_detection(deltaF, return_decay_frames=True)
         return peaks, amplitudes, peak_count, decay_times, decay_frames
 
     results = []
