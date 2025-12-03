@@ -6,10 +6,11 @@ import scipy.signal as signal
 from scipy.stats import norm
 from analyze_suite2p import config_loader
 from BaselineRemoval import BaselineRemoval
+import os
 
 config = config_loader.load_json_config_file()
 
-def calculate_deltaF(F_file, event_threshold = 3):
+def calculate_deltaF(F_file, event_threshold = 2):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -56,7 +57,10 @@ def calculate_deltaF(F_file, event_threshold = 3):
         
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
-    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+    if not os.path.exists(f"{savepath}/deltaF.npy"):
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+
     print(f"delta F calculated for {F_file[len(config.general_settings.main_folder)+1:-21]}")
     print(f"delta F traces saved as deltaF.npy under {savepath}\n")
     return deltaF
