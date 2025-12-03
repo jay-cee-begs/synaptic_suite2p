@@ -155,7 +155,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         extract_peaks: returns deltaF window around calcium spike for calcium spike library 
     """
     
-    sigma, deltaF_baseline = estimate_baseline_noise_mad(deltaF, frame_rate = 20, event_threshold=3, min_baseline_sec=10)
+    sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
     
     baseline_reference = np.median(deltaF_baseline)
     peak_detection_multiplier = float(config.analysis_params.peak_detection_threshold)
@@ -206,7 +206,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
     if extract_peaks:
         peak_dict = {}
         for peak in peaks:
-            peak_dict.update(f'peak_{peak}': deltaF[peak-10:peak+30])
+            peak_dict.update(f'peak_{peak}': deltaF[peak:peak+30])
         
         return peak_dict
 
