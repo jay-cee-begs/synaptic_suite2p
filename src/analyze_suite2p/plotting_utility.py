@@ -33,11 +33,6 @@ suite2one might implement this code as the following in a processing_pipeline:
         "replicate_2": [f"treatment_B_well_0{j}Dur180sInt100msBin500ms_filtered.pkl" for j in range(5, 9)],
     }
 }
-experiment_structure = {
-
-
-maybe consider a dictionary of dictionaries?? although I am not sure the benefit of this immediately
-}
 """
 _experiment_structure_example = {
     "control": {
