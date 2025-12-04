@@ -6,10 +6,11 @@ import scipy.signal as signal
 from scipy.stats import norm
 from analyze_suite2p import config_loader
 from BaselineRemoval import BaselineRemoval
+import os
 
 config = config_loader.load_json_config_file()
 
-def calculate_deltaF(F_file, event_threshold = 3):
+def calculate_deltaF(F_file, event_threshold = 2):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -56,13 +57,16 @@ def calculate_deltaF(F_file, event_threshold = 3):
         
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
-    np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+    if not os.path.exists(f"{savepath}/deltaF.npy"):
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+
     print(f"delta F calculated for {F_file[len(config.general_settings.main_folder)+1:-21]}")
-    print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+
     return deltaF
 
 
-def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_baseline_sec = 10):
+def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
     Estimate noise sigma from baseline-only windows using MAD.
     
@@ -75,7 +79,7 @@ def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_ba
     event_threshold: float
         Preserved from calculate_deltaF function above.
         Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
-        Default: 3
+        Default: 2 (SD above median)
         Smaller values will limit the number of baseline points used for correction.
     min_baseline_sec : float
         Minimum duration (seconds) of a baseline window.
@@ -92,39 +96,18 @@ def estimate_baseline_noise_mad(F_trace, frame_rate, event_threshold = 3, min_ba
     trace_median = np.median(F_trace)
     mad = np.median(np.abs(F_trace - trace_median))
     sigma = 1.4826 * mad
-    event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma()
+    event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma
 
     trace_baseline = ~event_mask
-    min_baseline_length = int(np.ceil(min_baseline_sec * frame_rate))
     baseline_mask = np.zeros_like(trace_baseline, dtype=bool)
 
-    start = None
-    for i, val in enumerate(trace_baseline):
-        if val and start is None:
-            start = i
-        elif not val and start is not None:
-            end = i
-            if (end - start) >= min_baseline_length:
-                baseline_mask[start:end] = True
-            start = None
-    
-    if start is not None:
-        end = len(trace_baseline)
-        if (end - start) >= min_baseline_length:
-            baseline_mask[start:end] = True
-
     baseline_samples = F_trace[baseline_mask]
-
-    if len(baseline_samples) < 10:
-        print("Not enough points to produce reliable baseline for synapse trace...please check manually")
-        
-        baseline_samples = F_trace
     
     baseline_median = np.median(baseline_samples)
     baseline_mad = np.median(np.abs(baseline_samples - baseline_median))
     sigma = 1.4826 * baseline_mad
     
-    return sigma, baseline_mask
+    return sigma, baseline_samples
 
 def filter_outliers(trace):
     """
@@ -148,7 +131,7 @@ def filter_outliers(trace):
     return filtered_values   
 
 
-def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = False, 
+def single_synapse_peak_detection(deltaF, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
@@ -172,7 +155,7 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         extract_peaks: returns deltaF window around calcium spike for calcium spike library 
     """
     
-    sigma, deltaF_baseline = estimate_baseline_noise_mad(deltaF, frame_rate = 20, event_threshold=3, min_baseline_sec=10)
+    sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
     
     baseline_reference = np.median(deltaF_baseline)
     peak_detection_multiplier = float(config.analysis_params.peak_detection_threshold)
@@ -222,8 +205,9 @@ def single_synapse_baseline_correction_and_peak_return(deltaF, return_peaks = Fa
         return peak_count
     if extract_peaks:
         peak_dict = {}
-        for peak in peaks:
-            peak_dict.update(f'peak_{peak}': deltaF[peak-10:peak+30])
+        #TODO fix up these points for peak library
+        # for peak in peaks:
+        #     peak_dict.update(f'peak_{peak}': 'deltaF[peak:peak+30]')
         
         return peak_dict
 
