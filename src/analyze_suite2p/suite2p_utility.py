@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import os
@@ -171,7 +170,23 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
 
 
 def get_experimental_dates(main_folder):
-    """returns a dictionary of all folders and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc."""
+    """
+    Extract experiment dates from file names; chooses dates from the beginning of the file name.
+    Creates a usable template for 'load_suite2p_output' function below.
+
+    Parameters:
+    -----------
+    main_folder: str / Path
+        Path to main folder (also found in config.json)
+
+    Returns:
+    --------
+    sample_dict: dictionary
+        Example dictionary used in function 'create_suite2p_df'
+        Searches for unique dates at beginning of files (either 6 or 4 characters)
+        Each unique date is assigned to a replicate number
+    returns a dictionary of all folders and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc.
+    """
     image_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
     date_list= []
     sample_dict = {}
