@@ -143,6 +143,19 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
     -----------
     deltaF: 1D numpy array
         Normalized fluroescence trace 
+    return_peaks: bool, optional
+        Returns time stamps (frame) for each peak
+    return_decay_frames: bool, optional
+        Returns time stamp (frame) for when each peak returns to threshold
+        if no return to threshold --> returns NaN
+    return_amplitudes: bool, optional
+        Returns normalized amplitude for each detected peak
+    return_decay_times: bool, optional
+        Returns decay time from peak frame to crossing threshold (in seconds)
+    return_peak_count: bool, optional
+        Returns len(peaks)
+    extract_peaks: bool, optional
+        Returns peaks + 30 frames for peak library --> to be used for Tau calculations
 
     Returns:
     --------
@@ -213,6 +226,19 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
 
 
 def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
+    """
+    Detect spikes by median absolute difference (MAD) of each frame from median of the trace.
+
+    Parameters:
+    -----------
+    input_trace: 1D NumPy array
+    **signal_kwargs: assorted see signal.find_peaks()
+        Ex. width = (min,max), peak_prominence = type(float), height = type(float), threshold = type(float), distance = int/float
+    Returns:
+    --------
+    peak time frames using signal.find_peaks() function
+
+    """
     median = np.median(input_trace)
     deviation_from_med = np.array(input_trace) - median
     mad = np.median(np.abs(deviation_from_med))
@@ -221,6 +247,24 @@ def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
 
 
 def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs):
+    """
+    Plot ROI calcium trace with overlayed detected spikes as red vertical lines.
+
+    Parameters:
+    -----------
+    raw_trace: 1D NumPy array
+    detector_func: Function
+        Ex. scipy.signal.find_peaks() / detect_spikes_by_mod_z()
+    detector_trace: bool, optional
+    **detector_kwargs: assorted, optional
+        Ex. scipy.signal.find_peaks(x, height = , threshold = , peak_prominence = , width = , distance = )
+
+    Returns:
+    -------- 
+    matplotlib.pyplot.plot line graph
+        blue: detector_trace (if true) or raw trace
+        red: detected spikes
+    """
     if detector_trace is None:
         detector_input_trace = raw_trace.copy()
     else:
@@ -233,15 +277,46 @@ def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs
 
 
 def rolling_min(input_series, window_size):
+    """
+    Calculate rolling minimum value (input_series.rolling()) over different windows of the input trace.
+
+    Parameters:
+    -----------
+    input_series: 1D NumPy array
+        raw_trace / F.npy / deltaF.npy
+    window_size: int
+        Size of window to measure with each iteration
+
+    Returns:
+    -------- 
+    m: int / float
+        Smallest local minimum across all windows
+    """
     r = input_series.rolling(window_size, min_periods=1)
     m = r.min()
     return m
 
 
 def remove_bleaching(input_trace):
+    """
+    Basic first-order polynomial function to remove bleaching from single ROI calcium imaging trace
+
+    Parameters:
+    -----------
+    input_trace: 1D array
+        raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
+        functions by processing one ROI at a time
+
+    Returns:
+    --------
+    input_trace - fit(range(len(input_trace)))
+        input trace adjusted by rolling minimum
+        polynomial fit built on length of trace, rolling min values, and order of polynomial (e.g. 2nd)
+        poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
+
+    """
     min_trace = rolling_min(pd.Series(input_trace), window_size=int(len(input_trace)/10))
     fit_coefficients = np.polyfit(range(len(min_trace)), min_trace, 2)
     fit = np.poly1d(fit_coefficients)
     return input_trace - fit(range(len(input_trace)))
-
 
