@@ -10,20 +10,22 @@ config = config_loader.load_json_config_file()
 
 def calculate_synapse_frequency(input_df):
     """
-    Calculate frequency of calcium spikes for individual spikes based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
+    Calculate spike frequency metrics for each ROI.
 
     Args:
-    -----------
-    input_df: pd.DataFrame()
-    Dataframe generated from processing suite2p analysis files
-    contains PeakTimes column variable (frames for spikes detected)
+    -----
+    input_df : pandas.DataFrame
+        DataFrame containing at least the 'PeakTimes' and 'Total_Frames'
+        columns.
 
     Returns:
     --------
-    output_df: pd.DataFrame()
-        SpikeCount - count of calcium spikes per ROI
-        SpikesFreq - Frequency of spikes per ROI during the recording
-        SpikesCV - Coefficient of Variance per ROI (MAY NOT BE STATISTICALLY VIABLE)
+    pandas.DataFrame
+        A copy of the input DataFrame with added columns:
+        - SpikesCount
+        - SpikesFreq
+        - SpikesCV
+
     """
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
@@ -34,20 +36,22 @@ def calculate_synapse_frequency(input_df):
 
 def calculate_synapse_isi(input_df): #isi == interspike interval
     """
-    Calculate interspike interval (ISI) of calcium spikes for individual spikes based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
+    Calculate inter-spike interval (ISI) statistics for each ROI.
+
     Args:
-    -----------
-    input_df: pd.DataFrame()
-    Dataframe generated from processing suite2p analysis files
-    contains PeakTimes column variable (frames for spikes detected)
+    -----
+    input_df : pandas.DataFrame
+        DataFrame containing a 'PeakTimes' column of lists of spike frames.
 
     Returns:
     --------
-    output_df: pd.DataFrame()
-        SpikeDiff - interspike interval per event per ROI, 
-        DiffAvg - mean interspike interval per ROI
-        DiffMedian - median interspike interval per ROI
-        DiffCV - Coefficient of Variance for all interspike intervals per ROI
+    pandas.DataFrame
+        A DataFrame with added ISI-related columns:
+        - SpikesDiff
+        - DiffAvg
+        - DiffMedian
+        - DiffCV
+
     """
     output_df = input_df.copy()
     output_df["SpikesDiff"] = output_df["PeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
@@ -58,20 +62,22 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
 
 def calculate_spike_amplitudes(input_df):
     """
-    Calculate normalized amplitude for each calcium spike for each ROI based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
+    Calculate amplitude metrics for calcium spikes per ROI.
 
     Args:
-    -----------
-    input_df: pd.DataFrame()
-    Dataframe generated from processing suite2p analysis files
-    contains 'Amplitudes' column variable (peak value - baseline fluorescence)
+    -----
+    input_df : pandas.DataFrame
+        DataFrame containing an 'Amplitudes' column with lists of peak
+        amplitudes.
 
     Returns:
     --------
-    output_df: pd.DataFrame()
-        AvgAmplitude - average amplitude of calcium spikes per ROI 
-        SpkAmpMedian - median amplitude of  calcium spikes per ROI
-        SpkAmpCV - Coefficient of Variance of calcium spike amplitudes per ROI
+    pandas.DataFrame
+        DataFrame with added amplitude metrics:
+        - AvgAmplitude
+        - SpkAmpMedian
+        - SpkAmpCV
+
     """
     output_df = input_df.copy()
     output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
@@ -81,21 +87,20 @@ def calculate_spike_amplitudes(input_df):
 
 def calculate_decay_fraction(row):
     """
-    Calculate fraction of calcium spikes that decay back to baseline; quickly shows fraction of nested peaks or peak trains for each ROI
+    Calculate the fraction of calcium events that decay back to baseline.
 
     Args:
-    -----------
-    row: 1D array from pd.DataFrame()
-    
+    -----
+    row : pandas.Series
+        Single row containing 'DecayCount' and 'SpikesCount'.
 
     Returns:
     --------
-    output_df['DecayFraction']: pd.DataFrame() column
-    See analysis_utility.calculate_decay_values()
-        DecayFraction - Number of Decay values (non-NaN; DecayCount) divided by number of spikes (SpikesCount) 
-        SpkAmpMedian - median amplitude of  calcium spikes per ROI
-        SpkAmpCV - Coefficient of Variance of calcium spike amplitudes per ROI
+    float
+        Fraction of spikes with valid decay (or empty list if no spikes).
+
     """
+
     if row["SpikesCount"] != 0:
         return row['DecayCount'] / row["SpikesCount"]
     else:
@@ -104,22 +109,25 @@ def calculate_decay_fraction(row):
 
 def calculate_decay_values(input_df):
     """
-    Calculate decay parameters based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
+    Calculate decay-related metrics for each ROI.
 
     Args:
-    -----------
-    input_df: pd.DataFrame()
-        Dataframe generated from processing suite2p analysis files
-        contains 'DecayTimes' column variable (peak time --> calcium trace threshold - if applicable)    
+    -----
+    input_df : pandas.DataFrame
+        DataFrame containing a 'DecayTimes' column, where each entry is a list
+        of decay durations.
 
     Returns:
     --------
-    output_df: pd.DataFrame()
-        DecayCount - Number of events that decay from peak back to threshold 
-        DecayedFraction - Percentage of total calcium events that decay from peak back to threshold
-        AvgDecayTime - Average decay time (in seconds) for each ROIs calcium events 
-        AvgDecayCV - Average Coefficient of Variance for time (in seconds) for all calcium events to decay back to threshold
+    pandas.DataFrame
+        DataFrame with added decay metrics:
+        - DecayCount
+        - DecayedFraction
+        - AvgDecayTime
+        - AvgDecayCV
+
     """
+
     output_df = input_df.copy()
     output_df["DecayCount"] = output_df["DecayTimes"].apply(lambda arr: (len([x for x in arr if not pd.isna(x)])))
     output_df["DecayedFraction"] = output_df.apply(calculate_decay_fraction, axis =1)
@@ -130,29 +138,28 @@ def calculate_decay_values(input_df):
 
 def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calculate_amplitudes=True, calculate_decays = True):
     """
-    Parent function to calculate all frequency, amplitude, and decay parameters based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
+    Compute spike frequency, ISI, amplitude, and decay metrics for each ROI.
 
     Args:
-    -----------
-    input_df: pd.DataFrame()
-        Dataframe generated from processing suite2p analysis files
-    calculate_freq: bool, optional (Default: True)
-        Choice to run function analysis_utility.calculate_synapse_frequency() to measure frequency parameters
-    calcualte_isi: bool, optional (Default: True)
-        Choice to run function analysis_utility.calculate_synapse_frequency() to measure interspike interval parameters
-    calculate_amplitudes: bool, optional (Default: True)
-        Choice to run function analysis_utility.calculate_spike_amplitudes() to measure amplitude parameters
-    calculate_decays: bool, optional (Default: True)    
-        Choice to run function analysis_utility.calculate_decay_values() to measure decay time parameters
+    -----
+    input_df : pandas.DataFrame
+        Input DataFrame of ROI-level Suite2p metrics.
+    calculate_freq : bool, optional
+        Whether to compute frequency metrics.
+    calculate_isi : bool, optional
+        Whether to compute ISI metrics.
+    calculate_amplitudes : bool, optional
+        Whether to compute amplitude metrics.
+    calculate_decays : bool, optional
+        Whether to compute decay metrics.
 
     Returns:
     --------
-    output_df: pd.DataFrame()
-        if calculate_freq: returns SpikeCount, SpikesFreq, SpikesCV
-        if calculate_isi: returns SpikesDiff, DiffAvg, DiffMedian, DiffCV
-        if calculate_amplitudes: returns AvgAmplitude, SpkAmpMedian, SpkAmpCV
-        if calculate_decays: returns DecayCount, DecayedFraction, AvgDecayTime, AvgDecayCV
+    pandas.DataFrame
+        DataFrame with the selected statistical metrics added.
+
     """
+
     output_df = input_df.copy()
     if calculate_freq:
         output_df = calculate_synapse_frequency(output_df)
@@ -166,19 +173,50 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
 
 def translate_suite2p_dict_to_df(suite2p_dict):
     """
-    Translates compiled suite2p analysis files from dictionary (via suite2p_utility.load_suite2p_outputs) into a pd.DataFrame.
+    Translate Suite2p output dictionaries into raw and processed DataFrames.
+
+    Event detection, amplitude extraction, decay extraction, and ROI
+    classification are performed using detector and plotting utilities.
 
     Args:
-    -----------
-
+    -----
+    suite2p_dict : dict
+        Dictionary produced by suite2p_utility.load_suite2p_output().
 
     Returns:
     --------
+    tuple of pandas.DataFrame
+        (raw_df, processed_df)
+        raw_df : unfiltered ROI data
+        processed_df : ROIs with full computed metrics and filtering applied
 
-    this is the principle function in which we will create our .csv file structure; and where we will actually use
-        our detector functions for spike detection and amplitude extraction
     """
+
     def process_individual_synapse(deltaF):
+        """
+        Analyzes deltaF fluorescence to detect peaks
+        
+        This function is used to find peaks, the peak times,
+        decay times, and normalized amplitudes
+
+        Args:
+        -----
+        deltaF: 1D array
+
+        Returns:
+        --------
+        peaks: 1D array
+            Frame index for where peaks were detected
+        amplitudes: 1D array
+            List of amplitudes (peak - np.median(trace))
+        decay_times: 1D array
+            List of decay times in seconds for peak to decay to threshold, or NaN
+        peak_count: int
+            len(peaks) --> count of total peaks for a synapse
+        decay_frames: 1D array
+            number of frames for peak to decay back to threshold 
+        """
+        
         peaks = detector_utility.single_synapse_peak_detection(deltaF, return_peaks = True)
         amplitudes = detector_utility.single_synapse_peak_detection(deltaF, return_amplitudes=True)
         decay_times = detector_utility.single_synapse_peak_detection(deltaF, return_decay_time = True)
@@ -233,13 +271,23 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     return df, processed_df#, aggregate_stats
 
 def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_iscell = True):
-    """This will create .csv files for each video loaded from out data fram function below.
-        The structure will consist of columns that list: "Amplitudes": spike_amplitudes})
-        
-        col1: ROI #, col2: IsUsed (from iscell.npy); boolean, col3: Skew (from stats.npy); could be replaced with any 
-        stat >> compactness, col3: spike frames (relative to input frames), col4: amplitude of each spike detected measured 
-        from the baseline (the median of each trace)"""
-    
+    """
+    Convert Suite2p output folders into raw and processed CSV files.
+
+    Args:
+    -----
+    input_path : str
+        Path containing Suite2p output folders.
+    check_for_iscell : bool, optional
+        Whether to classify ROIs using Suite2p's iscell.npy.
+    update_iscell : bool, optional
+        Whether to overwrite the iscell.npy file based on reclassification.
+
+    Returns:
+    --------
+    None
+
+    """
     suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
 
     output_path = os.path.join(input_path,"csv_files")
@@ -289,6 +337,21 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
     print(f"{len(suite2p_outputs)} .csv files were saved under {Path(config.general_settings.main_folder) / 'csv_files'}")
 
 def create_experiment_summary(main_folder):
+    """
+    Create merged experiment-level summary CSV files from processed ROI data.
+
+    Args:
+    -----
+    main_folder : str
+        Path containing the 'csv_files' directory.
+
+    Returns:
+    --------
+    tuple
+        (aggregate_stats, merged_df)
+        aggregate_stats : grouped summary metrics
+        merged_df : concatenated per-recording data
+    """
     csv_file_path = os.path.join(main_folder, 'csv_files')
     csv_files = list_all_files_of_type(csv_file_path, '.csv')
     processed_csvs = [file for file in csv_files if file.startswith('processed')]
@@ -307,33 +370,141 @@ def create_experiment_summary(main_folder):
     return aggregate_stats, merged_df
 
 def list_all_files_of_type(input_path, filetype):
+    """
+    List all files in a directory with a specific extension.
+
+    Args:
+    -----
+    input_path : str
+        Directory to search.
+    filetype : str
+        File extension filter.
+
+    Returns:
+    --------
+    list of str
+        Filenames matching the requested extension.
+
+    """
+
     return [file for file in os.listdir(input_path) if file.endswith(filetype)]
 
 def string_to_list_translator(input_string, strip_before_split="[ ]", split_on=" "):
+    """
+    Convert a delimited string into a cleaned list of tokens.
+
+    Args:
+    -----
+    input_string : str
+        String containing delimited values.
+    strip_before_split : str, optional
+        Characters to strip from both ends.
+    split_on : str, optional
+        String delimiter for splitting.
+
+    Returns:
+    --------
+    list
+        Cleaned list of non-empty string tokens.
+
+    """
+
     split_string = input_string.strip(strip_before_split).split(split_on)
     return list(filter(None, split_string))
 
 def spike_list_translator(input_string):
-    """This funciton is nested in the next. It is designed to convert the time stamp of each event into a time
-        during the experiment (e.g. frame 2 = 1.1 seconds into the recording)"""
+    """
+    Convert a spike frame index string into a time-scaled NumPy array.
+
+    Args:
+    -----
+    input_string : str
+        Raw string containing integer frame indices.
+
+    Returns:
+    --------
+    numpy.ndarray
+        Array of spike times in seconds.
+
+    """
     string_list = string_to_list_translator(input_string)
     return np.array(string_list).astype(int) * config.general_settings.FRAME_INTERVAL
 
 def amplitude_list_translator(input_string):
+    """
+    Convert an amplitude string into a NumPy float array.
+
+    Args:
+    -----
+    input_string : str
+
+    Returns:
+    --------
+    numpy.ndarray
+        Array of spike amplitudes.
+
+    """
+
     amp_string_list = string_to_list_translator(input_string)
     amp_string_list = np.array(amp_string_list).astype(float)
     return (amp_string_list)
 
 
 def decay_frame_list_translator(input_string):
-     decay_frame_list = string_to_list_translator(input_string)
-     return np.array(decay_frame_list).astype(float)*config.general_settings.FRAME_INTERVAL
+    """
+    Convert a decay-frame string into a time-scaled NumPy array.
+
+    Args:
+    -----
+    input_string : str
+
+    Returns:
+    --------
+    numpy.ndarray
+        Array of decay times in seconds.
+
+    """
+
+    decay_frame_list = string_to_list_translator(input_string)
+    return np.array(decay_frame_list).astype(float)*config.general_settings.FRAME_INTERVAL
 
 def decay_time_list_translator(input_string):
+    """
+    Convert a decay-time string into a NumPy array of floats.
+
+    Args:
+    -----
+    input_string : str
+
+    Returns:
+    --------
+    numpy.ndarray
+        Array of decay times.
+
+    """
+
     decay_time_list = string_to_list_translator(input_string) 
     return np.array(decay_time_list).astype(float)
 
 def spike_df_iterator(input_path, return_name=True):
+    """
+    Iterate through CSV spike files and yield parsed DataFrames.
+
+    Args:
+    -----
+    input_path : str
+        Path to a folder containing CSV files.
+    return_name : bool, optional
+        Whether to include the filename in the output.
+
+    Returns:
+    --------
+    tuple or pandas.DataFrame
+        (DataFrame, filename) if return_name=True,
+        otherwise DataFrame only.
+
+    """
+
     for csv_file in list_all_files_of_type(input_path, "csv"):
         csv_path = os.path.join(input_path, csv_file)
         csv_df = pd.read_csv(csv_path, converters={"PeakTimes":spike_list_translator , "Amplitudes":amplitude_list_translator, 
@@ -343,6 +514,22 @@ def spike_df_iterator(input_path, return_name=True):
         
    #Again, binned stats are not necessary for synapses, but regardless, we can leave this here for now
 def calculate_binned_stats(input_df):
+    """
+    Compute population-level spike counts and instantaneous frequency in
+    fixed-width time bins.
+
+    Args:
+    -----
+    input_df : pandas.DataFrame
+        DataFrame containing a 'PeakTimes' column.
+
+    Returns:
+    --------
+    pandas.DataFrame
+        Table of (bin range, spike count, frequency).
+
+    """
+
     local_df = input_df.copy()
 
     bins = np.arange(0, config.general_settings.EXPERIMENT_DURATION + config.general_settings.BIN_WIDTH, config.general_settings.BIN_WIDTH) 
@@ -359,7 +546,19 @@ def calculate_binned_stats(input_df):
 
 
 def process_spike_csvs_to_pkl(input_path):
-    """This will convert .csv files into pickle files which behave like dataframes; but are faster and preserve CPU RAM"""
+    """
+    Convert spike CSV files into pickled analysis dictionaries.
+
+    Args:
+    -----
+    input_path : str
+        Path containing a 'csv_files' directory.
+
+    Returns:
+    --------
+    None
+
+    """
     csv_path = os.path.join(input_path, 'csv_files')
     output_path = os.path.join(input_path, 'pkl_files')
     if not os.path.exists(output_path):
@@ -382,6 +581,23 @@ def process_spike_csvs_to_pkl(input_path):
 
 
 def generate_synapse_counts_and_summary_stats(experiment_folder):
+    """
+    Generate per-file summary statistics and synapse/dendrite counts.
+
+    Args:
+    -----
+    experiment_folder : str
+        Path to the experiment directory.
+
+    Returns:
+    --------
+    tuple
+        (groups, metrics, summary)
+        groups : list of experimental groups
+        metrics : list of metric names
+        summary : grouped aggregate statistics
+
+    """
     import os
     from analyze_suite2p import config_loader
     config = config_loader.load_json_config_file(os.path.join(experiment_folder, 'analysis_config.json'))
