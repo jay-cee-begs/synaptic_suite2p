@@ -12,7 +12,7 @@ def calculate_synapse_frequency(input_df):
     """
     Calculate frequency of calcium spikes for individual spikes based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
 
-    Parameters:
+    Args:
     -----------
     input_df: pd.DataFrame()
     Dataframe generated from processing suite2p analysis files
@@ -35,7 +35,7 @@ def calculate_synapse_frequency(input_df):
 def calculate_synapse_isi(input_df): #isi == interspike interval
     """
     Calculate interspike interval (ISI) of calcium spikes for individual spikes based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
-    Parameters:
+    Args:
     -----------
     input_df: pd.DataFrame()
     Dataframe generated from processing suite2p analysis files
@@ -60,7 +60,7 @@ def calculate_spike_amplitudes(input_df):
     """
     Calculate normalized amplitude for each calcium spike for each ROI based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
 
-    Parameters:
+    Args:
     -----------
     input_df: pd.DataFrame()
     Dataframe generated from processing suite2p analysis files
@@ -83,7 +83,7 @@ def calculate_decay_fraction(row):
     """
     Calculate fraction of calcium spikes that decay back to baseline; quickly shows fraction of nested peaks or peak trains for each ROI
 
-    Parameters:
+    Args:
     -----------
     row: 1D array from pd.DataFrame()
     
@@ -106,7 +106,7 @@ def calculate_decay_values(input_df):
     """
     Calculate decay parameters based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
 
-    Parameters:
+    Args:
     -----------
     input_df: pd.DataFrame()
         Dataframe generated from processing suite2p analysis files
@@ -132,7 +132,7 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
     """
     Parent function to calculate all frequency, amplitude, and decay parameters based on suite2p analysis files saved in suite2p dictionary (see suite2p_utility.load_suite2p_output)
 
-    Parameters:
+    Args:
     -----------
     input_df: pd.DataFrame()
         Dataframe generated from processing suite2p analysis files
@@ -168,7 +168,7 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     """
     Translates compiled suite2p analysis files from dictionary (via suite2p_utility.load_suite2p_outputs) into a pd.DataFrame.
 
-    Parameters:
+    Args:
     -----------
 
 

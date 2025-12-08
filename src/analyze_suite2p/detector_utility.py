@@ -14,7 +14,7 @@ def calculate_deltaF(F_file, event_threshold = 2):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
-    Parameters:
+    Args:
     -----------
     F_file : 1D numpy array
         Raw flourescence (F.npy) trace from suite2p.
@@ -70,7 +70,7 @@ def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
     Estimate noise sigma from baseline-only windows using MAD.
     
-    Parameters:
+    Args:
     -----------
     F : 1D numpy array
         Baseline-corrected ΔF/F trace.
@@ -113,7 +113,7 @@ def filter_outliers(trace):
     """
     Filter outliers (peaks) from calcium trace using the trace IQR
 
-    Parameters:
+    Args:
     -----------
     trace : 1D numpy array
         Fluorescence trace (e.g., F.npy) from suite2p output.
@@ -139,7 +139,7 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
                                                        extract_peaks = False):
     """
     Identify time stamps and metrics of individual calcium spikes for a single ROI.
-    Parameters:
+    Args:
     -----------
     deltaF: 1D numpy array
         Normalized fluroescence trace 
@@ -229,7 +229,7 @@ def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
     """
     Detect spikes by median absolute difference (MAD) of each frame from median of the trace.
 
-    Parameters:
+    Args:
     -----------
     input_trace: 1D NumPy array
     **signal_kwargs: assorted see signal.find_peaks()
@@ -250,7 +250,7 @@ def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs
     """
     Plot ROI calcium trace with overlayed detected spikes as red vertical lines.
 
-    Parameters:
+    Args:
     -----------
     raw_trace: 1D NumPy array
     detector_func: Function
@@ -280,7 +280,7 @@ def rolling_min(input_series, window_size):
     """
     Calculate rolling minimum value (input_series.rolling()) over different windows of the input trace.
 
-    Parameters:
+    Args:
     -----------
     input_series: 1D NumPy array
         raw_trace / F.npy / deltaF.npy
@@ -301,7 +301,7 @@ def remove_bleaching(input_trace):
     """
     Basic first-order polynomial function to remove bleaching from single ROI calcium imaging trace
 
-    Parameters:
+    Args:
     -----------
     input_trace: 1D array
         raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
