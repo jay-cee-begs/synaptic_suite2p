@@ -5,87 +5,102 @@ from analyze_suite2p import detector_utility, config_loader
 
 config = config_loader.load_json_config_file()
 
-"""
-SUITE2P_STRUCTURE describes the sequence of directories to traverse to arrive at the files named in the key.
-For example: "F": ["suite2p", "plane0", "F.npy"] --> File describing F is found at ./suite2p/plane0/F.npy.
-All locations are relative to the suite2p output suite2p_output, which is output into the suite2p_output / file location where the original 
-.tiff image for analysis was located. suite2p output can also be identified by checking if it follows this structure.
-Both spks and iscell are not used because: spks are not calculated; no need for deconvolution
-iscell is not used because all ROIs are considered and filtered later based on individual stats
-"""
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],
     "Fneu": ["suite2p", "plane0", "Fneu.npy"],
-    #'spks': ["suite2p", "plane0", "spks.npy"],
+    'spks': ["suite2p", "plane0", "spks.npy"],
     "stat": ["suite2p", "plane0", "stat.npy"],
     "iscell": ["suite2p", "plane0", "iscell.npy"],
     "ops": ["suite2p", "plane0", "ops.npy"],
     "deltaF": ["suite2p","plane0","deltaF.npy"]
 }
-""" spks is not really necessary with our current set up since the spont. events are all pretty uniform, and are below 
-    AP threshold (and therefore will not need to be deconvolved into action potentials themselves)"""
 
 def load_npy_array(npy_path):
     """
-    Load NumPy .npy file as a Pandas DataFrame.
+    Load a NumPy `.npy` file into a NumPy array.
     
-    Parameters:
-    -----------
-    npy_path: str-like
-    Path object pointing to .npy file (e.g. F.npy / Fneu.npy)
+    This function loads the `.npy` file located at the specified `npy_path` and returns it as a NumPy array.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    -----
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
     --------
-    np.array(): load NumPy path with allow_pickle set to true.
+        numpy.ndarray: The loaded NumPy array from the `.npy` file.
+    
+    Example:
+        >>> load_npy_array('data/F.npy')
+        array([1, 2, 3])
     """
     return np.load(npy_path, allow_pickle=True) #functionally equivalent to np.load(npy_array) but iterable; w/ Pickle
 
 
 def load_npy_df(npy_path):
     """
-    Load NumPy .npy file as a Pandas DataFrame.
+    Load a NumPy `.npy` file as a Pandas DataFrame.
     
-    Parameters:
-    -----------
-    npy_path: str-like
-    Path object pointing to .npy file (e.g. F.npy / Fneu.npy)
+    This function loads the `.npy` file at the specified `npy_path` and converts it into a Pandas DataFrame.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    -----
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
     --------
-    pd.DataFrame(np.array()): load NumPy path into a DataFrame with allow_pickle set to true.
+        pd.DataFrame: A Pandas DataFrame containing the loaded data from the `.npy` file.
+    
+    Example:
+        >>> load_npy_df('data/F.npy')
+        DataFrame with shape (3, 3)
     """
     return pd.DataFrame(np.load(npy_path, allow_pickle=True)) #load suite2p outputs as pandas dataframe
 
 
 def load_npy_dict(npy_path):
     """
-    Load NumPy .npy file as a dictionary.
+    Load a NumPy `.npy` file as a dictionary.
     
-    Parameters:
-    -----------
-    npy_path: str-like
-    Path object pointing to .npy file (e.g. F.npy / Fneu.npy)
+    This function loads the `.npy` file at the specified `npy_path` and returns the contents as a dictionary.
+    The `allow_pickle` option is set to `True` to allow loading pickled objects.
+    
+    Args:
+    -----
+        npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
     --------
-    np.load(npy_path, allow_pickle = True)[()] to load NumPy file as a dictionary
+        dict: The loaded dictionary from the `.npy` file.
+    
+    Example:
+        >>> load_npy_dict('data/stat.npy')
+        {'key1': value1, 'key2': value2}
     """
     return np.load(npy_path, allow_pickle=True)[()] 
 
 
 def check_for_suite2p_output(folder_name_list):
     """
-    Verifies whether each folder in a list of folders contains suite2p-style output files.
+    Verifies whether each folder in a list of folders contains Suite2p-style output files.
     
-    Parameters:
-    -----------
-    folder_name_list: list of strings
-    List containing string paths to folder locations
-
+    This function checks if the `stat.npy` file exists in each folder in the provided `folder_name_list`.
+    If any folder does not contain the required output files, the function will return `False`.
+    
+    Args:
+    -----
+        folder_name_list (list of str): A list of folder paths to check for Suite2p output files.
+    
     Returns:
     --------
-    True: binary mask if each folder provided has suite2p generated files (checked with stat.npy)
+        bool: `True` if all folders contain the required Suite2p files, `False` otherwise.
+    
+    Example:
+        >>> check_for_suite2p_output(['/path/to/folder1', '/path/to/folder2'])
+        True
     """
+
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["stat"])
         if os.path.exists(location):
@@ -97,16 +112,21 @@ def check_for_suite2p_output(folder_name_list):
 
 def check_deltaF(folder_name_list):
     """
-    Checks each folder in a list of folders if F.npy and Fneu.npy have been normalized into a deltaF.npy file.
+    Checks if `deltaF.npy` exists in each folder; if not, calculates and generates it.
     
-    Parameters:
-    -----------
-    folder_name_list: list of strings
-    List containing string paths to folder locations with calcium imaging videos and suite2p-generated files
-
+    This function checks each folder in the `folder_name_list` to see if the `deltaF.npy` file exists. If it doesn't,
+    the function will automatically calculate and generate `deltaF.npy` using the `detector_utility.calculate_deltaF` function.
+    
+    Args:
+    -----
+        folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+    
     Returns:
     --------
-    IF no file deltaF.npy exists...run function detector_utility.calculate_deltaF() to automatically calculate and generate deltaF.npy file.
+        None: If `deltaF.npy` is missing, it will be calculated and generated automatically.
+    
+    Example:
+        >>> check_deltaF(['/path/to/folder1', '/path/to/folder2'])
     """
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
@@ -122,23 +142,26 @@ def check_deltaF(folder_name_list):
 
 def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     """
-    Searches given parent folder for specific suite2p-generated files. Or subfolders containing recordings and suite2p analysis files.
-
-    Parameters:
-    -----------
-    folder_path: str
-    Parent folder path that contains experimental treatments and image subfolders with suite2p generated analysis run
-    file_ending: str
-    String indicating what file / folder should be searched for within the parent
-                Accepted inputs: "F.npy", "deltaF.npy", "samples"
-    suppress_printing: bool, optional
-    Option to block printing for files / folders that were found and added to a list
-
+    Searches the given parent folder for specific Suite2p-generated files or subfolders containing recordings.
+    
+    This function recursively searches the `folder_path` for files matching the specified `file_ending` (e.g., `F.npy`,
+    `deltaF.npy`, or `samples`). It can also return subfolders containing both image and Suite2p analysis files.
+    
+    Args:
+    -----
+        folder_path (str or Path): The root folder path to search for Suite2p files.
+        file_ending (str): The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`.
+        suppress_printing (bool, optional): Whether to suppress printing the found files/folders. Defaults to `False`.
+    
     Returns:
     --------
-    file_ending == "F.npy": returns all F.npy path locations as strings in a list
-    file_ending == "deltaF.npy": returns all deltaF.npy path locations as strings in a list
-    file_ending == "samples": returns all recording folders with both images and suite2p-generated analysis files
+        list of str: A list of file or folder paths matching the specified `file_ending`.
+    
+    Example:
+        >>> get_all_suite2p_outputs_in_path('/path/to/data', 'F.npy')
+        ['/path/to/data/subject1/suite2p/plane0/F.npy', '/path/to/data/subject2/suite2p/plane0/F.npy']
+        >>> get_all_suite2p_outputs_in_path('/path/to/data', 'samples')
+        ['/path/to/data/subject1', '/path/to/data/subject2']
     """
     file_names = []
     other_files = []
@@ -171,21 +194,22 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
 
 def get_experimental_dates(main_folder):
     """
-    Extract experiment dates from file names; chooses dates from the beginning of the file name.
-    Creates a usable template for 'load_suite2p_output' function below.
-
-    Parameters:
-    -----------
-    main_folder: str / Path
-        Path to main folder (also found in config.json)
-
+    Extract experimental dates from folder names and assign replicates to each unique date.
+    
+    This function scans the folder names in `main_folder` and extracts the dates from the beginning of each folder name.
+    It then assigns each unique date a corresponding replicate number (e.g., `sample1`, `sample2`).
+    
+    Args:
+    -----
+        main_folder (str or Path): The path to the main folder containing subfolders with experiment data.
+    
     Returns:
     --------
-    sample_dict: dictionary
-        Example dictionary used in function 'create_suite2p_df'
-        Searches for unique dates at beginning of files (either 6 or 4 characters)
-        Each unique date is assigned to a replicate number
-    returns a dictionary of all folders and the corresponding sample/replicate, the samples are sorted by date, everything sampled on the first date is then sample1, on the second date sample2, etc.
+        dict: A dictionary mapping each folder path to its corresponding sample/replicate number.
+    
+    Example:
+        >>> get_experimental_dates('/path/to/main_folder')
+        {'/path/to/main_folder/experimental_condition/251030_file_image': 'sample_1', '/path/to/main_folder/experimental_condition/251126_file_image': 'sample_2'}
     """
     image_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
     date_list= []
@@ -214,28 +238,44 @@ def get_experimental_dates(main_folder):
 
 def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for folder_x)
     """
-    Load all suite2p-generated analysis files for a given file into a single dictionary
+Load all Suite2p output files for a given recording into a single dictionary.
+
+This includes fluorescence traces, neuropil signals, ROI statistics,
+Suite2p processing options, and classification arrays. Optionally replaces
+Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
+
+Args:
+----------
+data_folder : str or Path
+    Path to the folder containing the Suite2p output directory.
+groups : list of str
+    Names of experimental groups present inside ``main_folder``.
+main_folder : str or Path
+    Root directory containing all experimental condition folders.
+use_iscell : bool, optional
+    If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+    If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+
+Returns:
+-------
+dict
+    Dictionary containing all Suite2p arrays and metadata associated with
+    the recording, including assigned group and replicate label.
+Example:
+        >>> load_suite2p_output('/path/to/data_folder', config_dict['general_settings']['groups'], config_dict['general_settings']['main_folder'], use_iscell = False)
+        {"F": [5,6,7,8...],
+        "Fneu": [0,1,2,3...],
+        "stat": {npix: [7], skew: [0.56], radius: 25,...}
+        "ops": {dict}
+        "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
+        "deltaF": [0.25, 0.5, 0.67, 0.012,...],
+        "IsUsed": [True, False, True, True, False, False, ...],
+        "Group": 'Experimental_Treatment_Condition',
+        "sample": 'Replicate01',
+        "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
+        }
     
-    Parameters:
-    data_folder: string-like
-    Folder containing the suite2p-generated output folder 'suite2p' (suite2p\plane0\...)
-    groups: list of strings
-    Experimental conditions one level below main_folder
-    Generally extracted from config.json and by running <python -m synapse_gui>
-    main_folder: string-like
-    Parent folder containing all experimental conditions and suite2p analysis folders for all files
-    Generally extracted from config.json or by running <python -m synapse_gui>
-    use_iscell: bool, optional
-    Toggles using iscell.npy / suite2p ROI classifier to categorize ROIs
-    Default: False --> User updates iscell based on activity during the first analysis
-    any further reclassification done by the user is preserved by setting <use_iscell = True>
-    
-    Returns:
-    --------
-    suite2p_dict: dictionary
-    Dictionary with all suite2p-generated files for a given recording as key:value pairs in a dictionary
-    Can be compiled into dictionary of dictionaries with multiple image files each containing suite2p-generated analysis files nested within
-    """
+"""
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"]).replace('\\','/')),
         "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"]).replace('\\','/')),
