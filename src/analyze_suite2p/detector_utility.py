@@ -99,9 +99,8 @@ def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     event_mask = np.abs(F_trace - trace_median) > event_threshold * sigma
 
     trace_baseline = ~event_mask
-    baseline_mask = np.zeros_like(trace_baseline, dtype=bool)
 
-    baseline_samples = F_trace[baseline_mask]
+    baseline_samples = F_trace[trace_baseline]
     
     baseline_median = np.median(baseline_samples)
     baseline_mad = np.median(np.abs(baseline_samples - baseline_median))
