@@ -8,8 +8,37 @@ config = config_loader.load_json_config_file()
 
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
-    """Export each image file (with variable file extension) into its own folder for suite2p processing, for all directories within a given parent directory."""
-    
+    """
+    Move image files into their own subfolders.
+     
+    This function takes image files with a given file extension and copies them into
+    their own subfolder to give 1 image per subfolder where the image name is preserved
+    in the folder name itself. This is necessary for Suite2p processing without the settings
+    'look_one_level_down'.
+
+    Args:
+    -----------
+    parent_directory: path / str
+        Path-like object pointing to main folder to search through
+    file_ending: str
+        File type / file ending for image file
+        example endings ('nd2', 'tif')
+
+    Returns:
+    --------
+    Files organized in the following tree
+        \path\to\parent_folder
+        ├───experiment_condition_folder_1
+        │   ├───image_folder_1
+        |        ├───image_1
+        │   ├───image_folder_2
+        |        ├───image_2              
+        ├───experiment_condition_folder_2
+        │   ├───image_folder_1
+        |        ├───image_1
+        │   ├───image_folder_2
+        |        ├───image_2
+    """
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
         return
@@ -39,19 +68,44 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                     print(f"Failed to process {file} due to {e}")
             else:
                 print(f"Skipping non-{file_ending} file: {file}")
-#Loading in suite2p settings to begin processing
 
 def get_all_image_folders_in_path(path):
     """
-    Find all folders within a given path that contain exactly one .nd2 file in their deepest subfolder.
-    
-    Nested Function:
-    - check_for_single_image_file_in_folder: Checks if a given directory contains exactly one .nd2 file.
+    Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
+
+    This function traverses the directory tree from the specified `path`, identifies all the folders that
+    contain exactly one `.nd2` file in the deepest subfolder, and returns a list of those folders.
+
+    Args:
+        path (str): The root directory path to begin the search from. The function will walk through all
+                    subdirectories starting from this path.
+
+    Returns:
+        list: A list of absolute paths to directories that contain exactly one `.nd2` file in their deepest
+              subfolder. If no such directories are found, the list will be empty.
+
+    Example:
+        >>> get_all_image_folders_in_path("/home/user/images")
+        ['/home/user/images/folder1', '/home/user/images/folder2']
     """
 
     def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
         """
-        Check if the specified path contains exactly one .nd2 file.
+        Check if the specified directory contains exactly one `.nd2` file.
+
+        This helper function scans a directory for files that match the specified `file_ending` (default is `.nd2`).
+        It returns True if the directory contains exactly one such file, otherwise False.
+
+        Args:
+            current_path (str): The path of the directory to check.
+            file_ending (str, optional): The file extension to look for. Default is `.nd2`.
+
+        Returns:
+            bool: True if the directory contains exactly one `.nd2` file, False otherwise.
+
+        Example:
+            >>> check_for_single_image_file_in_folder("/home/user/images/folder1")
+            True
         """
         tiff_files = [file for file in os.listdir(current_path) if file.endswith(file_ending)]
         return len(tiff_files) == 1
@@ -67,33 +121,77 @@ def get_all_image_folders_in_path(path):
 
 
 def process_files_with_suite2p(image_list, ops):
-        """
-        Processes a list of image paths using the run_s2p function, applying specified configurations.
+    """
+    Process a list of image folders using the Suite2p pipeline.
 
-        Args:
-        image_list (list of str): List of file paths to the images to be processed.
-        """
-        for image_path in image_list:
-            try:
-                 fast_disk_path = r'C:\BIN'
-                 if not os.path.exists(fast_disk_path):
-                      os.makedirs(fast_disk_path)
-                 db = {
-                    'h5py': [], # a single h5 file path
-                    'h5py_key': 'data',
-                    'look_one_level_down': False, # whether to look in ALL subfolders when searching for images
-                    'data_path': [image_path], # a list of folders with images 
-                                                        # (or folder of folders with images if look_one_level_down is True, or subfolders is not empty)
-                                                        
-                    'subfolders': [], # choose subfolders of 'data_path' to look in (optional)
-                    'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
-                 }
-            
-                 opsEnd = run_s2p(ops=ops, db=db)
-            except (ValueError, AssertionError, IndexError, Exception) as e:
-                 print(f"Error processing {image_path}: {e}")
+    This function wraps Suite2p’s ``run_s2p`` function and applies a user-provided
+    ``ops`` dictionary to each image folder. A temporary fast-disk directory is
+    created if needed to store Suite2p-generated binary files.
+
+    Args:
+    -----
+    image_list : list of str or Path
+        List of folder paths containing images to be processed by Suite2p.
+    ops : dict
+        The Suite2p ``ops`` settings dictionary, typically loaded from ``ops.npy``.
+
+    Notes:
+    ------
+    Each item in ``image_list`` is treated as a separate Suite2p input folder.
+    Any exceptions raised during Suite2p processing are caught and reported,
+    allowing the loop to continue.
+    """
+    for image_path in image_list:
+        try:
+                fast_disk_path = r'C:\BIN'
+                if not os.path.exists(fast_disk_path):
+                    os.makedirs(fast_disk_path)
+                db = {
+                'h5py': [], # a single h5 file path
+                'h5py_key': 'data',
+                'look_one_level_down': False, # whether to look in ALL subfolders when searching for images
+                'data_path': [image_path], # a list of folders with images 
+                                                    # (or folder of folders with images if look_one_level_down is True, or subfolders is not empty)
+                                                    
+                'subfolders': [], # choose subfolders of 'data_path' to look in (optional)
+                'fast_disk': fast_disk_path, # string which specifies where the binary file will be stored (should be an SSD)
+                }
+        
+                opsEnd = run_s2p(ops=ops, db=db)
+        except (ValueError, AssertionError, IndexError, Exception) as e:
+                print(f"Error processing {image_path}: {e}")
 
 def main(config_file = None):
+    """
+    Run a full Suite2p preprocessing and analysis pipeline based on a configuration file.
+
+    This function loads a JSON configuration, prepares Suite2p-compatible image
+    folders, processes unprocessed recordings with Suite2p, translates Suite2p
+    outputs to CSV, converts spike CSVs to pickles, and generates summary
+    statistics for the experiment. A copy of the analysis configuration is saved
+    as ``analysis_config.json`` inside the main experiment folder.
+
+    Args:
+    -----
+    config_file : str or Path, optional
+        Path to a JSON configuration file. If omitted, the default configuration
+        from ``config_loader`` is used.
+
+    Workflow:
+    ---------
+    1. Load configuration and ``ops.npy`` Suite2p settings.
+    2. Export raw images into Suite2p format.
+    3. Identify all image folders and detect existing Suite2p outputs.
+    4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
+    5. Convert Suite2p outputs to CSV and pickle formats.
+    6. Generate experiment summary tables and statistical outputs.
+    7. Save the analysis configuration used for reproducibility.
+
+    Returns:
+    --------
+    None
+        The function performs processing and file I/O but does not return a value.
+    """
     import numpy as np
     if config_file is not None:
         config = config_loader.load_json_config_file(config_file)
