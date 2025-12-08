@@ -226,11 +226,9 @@ def translate_suite2p_dict_to_df(suite2p_dict):
 
     results = []
 
-    for idx, (is_used, deltaF) in enumerate(zip(suite2p_dict["IsUsed"],suite2p_dict["deltaF"])):
-        if is_used:
-            result = process_individual_synapse(deltaF)
-        else:
-            result = (np.array([]), np.array([]), 0, np.array([]), np.array([]))
+    for idx, deltaF in enumerate(suite2p_dict["deltaF"]):
+        result = process_individual_synapse(deltaF)
+        
         results.append(result)
     spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
     # with concurrent.futures.ThreadPoolExecutor() as executor:
