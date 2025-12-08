@@ -27,7 +27,7 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
     Returns:
     --------
     Files organized in the following tree
-        \path\to\parent_folder
+        /path/to/parent_folder
         ├───experiment_condition_folder_1
         │   ├───image_folder_1
         |        ├───image_1
