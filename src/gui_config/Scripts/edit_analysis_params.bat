@@ -1,7 +1,6 @@
 @echo off
 
 :: Activate the s2p environment
-CALL "C:\Users\jcbeg\pyenv\suite2p\Scripts\activate.bat" 
 
 :: Run the first script
 
