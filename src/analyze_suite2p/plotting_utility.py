@@ -376,7 +376,7 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     plt.tight_layout()
     plt.show()
         
-def getImg(ops):
+def getImg(ops, config):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
     Img = ops[config.analysis_params.Img_Overlay] # Option of  "max_proj" or "meanImg"
     mimg = Img # Use suite-2p source-code naming
@@ -412,7 +412,7 @@ def boundary(ypix,xpix):
 
 #gets neuronal indices
 
-def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
+def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
     F = suite2p_dict['F']

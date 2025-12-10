@@ -250,8 +250,8 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
                        })
                        
     df.index.set_names("SynapseID", inplace=True)
-    Img = plotting_utility.getImg(suite2p_dict["ops"])
-    scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df)
+    Img = plotting_utility.getImg(suite2p_dict["ops"], config)
+    scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
     
     df['classification'] = 'none'
     for n in range(len(df)):
@@ -269,7 +269,6 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
 
     return df, processed_df#, aggregate_stats
 
-def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_iscell = True):
 def translate_suite2p_outputs_to_csv(main_folder, config, check_for_iscell=False, update_iscell = True):
     """
     Convert Suite2p output folders into raw and processed CSV files.
@@ -293,7 +292,6 @@ def translate_suite2p_outputs_to_csv(main_folder, config, check_for_iscell=False
     output_path = os.path.join(main_folder,"csv_files")
     if not os.path.exists(output_path):
         os.mkdir(output_path)
-    
     for suite2p_output in suite2p_outputs:
         output_directory = os.path.basename(suite2p_output)
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
