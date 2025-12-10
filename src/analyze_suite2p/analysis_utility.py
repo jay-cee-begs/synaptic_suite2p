@@ -172,7 +172,7 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
         output_df = calculate_decay_values(output_df)
     return output_df
 
-def translate_suite2p_dict_to_df(suite2p_dict):
+def translate_suite2p_dict_to_df(suite2p_dict, config):
     """
     Translate Suite2p output dictionaries into raw and processed DataFrames.
 
