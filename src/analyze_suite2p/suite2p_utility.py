@@ -237,46 +237,48 @@ def get_experimental_dates(main_folder):
     return sample_dict
     
 
-def load_suite2p_output(data_folder, groups, main_folder, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for folder_x)
+def load_suite2p_output(data_folder, config, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for folder_x)
     """
-Load all Suite2p output files for a given recording into a single dictionary.
+    Load all Suite2p output files for a given recording into a single dictionary.
 
-This includes fluorescence traces, neuropil signals, ROI statistics,
-Suite2p processing options, and classification arrays. Optionally replaces
-Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
+    This includes fluorescence traces, neuropil signals, ROI statistics,
+    Suite2p processing options, and classification arrays. Optionally replaces
+    Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
 
-Args:
-----------
-data_folder : str or Path
-    Path to the folder containing the Suite2p output directory.
-groups : list of str
-    Names of experimental groups present inside ``main_folder``.
-main_folder : str or Path
-    Root directory containing all experimental condition folders.
-use_iscell : bool, optional
-    If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
-    If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+    Args:
+    ----------
+    data_folder : str or Path
+        Path to the folder containing the Suite2p output directory.
+    groups : list of str
+        Names of experimental groups present inside ``main_folder``.
+    main_folder : str or Path
+        Root directory containing all experimental condition folders.
+    use_iscell : bool, optional
+        If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+        If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
 
-Returns:
--------
-dict
-    Dictionary containing all Suite2p arrays and metadata associated with
-    the recording, including assigned group and replicate label.
-Example:
-        >>> load_suite2p_output('/path/to/data_folder', config_dict['general_settings']['groups'], config_dict['general_settings']['main_folder'], use_iscell = False)
-        {"F": [5,6,7,8...],
-        "Fneu": [0,1,2,3...],
-        "stat": {npix: [7], skew: [0.56], radius: 25,...}
-        "ops": {dict}
-        "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
-        "deltaF": [0.25, 0.5, 0.67, 0.012,...],
-        "IsUsed": [True, False, True, True, False, False, ...],
-        "Group": 'Experimental_Treatment_Condition',
-        "sample": 'Replicate01',
-        "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
-        }
-    
-"""
+    Returns:
+    -------
+    dict
+        Dictionary containing all Suite2p arrays and metadata associated with
+        the recording, including assigned group and replicate label.
+    Example:
+            >>> load_suite2p_output('/path/to/data_folder', config_dict['general_settings']['groups'], config_dict['general_settings']['main_folder'], use_iscell = False)
+            {"F": [5,6,7,8...],
+            "Fneu": [0,1,2,3...],
+            "stat": {npix: [7], skew: [0.56], radius: 25,...}
+            "ops": {dict}
+            "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
+            "deltaF": [0.25, 0.5, 0.67, 0.012,...],
+            "IsUsed": [True, False, True, True, False, False, ...],
+            "Group": 'Experimental_Treatment_Condition',
+            "sample": 'Replicate01',
+            "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
+            }
+        
+    """
+    main_folder = str(config.general_settings.main_folder)
+    groups = config.general_settings.groups
     suite2p_dict = {
         "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"]).replace('\\','/')),
         "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"]).replace('\\','/')),
