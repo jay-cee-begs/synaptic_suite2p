@@ -33,7 +33,7 @@ def load_json_config_file(config_path = None):
 
 config = load_json_config_file()
 
-def load_json_dict():
+def load_json_dict(config_path = None):
     """
     Load config.json synapse_gui configurations file as a dictionary
 
@@ -51,8 +51,12 @@ def load_json_dict():
         {config['general_settings']['main_folder'], config['general_settings']['groups'], 
         config['analysis_params']['overwrite_suite2p'], ...} 
     """
-    script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
-    json_filepath = (script_dir / "../../config/config.json").resolve()
-    with open(json_filepath, 'r') as f:
-        config_dict = json.load(f)
+    if config_path is not None: 
+        with open(config_path, 'r') as f:
+            config_dict = json.load(f)       
+    else:
+        script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
+        json_filepath = (script_dir / "../../config/config.json").resolve()
+        with open(json_filepath, 'r') as f:
+            config_dict = json.load(f)
     return config_dict
