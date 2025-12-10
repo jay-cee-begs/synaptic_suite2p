@@ -221,7 +221,7 @@ def main(config_file = None):
             if image not in suite2p_samples:
                 unprocessed_files.append(image)
     process_files_with_suite2p(unprocessed_files,ops)
-    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
+    analysis_utility.translate_suite2p_outputs_to_csv(main_folder, config = config, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
     try:
         analysis_utility.process_spike_csvs_to_pkl(main_folder)

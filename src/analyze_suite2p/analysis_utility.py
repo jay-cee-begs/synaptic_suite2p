@@ -270,12 +270,13 @@ def translate_suite2p_dict_to_df(suite2p_dict):
     return df, processed_df#, aggregate_stats
 
 def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_iscell = True):
+def translate_suite2p_outputs_to_csv(main_folder, config, check_for_iscell=False, update_iscell = True):
     """
     Convert Suite2p output folders into raw and processed CSV files.
 
     Args:
     -----
-    input_path : str
+    main_folder : str
         Path containing Suite2p output folders.
     check_for_iscell : bool, optional
         Whether to classify ROIs using Suite2p's iscell.npy.
@@ -287,9 +288,9 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
     None
 
     """
-    suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(input_path, "samples", supress_printing=True)
+    suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing=True)
 
-    output_path = os.path.join(input_path,"csv_files")
+    output_path = os.path.join(main_folder,"csv_files")
     if not os.path.exists(output_path):
         os.mkdir(output_path)
     
@@ -298,13 +299,13 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
         translated_path = os.path.join(output_path, f"{output_directory}.csv")
         processed_path = os.path.join(output_path, f"processed_{output_directory}.csv")
         
-        suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, config.general_settings.groups, input_path, use_iscell=update_iscell)
+        suite2p_dict = suite2p_utility.load_suite2p_output(suite2p_output, config, use_iscell=check_for_iscell)
         
-        raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict)
+        raw_data, processed_data = translate_suite2p_dict_to_df(suite2p_dict, config)
 
         ops = suite2p_dict["ops"]
-        Img = plotting_utility.getImg(ops)
-        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID, nid2idx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, use_iscell=check_for_iscell)
+        Img = plotting_utility.getImg(ops, config)
+        scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapseID, nid2idx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, raw_data, config, use_iscell=check_for_iscell)
         iscell_path = os.path.join(suite2p_output, *suite2p_utility.SUITE2P_STRUCTURE['iscell'])
         parent_iscell = suite2p_utility.load_npy_array(iscell_path)
         updated_iscell = parent_iscell.copy()
@@ -329,7 +330,7 @@ def translate_suite2p_outputs_to_csv(input_path, check_for_iscell=False, update_
         processed_data.to_csv(processed_path)
         print(f"csvs created for {suite2p_output}")
 
-        image_save_path = os.path.join(input_path, f"{suite2p_output}_plot.png") #TODO add GUI config for choosing image type to save default should be .png and fix svg output so text is scaled correctly
+        image_save_path = os.path.join(main_folder, f"{suite2p_output}_plot.png") #TODO add GUI config for choosing image type to save default should be .png and fix svg output so text is scaled correctly
         plotting_utility.dispPlot(Img, scatters, nid2idx, nid2idx_rejected, nid2idx_dendrite, nid2idx_synapse,
                                    pixel2neuron, suite2p_dict["F"], suite2p_dict["Fneu"], image_save_path, fill_ROIs=True)
 
