@@ -204,6 +204,7 @@ def main(config_file = None):
         config_dict = config_loader.load_json_dict()
 
     main_folder = config.general_settings.main_folder
+    groups = config.general_settings.groups
     data_extension = config.general_settings.data_extension
     ops_path = config.general_settings.ops_path
     ops = np.load(ops_path, allow_pickle=True).item()
