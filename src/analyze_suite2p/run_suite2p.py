@@ -3,8 +3,8 @@ import shutil
 from suite2p import run_s2p
 from analyze_suite2p import analysis_utility, suite2p_utility, config_loader
 
-config = config_loader.load_json_config_file()
-
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 
 def export_image_files_to_suite2p_format(parent_directory, file_ending= config.general_settings.data_extension):
@@ -193,11 +193,15 @@ def main(config_file = None):
         The function performs processing and file I/O but does not return a value.
     """
     import numpy as np
+    global config  # <- important
+    global config_dict
     if config_file is not None:
         config = config_loader.load_json_config_file(config_file)
+        config_dict = config_loader.load_json_dict(config_file)
+
     else:
         config = config_loader.load_json_config_file()
-    config_dict = config_loader.load_json_dict()
+        config_dict = config_loader.load_json_dict()
 
     main_folder = config.general_settings.main_folder
     data_extension = config.general_settings.data_extension

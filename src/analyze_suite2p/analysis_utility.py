@@ -6,7 +6,8 @@ import os
 from pathlib import Path
 from analyze_suite2p import suite2p_utility, detector_utility, plotting_utility, config_loader
 
-config = config_loader.load_json_config_file()
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def calculate_synapse_frequency(input_df):
     """

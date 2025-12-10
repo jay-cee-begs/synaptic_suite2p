@@ -17,8 +17,8 @@ import pynapple as nap
 
 from analyze_suite2p import detector_utility, config_loader
 
-config = config_loader.load_json_config_file()
-
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 """
 below is an example structure for a dictionary for all the experiment files 

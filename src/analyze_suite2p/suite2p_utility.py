@@ -3,7 +3,8 @@ import numpy as np
 import os
 from analyze_suite2p import detector_utility, config_loader
 
-config = config_loader.load_json_config_file()
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 SUITE2P_STRUCTURE = {
     "F": ["suite2p", "plane0", "F.npy"],

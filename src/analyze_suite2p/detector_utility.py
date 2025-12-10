@@ -8,7 +8,8 @@ from analyze_suite2p import config_loader
 from BaselineRemoval import BaselineRemoval
 import os
 
-config = config_loader.load_json_config_file()
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def calculate_deltaF(F_file, event_threshold = 2):
     """
