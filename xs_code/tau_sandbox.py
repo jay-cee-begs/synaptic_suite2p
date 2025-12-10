@@ -429,7 +429,7 @@ def doubleExpFit(x, a, b, c, d):
 
 frame_rate = 20
 
-def single_synapse_baseline_correction_and_peak_return(input_f, input_fneu, return_peaks = False, return_decay_frames = False, 
+def single_synapse_peak_detection(input_f, input_fneu, return_peaks = False, return_decay_frames = False, 
                                                        return_amplitudes = False, return_decay_time = False, return_peak_count = False,
                                                        calculate_tau = False):
     

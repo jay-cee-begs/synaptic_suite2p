@@ -17,8 +17,8 @@ import pynapple as nap
 
 from analyze_suite2p import detector_utility, config_loader
 
-config = config_loader.load_json_config_file()
-
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 """
 below is an example structure for a dictionary for all the experiment files 
@@ -32,11 +32,6 @@ suite2one might implement this code as the following in a processing_pipeline:
         "replicate_1": [f"treatment_B_well_0{j}Dur180sInt100msBin500ms_filtered.pkl" for j in range(1, 5)],
         "replicate_2": [f"treatment_B_well_0{j}Dur180sInt100msBin500ms_filtered.pkl" for j in range(5, 9)],
     }
-}
-experiment_structure = {
-
-
-maybe consider a dictionary of dictionaries?? although I am not sure the benefit of this immediately
 }
 """
 _experiment_structure_example = {
@@ -381,7 +376,7 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     plt.tight_layout()
     plt.show()
         
-def getImg(ops):
+def getImg(ops, config):
     """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
     Img = ops[config.analysis_params.Img_Overlay] # Option of  "max_proj" or "meanImg"
     mimg = Img # Use suite-2p source-code naming
@@ -417,7 +412,7 @@ def boundary(ypix,xpix):
 
 #gets neuronal indices
 
-def getStats(suite2p_dict, frame_shape, output_df, use_iscell = False):
+def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
     F = suite2p_dict['F']
