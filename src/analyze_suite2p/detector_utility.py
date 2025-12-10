@@ -16,8 +16,8 @@ def calculate_deltaF(F_file, event_threshold = 2):
 
     Args:
     -----------
-    F_file : 1D numpy array
-        Raw flourescence (F.npy) trace from suite2p.
+    F_file : str
+        Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
     
     event_threshold: float
         Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
@@ -60,8 +60,8 @@ def calculate_deltaF(F_file, event_threshold = 2):
     if not os.path.exists(f"{savepath}/deltaF.npy"):
         np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
         print(f"delta F traces saved as deltaF.npy under {savepath}\n")
-
-    print(f"delta F calculated for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
 
     return deltaF
 
@@ -170,7 +170,7 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
     sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
     
     baseline_reference = np.median(deltaF_baseline)
-    peak_detection_multiplier = float(config.analysis_params.peak_detection_threshold)
+    peak_detection_multiplier = 4.5# float(config.analysis_params.peak_detection_threshold)
     threshold = np.median(deltaF_baseline) + (peak_detection_multiplier * sigma)
 
     peaks, _ = find_peaks(deltaF, height = threshold, distance = 5, prominence = baseline_reference + sigma, width = (2,None))
