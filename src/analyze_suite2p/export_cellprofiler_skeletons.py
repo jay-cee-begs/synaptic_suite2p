@@ -7,6 +7,7 @@ import numpy as np
 folder = r'G:\washing_acute_repeats\Ketamine_Mem_DMSO_low_conc'
 experiment = folder.split('\\')[-1]
 File_Name = str(experiment) + "_experiment_summary.csv"
+experiment_file_name = "2024-2025_LSD_PBS_all_synapse_experiments.csv"
 
 
 def load_experiment_csv(experiment_folder):
@@ -59,8 +60,8 @@ def merge_cellprofiler_csvs(folder, summary_File_Name = f"{experiment}_experimen
     merged_df = skele_data.sort_values(by=['FileName_Originals']).reset_index(drop=True)
 
     merged_df['FileName_Originals'] = merged_df['FileName_Originals'].apply(lambda x: x.split("_")[1:])
-    merged_df['FileName_Originals'] = merged_df['FileName_Originals'].apply(lambda x: "_".join(x))
-    merged_df['FileName_Originals'] = merged_df['FileName_Originals'].str[0:-15]
+    merged_df['FileName_Originals'] = merged_df["FileName_Originals"].apply(lambda x: "_".join(x))
+    merged_df['FileName_Originals'] = merged_df['FileName_Originals'].apply(lambda x: x.split("_Projection.tif")[0])
     # merged_df['FileName_Originals'] = merged_df['FileName_Originals'].str.split("_Projection")[0]
     # merged_df['Total Area'] = merged_df['AreaShape_BoundingBoxMaximum_Y'] * merged_df['AreaShape_BoundingBoxMaximum_X']
     # merged_df['Total Area um'] = (merged_df['AreaShape_BoundingBoxMaximum_Y']/pix2micron) * (merged_df['AreaShape_BoundingBoxMaximum_X']/pix2micron)
@@ -78,26 +79,27 @@ def merge_cellprofiler_csvs(folder, summary_File_Name = f"{experiment}_experimen
 
     stats['FileName_Originals'] = stats['FileName_Originals'].apply(lambda x: "".join(x.split("\\")[-1]))
 
-    stats = stats.drop(columns = ['Unnamed: 0'])
+    stats = stats.drop(columns = ['Unnamed: 0', 'SpikesDiff'])
     print(stats.columns)
-    sorted_experiment_stats = stats.sort_values(by='FileName_Originals').reset_index(drop=True)
-
-    print(sorted_experiment_stats.columns)
+    # sorted_experiment_stats = stats.sort_values(by=['Experimental_Group','FileName_Originals']).reset_index(drop=True)
+    avg_experiment_stats = stats.groupby(['Experimental_Group', 'Replicate_No.','File_Name', 'FileName_Originals','classification']).agg('mean')
+    sorted_avg_experiment_stats = avg_experiment_stats.sort_values(by = ['Experimental_Group', "FileName_Originals"]).reset_index()
+    print(sorted_avg_experiment_stats.columns)
     print(sorted_skeletons.columns)
-    full_df = sorted_skeletons.merge(sorted_experiment_stats, on='FileName_Originals', how = 'right')
+    full_df = sorted_skeletons.merge(sorted_avg_experiment_stats, on='FileName_Originals', how = 'right')
     full_df
 
     print(sorted_skeletons["FileName_Originals"].head())
-    print(sorted_experiment_stats["FileName_Originals"].head())
+    print(sorted_avg_experiment_stats["FileName_Originals"].head())
 
     # How many exact matches?
-    overlap = set(sorted_skeletons["FileName_Originals"]) & set(sorted_experiment_stats["FileName_Originals"])
+    overlap = set(sorted_skeletons["FileName_Originals"]) & set(sorted_avg_experiment_stats["FileName_Originals"])
     print("Number of matching keys:", len(overlap))
     print("Example overlaps:", list(overlap)[:10])
 
     # Which keys are missing?
-    print("Only in skeletons:", set(sorted_skeletons["FileName_Originals"]) - set(sorted_experiment_stats["FileName_Originals"]))
-    print("Only in stats:", set(sorted_experiment_stats["FileName_Originals"]) - set(sorted_skeletons["FileName_Originals"]))
+    print("Only in skeletons:", set(sorted_skeletons["FileName_Originals"]) - set(sorted_avg_experiment_stats["FileName_Originals"]))
+    print("Only in stats:", set(sorted_avg_experiment_stats["FileName_Originals"]) - set(sorted_skeletons["FileName_Originals"]))
 
     full_df['Normalized Skeleton Coverage'] = full_df['Normalized Skeleton Coverage'].astype('float') 
     full_df['Normalized Neurite Area'] = full_df['Normalized Neurite Area'].astype('float') 
