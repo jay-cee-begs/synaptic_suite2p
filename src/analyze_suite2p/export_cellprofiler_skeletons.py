@@ -13,7 +13,8 @@ def load_experiment_csv(experiment_folder):
     import os
     from analyze_suite2p import config_loader
     config = config_loader.load_json_config_file(os.path.join(experiment_folder, 'analysis_config.json'))
-    file_path = os.path.join(config.general_settings.main_folder,f"{str(config.general_settings.main_folder.split('\\')[-1])}_experiment_summary.csv")
+    csv_file = str(config.general_settings.main_folder.split('\\')[-1]) + "_experiment_summary.csv"
+    file_path = os.path.join(config.general_settings.main_folder,csv_file)
     data = pd.read_csv(file_path)
     # synapses = data[["Experimental_Group", 
     #                  "File_Name", 
@@ -23,13 +24,7 @@ def load_experiment_csv(experiment_folder):
     #                  "SpikesFreq",
     #                  "AvgAmplitude",
     #                  "AvgDecayTime" ]].drop_duplicates()
-    # syanpses = synapses.groupby("File_Name").agg({"Experimental_Group": "first",
-    #                                           "synapse_ROI":["mean"],
-    #                                           "dendrite_ROI": ["mean"],
-    #                                           "total_ROIs": ["mean"],
-    #                                           "SpikesFreq": ["mean"],
-    #                                           "AvgAmplitude": ["mean"],
-    #                                           "AvgDecayTime": ["mean"]})
+
     synapses = data[["Experimental_Group", 
                      "Replicate_No.",
                      "File_Name",
@@ -54,10 +49,6 @@ def load_experiment_csv(experiment_folder):
     #     "AvgAmplitude",
     #     "AvgDecayTime"
     ]
-    save_path = file_path.split("\\")[0:-1]
-    save_path = '\\'.join(save_path)
-    experiment = file_path.split("\\")[-1]
-    experiment = experiment.split(".csv")[0]
 
     return groups, metrics, syanpses
 
