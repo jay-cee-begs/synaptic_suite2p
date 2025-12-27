@@ -33,13 +33,14 @@ def load_experiment_csv(experiment_folder):
                      'synapse_ROI', 
                      "dendrite_ROI",
                      "total_ROIs"]].dropna()
+    groups = synapses["Experimental_Group"].unique().tolist()
+
     synapses = synapses.groupby("File_Name").agg({"Experimental_Group": "first",
                                                   "Replicate_No.": "first",
                                                   "synapse_ROI":["mean"],
                                                   "dendrite_ROI": ["mean"],
                                                   "total_ROIs": ["mean"],
                                                   "SpikesFreq": ["mean"]})
-    groups = synapses["Experimental_Group"].unique().tolist()
     mapped_groups = synapses["Experimental_Group"]
     # Metrics and grouping
     metrics = [
@@ -241,7 +242,7 @@ if __name__ == "__main__":
     
     df, skeletons, suite2p_files = merge_cellprofiler_csvs_without_fuzzy_match(folder)
 
-    if len(skeletons) or len(suite2p_files) is not 0:
+    if len(skeletons) or len(suite2p_files) != 0:
         print("something is wrong here")
 
     df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
