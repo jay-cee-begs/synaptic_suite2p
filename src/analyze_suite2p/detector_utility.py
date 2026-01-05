@@ -39,22 +39,22 @@ def calculate_deltaF(F_file, event_threshold = 2):
     deltaF= []
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+        #Remove bleaching to generate change in Fluorescence
+        baseline_corrected = BaselineRemoval(corrected_trace)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+
+        #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
         trace_mad = np.median(np.abs(corrected_trace - trace_median))
         norm_sigma = 1.4826*trace_mad
         baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
-
         F0 = np.median(corrected_trace[baseline_mask])
-        # amount = int(0.125*len(corrected_trace))
-        # middle = 0.5*len(corrected_trace)
-        # F_sample = (np.concatenate((corrected_trace[0:amount], corrected_trace[int(middle-amount/2):int(middle+amount/2)], 
-        #             corrected_trace[len(corrected_trace)-amount:len(corrected_trace)])))  #dynamically chooses beginning, middle, end 12.5%, changeable
-        # #TODO decide if mean, median or mode is best for deltaF calculations
-        # F_baseline = np.percentile(F_sample, 10)
-        normalized_F = (corrected_trace-F0)/F0
-        baseline_correction = BaselineRemoval(normalized_F)
-        ZhangFit_normalized = baseline_correction.ZhangFit(lambda_= 10)
-        deltaF.append(ZhangFit_normalized)
+
+        #calculate dF / F0
+        normalized_F = (airPLS_corrected)/F0
+        
+        deltaF.append(normalized_F)
         
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
