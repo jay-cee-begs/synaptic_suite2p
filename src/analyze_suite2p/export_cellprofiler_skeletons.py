@@ -4,10 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 # from analyze_suite2p.config_loader import load_json_config_file
-folder = r'G:\washing_acute_repeats\Ketamine_Mem_DMSO_low_conc'
-experiment = folder.split('\\')[-1]
-File_Name = str(experiment) + "_experiment_summary.csv"
-experiment_file_name = "2024-2025_LSD_PBS_all_synapse_experiments.csv"
+
 
 
 def load_experiment_csv(experiment_folder):
@@ -29,7 +26,8 @@ def load_experiment_csv(experiment_folder):
     synapses = data[["Experimental_Group", 
                      "Replicate_No.",
                      "File_Name",
-                     "SpikesFreq", 
+                     "SpikesFreq",
+                      
                      'synapse_ROI', 
                      "dendrite_ROI",
                      "total_ROIs"]].dropna()
@@ -70,16 +68,19 @@ def merge_cellprofiler_csvs_without_fuzzy_match(folder):
 
     merged_df = merged_df[['Normalized Neurite Area','um Neurite Area', "Normalized Skeleton Coverage",'um Skeleton Coverage', 'FileName_Originals']]
     sorted_skeletons = merged_df.sort_values(by="FileName_Originals").reset_index(drop=True)
+    experiment = folder.split('\\')[-1]
     stats = pd.read_csv(os.path.join(folder, f'{experiment}_synapse_average.csv')).dropna()
 
     stats['FileName_Originals'] = stats['Unnamed: 0'].astype("str")
 
     stats['FileName_Originals'] = stats['FileName_Originals'].apply(lambda x: "".join(x.split("\\")[-1]))
-
-    stats = stats.drop(columns = ['Unnamed: 0', 'SpikesDiff'])
+    try:
+        stats = stats.drop(columns = ['Unnamed: 0', 'SpikesDiff'])
+    except KeyError as e:
+        stats = stats.drop(columns = 'Unnamed: 0')
     print(stats.columns)
     # sorted_experiment_stats = stats.sort_values(by=['Experimental_Group','FileName_Originals']).reset_index(drop=True)
-    avg_experiment_stats = stats.groupby(['Experimental_Group', 'Replicate_No.','File_Name', 'FileName_Originals','classification']).agg('mean')
+    avg_experiment_stats = stats.groupby(['Experimental_Group', 'Replicate_No.', 'FileName_Originals']).agg('mean')
     sorted_avg_experiment_stats = avg_experiment_stats.sort_values(by = ['Experimental_Group', "FileName_Originals"]).reset_index()
     print(sorted_avg_experiment_stats.columns)
     print(sorted_skeletons.columns)
@@ -226,23 +227,15 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
     merged_df['total_per_10um'] = (merged_df['total_ROIs'] / merged_df["um Skeleton Coverage"]) * 10
 
     
-    return merged_df
+    return merged_df, missing
 
 
-def main():
+def main(folder):
+    experiment = folder.split('\\')[-1]
+
     groups, metrics, synapses_csv = load_experiment_csv(folder)
     synapses_csv.to_csv(os.path.join(folder, f'{experiment}_synapse_average.csv'))
     df = merge_cellprofiler_csvs_without_fuzzy_match(folder)
     df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
     return df
 
-if __name__ == "__main__":
-    groups, metrics, synapses_csv = load_experiment_csv(folder)
-    synapses_csv.to_csv(os.path.join(folder, f'{experiment}_synapse_average.csv'))
-    
-    df, skeletons, suite2p_files = merge_cellprofiler_csvs_without_fuzzy_match(folder)
-
-    if len(skeletons) or len(suite2p_files) != 0:
-        print("something is wrong here")
-
-    df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
