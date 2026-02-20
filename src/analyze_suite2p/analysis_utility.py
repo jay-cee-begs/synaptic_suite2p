@@ -265,7 +265,7 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     processed_df = calculate_cell_stats(filtered_df)
     filtered_columns = processed_df.columns[0:7]
     processed_df = processed_df.drop(filtered_columns, axis = 1)
-    processed_df = processed_df[processed_df['SpikesCount']>=2]
+    processed_df = processed_df[processed_df['SpikesCount']>=1]
 
     return df, processed_df#, aggregate_stats
 
