@@ -79,8 +79,10 @@ def merge_cellprofiler_csvs_without_fuzzy_match(folder):
     except KeyError as e:
         stats = stats.drop(columns = 'Unnamed: 0')
     print(stats.columns)
-    # sorted_experiment_stats = stats.sort_values(by=['Experimental_Group','FileName_Originals']).reset_index(drop=True)
-    avg_experiment_stats = stats.groupby(['Experimental_Group', 'Replicate_No.', 'FileName_Originals']).agg('mean')
+    stats[['synapse_ROI','dendrite_ROI','total_ROIs','SpikesFreq']] = stats[['synapse_ROI','dendrite_ROI','total_ROIs','SpikesFreq']].astype(float)
+
+    sorted_experiment_stats = stats.sort_values(by=['Experimental_Group','FileName_Originals']).reset_index(drop=True)
+    avg_experiment_stats = sorted_experiment_stats.groupby(['Experimental_Group', 'Replicate_No.', 'FileName_Originals']).agg('mean')
     sorted_avg_experiment_stats = avg_experiment_stats.sort_values(by = ['Experimental_Group', "FileName_Originals"]).reset_index()
     print(sorted_avg_experiment_stats.columns)
     print(sorted_skeletons.columns)
@@ -133,6 +135,8 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
     exp_df = exp_df.dropna().reset_index()
     exp_df["FileName_Originals"] = exp_df['Unnamed: 0']
     exp_df = exp_df.drop('Unnamed: 0', axis = 1)
+    exp_df[['synapse_ROI','dendrite_ROI','total_ROIs','SpikesFreq']] = exp_df[['synapse_ROI','dendrite_ROI','total_ROIs','SpikesFreq']].astype(float)
+
     exp_df["FileName_Originals"] = exp_df["FileName_Originals"].apply(lambda x: x.split('\\')[-1])
 
     sorted_experiment_stats = exp_df.sort_values(by=['FileName_Originals', "Experimental_Group"]).reset_index(drop=True)
