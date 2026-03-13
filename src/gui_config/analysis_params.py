@@ -21,7 +21,7 @@ class OpsEditor:
             'skew_threshold': 1.0,
             'compactness_threshold': 1.4,
             "peak_detection_threshold": 4.5,
-            'peak_count_threshold': 2,
+            'peak_count_threshold': 1,
             'Img_Overlay': 'max_proj',
             'use_suite2p_ROI_classifier': False,
             'update_suite2p_iscell': True,
