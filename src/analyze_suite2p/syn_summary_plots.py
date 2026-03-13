@@ -10,7 +10,7 @@ def plot_with_stats(data, metric, plot_type="violin", groups = None):
     """
     Plots the specified metric for all groups in the 'Group' column and adds statistical annotations.
 
-    Parameters:
+    Args:
     - data: pandas DataFrame containing the data.
     - metric: str, the column name of the metric to plot.
     - plot_type: str, the type of plot (e.g., "violin", "box", "swarm", "bar", "point").
