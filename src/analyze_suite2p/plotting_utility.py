@@ -282,7 +282,7 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
             for idx in my_tsd.keys():
                 plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
             plt.ylabel('Amplitude')
-            plt.ylim(0,max_amplitude)
+            plt.ylim(0,5)
             plt.xlabel('Spike time (s)')
             plt.tight_layout()
 
@@ -305,7 +305,7 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
     for idx in my_tsd.keys():
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
 
-def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, save_fig = False):
+def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, show_peaks = False, save_fig = False):
     # Get boolean mask of valid cells
     # Apply mask to deltaF
     iscell_mask = suite2p_dict['iscell'][:,0] == 1
@@ -337,16 +337,19 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
             '#0072B2', '#D55E00', '#CC79A7', '#999999', '#000000', '#999933']
     
     frame_rate = 20
-    time = np.arange(deltaF.shape[1]) / frame_rate
+    time = np.arange(masked_dF.shape[1]) / frame_rate
     print("time range (s):", time[0], "->", time[-1])
     # print("treatment(s) (s):", treatment1, treatment2)    
     plt_traces = masked_dF[lst]
     for i, trace in enumerate(plt_traces):
         offset_trace = trace + i * trace_offset
         ax.plot(time, offset_trace, color='black', alpha=0.6)
-    if treatment_vid is True and treatment_no is  1:
+        if show_peaks:
+            peak_list = detector_utility.single_synapse_peak_detection(trace, return_peaks = True)
+            ax.plot(peak_list, trace[peak_list], 'o', color = 'red')
+    if treatment_vid == True and treatment_no ==  1:
          ax.axvline(treatment1, color='red', linestyle='--')
-    if treatment_vid is True and treatment_no is 2:
+    if treatment_vid == True and treatment_no == 2:
          ax.axvline(treatment1, color='red', linestyle='--')
          ax.axvline(treatment2, color='red', linestyle='--')
 
@@ -554,48 +557,49 @@ def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
     im.save(output_path)
     return im, roi_masks
 
+def single_spine_plotting_new(deltaF):
+    """MUST HAVE airPLS FIT THEN dF/F0"""
+    sigma, deltaF_baseline = detector_utility.estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
+    
+    baseline_reference = np.median(deltaF_baseline)
+    peak_detection_multiplier = 4.5# float(config.analysis_params.peak_detection_threshold)
+    threshold = np.median(deltaF_baseline) + (peak_detection_multiplier * sigma)
 
+    peaks, _ = find_peaks(deltaF, height = threshold, distance = 5, prominence = baseline_reference + sigma, width = (2,None))
 
 def single_spine_peak_plotting(deltaF):
     
-    iqr_noise = detector_utility.filter_outliers(deltaF) #iqr noise
-    mu, SD = norm.fit(iqr_noise) #median and sd of noise of trace based on IQR
-    # threshold = mu + 3.5 * SD
-    # threshold2 = mu + 4*SD
-    threshold3 = mu + 4.5*SD
-    # threshold4 = mu+5*SD
-    peaks, _ = find_peaks(deltaF, height = threshold3, distance = 5) #frequency
-    amplitudes = deltaF[peaks] - mu #amplitude change baseline to mu instead
+    sigma, deltaF_baseline = detector_utility.estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
+    
+    baseline_reference = np.median(deltaF_baseline)
+    peak_detection_multiplier = 4.5# float(config.analysis_params.peak_detection_threshold)
+    threshold = np.median(deltaF_baseline) + (peak_detection_multiplier * sigma)
+
+    peaks, _ = find_peaks(deltaF, height = threshold, distance = 5, prominence = baseline_reference + sigma, width = (2,None))
+
+    amplitudes = deltaF[peaks] - baseline_reference #amplitude
+
     plt.figure(figsize=[10,10])
     plt.plot(deltaF)
     plt.plot(peaks, deltaF[peaks], "x")
-    # plt.plot(decay_points, corrected_trace[decay_points], "x")
-    # plt.plot(np.full_like(deltaF, threshold), "--",color = "green")
-    # plt.plot(np.full_like(deltaF, threshold2), "--",color = "blue")
-    plt.plot(np.full_like(deltaF, threshold3), "--",color = "orange")
-    # plt.plot(np.full_like(deltaF, threshold4), "--", color = 'red')
-    plt.plot(np.full_like(deltaF, mu), "--", color = 'black')
-    # plt.plot(np.full_like(deltaF, np.median(deltaF)), "--", color = 'black')
-    # plt.ylim(-0.1,0.5)
+
+    plt.plot(np.full_like(deltaF, threshold), "--",color = "red")
+    plt.plot(np.full_like(deltaF, np.median(deltaF_baseline)), "--", color = 'black')
+
     print('the peak time stamps are :{}' .format(peaks))
     print('the amplitude of each peak is: {}' .format(amplitudes))
     plt.legend()
 
     plt.show()
-    print(f"DeltaF Normalized Fit mu: {mu}")
     print(f" DeltaF Trace Median: {np.median(deltaF)}")
     print(f"DeltaF Trace Mode: {stats.mode(deltaF)}")
     plt.figure(figsize=[10,7])
     plt.hist(deltaF, bins = 1000)
-    # plt.axvline(np.median(deltaF), color = "red")
-    plt.axvline(mu, color = "orange")
-    # plt.axvline(SD, linestyle = '--', color = "blue")
-    plt.axvline(4.5*SD + mu, color = 'green')
     plt.xlabel("dF/F Normalized Fluorescence", fontsize = 20)
     plt.ylabel("Number of Frames per bin", fontsize = 20)
     plt.legend()
     plt.tight_layout
-    plt.show()
+    # plt.show()
 
 
 def plot_raw_deltaF_vs_airPLS_correction(deltaF, lambda_values = [100,1000], ylim = (-0.2,0.9)):

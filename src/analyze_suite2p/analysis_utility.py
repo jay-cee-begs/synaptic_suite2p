@@ -265,7 +265,7 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     processed_df = calculate_cell_stats(filtered_df)
     filtered_columns = processed_df.columns[0:7]
     processed_df = processed_df.drop(filtered_columns, axis = 1)
-    processed_df = processed_df[processed_df['SpikesCount']>=2]
+    processed_df = processed_df[processed_df['SpikesCount']>=1]
 
     return df, processed_df#, aggregate_stats
 
@@ -561,21 +561,27 @@ def process_spike_csvs_to_pkl(input_path):
     output_path = os.path.join(input_path, 'pkl_files')
     if not os.path.exists(output_path):
         os.mkdir(output_path)
+    csv_file_list = []
+    for root, dirs, files in os.walk(os.path.join(config.general_settings.main_folder, 'csv_files')):
+        for file in files:
+            if file.endswith('.csv') and "processed_" not in file:
+                csv_file_list.append(file)
     
     for spike_df, file_name in spike_df_iterator(csv_path):
-            processed_path = os.path.join(output_path, 
+            if file_name in csv_file_list: 
+                processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
                                         f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
                                         + ".pkl")
                 
                 
-            processed_dict = {
+                processed_dict = {
                 "cell_stats": calculate_cell_stats(spike_df)}#,#, #consider removing binned_stats for now unless there becomes a need for synapse synchronization / congruence
                 # "binned_stats": calculate_binned_stats(spike_df)}
-            processed_dict["cell_stats"] = processed_dict["cell_stats"][processed_dict['cell_stats']['IsUsed'] == True]
+                processed_dict["cell_stats"] = processed_dict["cell_stats"][processed_dict['cell_stats']['IsUsed'] == True]
 
-            pd.to_pickle(processed_dict, processed_path)
+                pd.to_pickle(processed_dict, processed_path)
 
 
 def generate_synapse_counts_and_summary_stats(experiment_folder):
