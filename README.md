@@ -4,11 +4,12 @@ A semi-automated calcium imaging detection (using suite2p) and deconvolution (us
 
 This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting NMDA synaptic puncta in 0mM Mg2+ solutions with TTX. 
 
+The current pipeline has only been tested on Windows; Linux compatibility is being implemented
+
 ## Setup and Installation 
 You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.9, etc)
 
 To start you will need to create a fork of this repository (synaptic suite2p) to your current machine through github or by downloading the source code as a zip file. 
-NOTE: likely would be _easier_ to just make a package with the src code on PyPi
 
 Alternatively you should download a zip file of the code and save it somewhere you can access easily
 
@@ -27,7 +28,7 @@ Alternatively you should download a zip file of the code and save it somewhere y
 6. Lastly, please run `pip install -e .` from the main project folder of synaptic_suite2p
 
 
-**NOTE**: some additional packages will need to be installed (e.g.`pip install nd2 seaborn BaselineRemoval`)
+**NOTE**: some additional packages will need to be installed (e.g.`pip install seaborn BaselineRemoval pynapple` image software-specific packages such as `nd2` might also nee to be installed for processing Nikon microscope image files)
 
 # Workflow
 
@@ -116,18 +117,54 @@ CONTENTS:
 notebook_scripts/
     test_pipline: for running suite2p in its current state, including user inputs
 src/
-    main code of the repository
+        main code of the repository
     init: marks code as source code
-    utility:
-        plotting: for generating plots and doing statistical tests
-        suite2p: unpacking suite2p outputs
-        detector: detect events from suite2p: extracted traces
-        analysis: converting spikes and amplitudes into measurable statistics 
-    run_functions:
-        suite2p_headless: allows suite2p to run without GUI
-    configurations:
-        not tracked by git, constants for your experiments
-suite2p/
+    plotting_utility:  for generating plots from processed data and performing basic statistical tests
+    
+    suite2p_utility: unpacking suite2p outputs
+        
+    detector_utility: peak detection and fluorescence nromalization
+
+    analysis_utility: converting spikes and amplitudes into measurable statistics 
+
+    run_suite2p: transfers image files into individual folders to run with suite2p and suite2p to run without GUI
+    
+    config_loader: functions for loading JSON config files as namespace objects or dictionaries
+
+    export_cellprofiler_skeletons: 
+    syn_summary_plots:
+    xs_plots:
+
+gui config/
+        Code to run gui and automated processing
+    Scripts/
+        .bat files that can be used to run the pipeline from the GUI
+    init: marks code as source code
+    analysis_params: establishes post-processing analysis parameters in the GUI
+
+    synapse_gui: code to run the gui; called using `python -m synapse_gui`
+
+suite2p_ops_files/
+        Example ops.npy files for suite2p settings
+    synaptic_suite2p_w_TTX_multivid_registration.npy: suite2p settings for detecting synapses across multiple recordings
+    synaptic_suite2p_w_TTX.npy: suite2p settings for detecting synapses in individual recordings
+
+R_analysis/
+        Code to run mixed-effect models and bootstrapping
+    glmm_effect_functions.R: function for running GLMM_TMB R package on processed synapse data
+
+    synapse_effect_bootstraps.R: function for running clustered, stratified bootstrap resampling with replacement on processed syanpse data
+
+neurite_normalization/
+        CellProfiler and FIJI macros for determining neurite coverage
+    Cell_Profiler_Projections_Dendrite_Coverage.ijm: ImageJ macro for automatically generating Average projection images
+
+    mask_neurons_and_skeletonize_neurites.cpproj: CellProfiler pipeline for removing soma signal and skeletonizing neurites from average projection images
+
+    MAX projection minus MIN projection.ijm: ImageJ macro to generate max minus min projection images as seen in figures
+
+
+        suite2p/
     pyproject.toml: 
         dependencies for this project (work in progress)
     export_cell_profiler_skeletons.py
@@ -142,7 +179,8 @@ tests/
     yet to be implemented
 
 config/
-    configurations: User defined constants that will remain here
+    analysis_params.json: JSON file containing outputs for the current experiment from analysis_params.py
+    config.json: JSON file containing all information for running the current experiment (including analysis_params.json)
 
 ```
 ## Configuration
