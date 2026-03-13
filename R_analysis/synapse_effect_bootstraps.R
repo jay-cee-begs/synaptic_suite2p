@@ -4,19 +4,6 @@ library(janitor)
 library(ggplot2)
 library(future.apply)
 
-wd <- getwd()
-
-data_dir <- "C:/Users/jcbegs/Documents/GitHub/R_synapse/R_analysis"
-if (wd != data_dir) {
-  setwd(data_dir)
-  wd <- getwd()
-}
-source("glmm_effect_functions.R")
-save_dir <- "C:\Users\jcbegs\Documents\R_analysis\r_analysis\newest_csvs\amp_new_bootstraps"
-if (wd != save_dir) {
-  setwd(save_dir)
-  wd <- getwd()
-}
     
 bootstrap_analysis_vectorized <- function(
     csv_file,
@@ -154,88 +141,32 @@ bootstrap_analysis_vectorized <- function(
         control_means = boot_control_means,
         summary = boot_summary_all
       ))
-    }
-    
 
 
-param_list <- c("spikes_freq", 'avg_amplitude')
-classifications <- list("synaptic_event","dendritic_event", NULL)
-for (param in param_list){
-  for (classification in classifications) {
-    
-  
-  bootstrap_analysis_vectorized("004-NMDA_synapse_experiment_summary.csv",
-                   param,
-                   test_groups = c("003-102", "007-124", "008-218", "MGO-53"),
-                   classification_filter = NULL,
-                   reference_group = 'MGO-53',
-                   y_min= 0.6, y_max = 1.4,
-                   file_base = "NMDA_AB_test_all_events")
-  }
-}
-for (param in param_list){
-  bootstrap_analysis_vectorized("glycine_NBQX_experiment_summary.csv",
-                   param,
-                   test_groups = c("NBQX_base", "NBQX"),
-                   classification_filter = NULL,
-                   y_min= 0.6, y_max = 1.9,
-                   reference_group = 'NBQX_base',
-                   file_base = "NBQX_all_events")
-}
-for (param in param_list){
-  for (classification in list('synaptic_event','dendritic_event')) {
-    bootstrap_analysis_vectorized("filtered_img_ket_mem_chronic.csv",
-                   param,
-                   test_groups = c("24h_DMSO", "24h_1uM_mem", "24h_10uM_mem", "24h_10uM_ket","24h_1uM_ket"),
-                   classification_filter = classification,
-                   reference_group = '24h_DMSO',
-                   y_min= 0.25, y_max = 1.58,
-                   file_base = paste0(classification,"_chronic_mem_ket"))
-}
-}
-for (param in param_list){
-  bootstrap_analysis_vectorized("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv",
-                   param,
-                   test_groups = c("Ket", "Mem", "DMSO"),
-                   classification_filter = NULL,
-                   reference_group = 'DMSO',
-                   y_min= 0.5, y_max = 1.15,
-                   file_base = "ket_mem_acute_all_events")
-}
-for (param in param_list){
-  bootstrap_analysis_vectorized("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv",
-                   param,
-                   test_groups = c("Ket", "Ket_base"),
-                   classification_filter = NULL,
-                   reference_group = 'Ket_base',
-                   y_min= 0.4, y_max = 1.15,
-                   file_base = "ket_acute_all_events")
-}
-for (param in param_list){
-  bootstrap_analysis_vectorized("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv",
-                   param,
-                   test_groups = c("Mem", "Mem_base"),
-                   classification_filter = NULL,
-                   reference_group = 'Mem_base',
-                   y_min= 0.4, y_max = 1.15,
-                   file_base = "mem_acute_all_events")
-}
-for (param in param_list){
-  bootstrap_analysis_vectorized("glycine_NBQX_experiment_summary.csv",
-                              param,
-                              test_groups = c("gly_base", "glycine"),
-                              classification_filter = NULL,
-                              reference_group = 'gly_base',
-                              y_min= 0.6, y_max = 1.9,
-                              file_base = "GLy_all_events")
-}
-for (param in param_list){
-    
-  bootstrap_analysis_vectorized("z-score_experiment_summary.csv",
-                              param,
-                              test_groups = c("z-base", "PDBu", "APV"),
-                              classification_filter = NULL,
-                              reference_group = 'z-base',
-                              y_min= 0.5, y_max = 2.75,
-                              file_base = "z-score_all_events")
-}
+# ----Example Workflow for a experiment csv file---- #
+
+
+# data_dir <- "C:/Users/username/Documents/csv_file_folder"
+# if (wd != data_dir) {
+#   setwd(data_dir)
+#   wd <- getwd()
+# }
+# source("glmm_effect_functions.R")
+
+#What parameters do you wish to check
+# param_list <- c("spikes_freq", 'avg_amplitude')
+
+#Option to look at synaptic, dendritic, or all events
+# classifications <- list("synaptic_event","dendritic_event", NULL)
+
+# for (param in param_list){
+#   for (classification in classifications){
+#     bootstrap_analysis_vectorized("example-imaging_experiment_summary.csv",
+#                     param,
+#                     test_groups = c("group1", "group2", "group3", "group4"),
+#                     classification_filter = classification,
+#                     reference_group = 'group1',
+#                     y_min= 0.6, y_max = 2.5,
+#                     file_base = "experiment_name")
+#   }
+# }
