@@ -58,20 +58,3 @@ function processImage(imagePath, imageName) {
 
 processImagesInDir(inputDir);
 setBatchMode(false);
-//saveAs("Results", splitDir + "AVG_Skeleton_and_Area_coverage.csv");
-
-//for (i=0; i<filelist.length; i++) { 
-//     if (endsWith(filelist[i], ".nd2")){ 
-//		
-//		Ext.Bio-run("Bio-Formats Importer"(inputDir+filelist[i]));
-//		run("Bio-Formats Importer", "open=[inputDir+filelist[i]] color_mode=Default rois_import=[ROI manager] view=Hyperstack stack_order=XYCZT use_virtual_stack");
-//
-//run("Z Project...", "projection=[Average Intensity]");
-////selectImage(imgName);
-////run("Z Project...", "projection=[Min Intensity);
-//
-////run("Image Calculator...");
-//
-////imageCalculator("Subtract create", "MAX_" + imgName","MIN_" + imgName);
-//selectImage("AVG_" + imgName);
-//         saveAs("Tiff",  splitDir + baseName + "_CP_Projection"); 
