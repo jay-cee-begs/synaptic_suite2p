@@ -426,7 +426,7 @@ def spike_list_translator(input_string):
 
     """
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * config.general_settings.FRAME_INTERVAL
+    return np.array(string_list).astype(int) * (1 / float(config.general_settings.frame_rate))
 
 def amplitude_list_translator(input_string):
     """
@@ -464,7 +464,7 @@ def decay_frame_list_translator(input_string):
     """
 
     decay_frame_list = string_to_list_translator(input_string)
-    return np.array(decay_frame_list).astype(float)*config.general_settings.FRAME_INTERVAL
+    return np.array(decay_frame_list).astype(float)*(1/config.general_settings.frame_rate)
 
 def decay_time_list_translator(input_string):
     """
@@ -572,7 +572,7 @@ def process_spike_csvs_to_pkl(input_path):
                 processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
-                                        f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
+                                        f"Int{int((1/config.general_settings.frame_rate)*1000)}ms"
                                         + ".pkl")
                 
                 
