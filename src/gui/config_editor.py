@@ -240,6 +240,42 @@ class ConfigEditor:
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Proceed", command=self.run_pipeline).pack(pady=5)
 
+    
+    def run_subprocess(self, bat_file):
+        subprocess.call([str(bat_file)])  # Execute sequence.bat
+        # Redirect the terminal output to a text file, seperate function to reduce interference with the process bar
+        scripts_dir = Path(bat_file).parent
+        log_file = scripts_dir / "process_log.txt"
+        with open(log_file, "w") as f:
+            process = subprocess.Popen([str(bat_file)], stdout=f, stderr=subprocess.STDOUT)
+            process.wait()
+
+        # Display the log file content in a new GUI window
+        # self.show_log_window(log_file)
+
+    def show_ops_options(self):
+        ops_window = tk.Toplevel(self.master)
+        ops_window.title("Select Ops File Option")
+
+        tk.Label(ops_window, text="Choose how to obtain the .ops file:").pack(padx=10, pady=10)
+
+        # Option a: Insert file path
+        tk.Label(ops_window, text="Insert Ops File Path:").pack(padx=10, pady=5)
+        ops_path_entry = tk.Entry(ops_window, width=50)
+        ops_path_entry.pack(padx=10, pady=5)
+        
+        def set_ops_path():
+            self.ops_path_var.set(ops_path_entry.get())
+            ops_window.destroy()
+
+        tk.Button(ops_window, text="Set Ops Path", command=set_ops_path).pack(pady=5)
+
+        # Option b: Edit default ops
+        tk.Button(ops_window, text="Edit Default Ops", command=self.default_ops_suite2p).pack(pady=5)
+
+        # Option c: Run Suite2P GUI
+        tk.Button(ops_window, text="Run Suite2P", command=self.run_suite2p).pack(pady=5)
+
     def run_pipeline(self):  #Option to skip suite2p, will execute a different .bat then
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
