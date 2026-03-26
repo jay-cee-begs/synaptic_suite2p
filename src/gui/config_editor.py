@@ -68,20 +68,20 @@ class ConfigEditor:
         # Main folder input
         tk.Label(self.main_frame, text="Experiment / Main Folder Path:").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.main_frame, textvariable=self.main_folder_var, width=50).pack(padx=10)
-        tk.Button(self.main_frame, text="Browse", command=self.browse_folder).pack(padx=10, pady=5)
+        tk.Button(self.main_frame, text="Browse", command=self.browse_folder).pack(padx=10, pady=0)
 
         # Data extension input
-        tk.Label(self.main_frame, text="Data Extension:").pack(anchor='w', padx=10, pady=5)
+        tk.Label(self.main_frame, text="Data Extension (e.g., 'nd2', 'tiff', 'tif'):").pack(anchor='w', padx=10, pady=5)
         tk.Entry(self.main_frame, textvariable=self.data_extension_var).pack(padx=10)
 
         # Groups
         self.group_frame = tk.Frame(self.main_frame)
         self.group_frame.pack(padx=10, pady=5)
-        tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
-        tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.add_group).pack(side=tk.LEFT)
+        # tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
+        tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.add_group).pack(side=tk.BOTTOM)
 
         # Ops path
-        tk.Label(self.main_frame, text="Suite2p configurations (ops.npy):").pack(anchor='w', padx=10, pady=5)
+        tk.Label(self.main_frame, text="Suite2p settings (ops.npy):").pack(anchor='w', padx=10, pady=5)
         ops_frame = tk.Frame(self.main_frame)
         ops_frame.pack(padx=10, pady=5)
         tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
@@ -201,7 +201,7 @@ class ConfigEditor:
         self.config.groups = folders
         self.config.exp_condition = folder_logic.build_exp_condition(folders)
 
-        print("Groups:", folders)
+        print("Sucessfully added groups:", folders)
 
     def create_exp_condition_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
@@ -235,7 +235,7 @@ class ConfigEditor:
         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
         config_file_path = (script_dir / "../../config/config.json").resolve()
         save_config(config_file_path, self.config)
-        print("Saved!")
+        print(f"Configurations saved as config.json @ {config_file_path}")
 
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Proceed", command=self.run_pipeline).pack(pady=5)
