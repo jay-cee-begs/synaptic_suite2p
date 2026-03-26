@@ -30,12 +30,12 @@ class ConfigEditor:
         # Load existing configurations
         self.config = load_config()
         logger.debug(f"CONFIG LOADED: {self.config}")
-        messagebox.showinfo("Debug", f"CONFIG LOADED: {self.config}")
+        # messagebox.showinfo("Debug", f"CONFIG LOADED: {self.config}")
 
         # Correct: GenSettings object is self.config
         self.gen_settings = self.config
         logger.debug(f"GEN SETTINGS: {vars(self.gen_settings)}")
-        messagebox.showinfo("Debug", f"GEN SETTINGS: {vars(self.gen_settings)}")
+        # messagebox.showinfo("Debug", f"GEN SETTINGS: {vars(self.gen_settings)}")
 
         # Initialize Tkinter variables
         self.selected_bat_file = tk.StringVar()  # Initialize selected_bat_file
@@ -57,7 +57,7 @@ class ConfigEditor:
         logger.debug(f"Ops path var: {self.ops_path_var.get()}")
         logger.debug(f"Exp duration var: {self.exp_dur_var.get()}")
         logger.debug(f"Bin width var: {self.bin_width_var.get()}")
-        messagebox.showinfo("Debug", f"Tk Vars Loaded:\nMain folder: {self.main_folder_var.get()}\nFrame rate: {self.frame_rate_var.get()}")
+        # messagebox.showinfo("Debug", f"Tk Vars Loaded:\nMain folder: {self.main_folder_var.get()}\nFrame rate: {self.frame_rate_var.get()}")
 
         # Build GUI frames
         self.master.geometry("500x900")  # Set initial window size
@@ -86,8 +86,8 @@ class ConfigEditor:
         ops_frame.pack(padx=10, pady=5)
         tk.Entry(ops_frame, textvariable=self.ops_path_var, width=40).pack(side=tk.LEFT)
         tk.Button(ops_frame, text="Browse", command=self.browse_ops_file).pack(side=tk.LEFT)
-        tk.Button(self.main_frame, text="Open Suite2p GUI", command=self.launch_suite2p_gui).pack(pady=5)
-        tk.Label(self.main_frame, text="Open Suite2p GUI to create a new ops file").pack(anchor='w', padx=30, pady=5)
+        # tk.Button(self.main_frame, text="Open Suite2p GUI", command=self.launch_suite2p_gui).pack(pady=5)
+        # tk.Label(self.main_frame, text="Open Suite2p GUI to create a new ops file").pack(anchor='w', padx=30, pady=5)
 
         # Frame rate
         tk.Label(self.main_frame, text="Frame Rate:").pack(anchor='w', padx=10, pady=5)
@@ -117,7 +117,7 @@ class ConfigEditor:
 
         # Final debug message
         logger.debug("GUI initialized successfully")
-        messagebox.showinfo("Debug", "GUI initialized successfully")
+        # messagebox.showinfo("Debug", "GUI initialized successfully")
 
 
     def _on_mousewheel(self, event):
