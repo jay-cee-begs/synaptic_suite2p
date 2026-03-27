@@ -110,12 +110,13 @@ def get_all_pkl_outputs_in_path(path):
     """
     processed_files = []
     file_names = []
-    for current_path, directories, files in os.walk(path):
+    for root, directories, files in os.walk(path):
         for file_name in files:
-            full_path = os.path.join(current_path, file_name)
-            processed_files.append(full_path)
-        file_names.append(files)
-    return processed_files, file_names[0]
+            if file_name.endswith('.pkl'):
+                full_path = os.path.join(root, file_name)
+                processed_files.append(Path(full_path))
+                file_names.append(file_name)
+    return processed_files, file_names
 
 
 def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, plot_amplitudes = False,
