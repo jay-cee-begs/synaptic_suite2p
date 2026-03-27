@@ -162,34 +162,21 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
     import pickle
     import pynapple as nap
     import matplotlib.pyplot as plt
-    import matplotlib
 
     warnings.filterwarnings('ignore')
     
     with open(file_path, 'rb') as f:
         data = pickle.load(f)
     df_cell_stats = data['cell_stats']
-    
-    color = "#4e4d4d"
     my_tsd = {}
     for idx in df_cell_stats['SynapseID'][0:]:
         my_tsd[idx] = nap.Tsd(t=df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'][idx],
                             d=df_cell_stats[df_cell_stats['SynapseID']==idx]['Amplitudes'][idx],time_units='s')
-    if vid_length is not None:
-        Inverval_1 = nap.IntervalSet(0, vid_length)
-    else:
-        Interval_1 = nap.IntervalSet(0,540)
 
-    # Interval_2 = nap.IntervalSet(250,290)
-    # Interval_3 = nap.IntervalSet(290,450)
-    
-    interval_set = [Interval_1]#,
-                #Interval_2]
-    
     #Make the figure
     plot_shapes = ['square','rectangle', "rectangle_skinny"]
     if plot_shape not in plot_shapes:
-        print(f"Acceptable Plot shapes are {plot_shapes}")
+        raise ValueError(f"Acceptable Plot shapes are {plot_shapes}")
         
     if plot_shape =='square':
         plt.figure(figsize = (6,6))
@@ -206,7 +193,6 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
         plt.subplot(1,1,1)
     for i, idx in enumerate(df_cell_stats['SynapseID']):
 #     
-        # plt.eventplot(df_cell_stats[df_cell_stats['SynapseID']==idx]['PeakTimes'],lineoffsets=i,linelength=0.8)
         spike_times = df_cell_stats[df_cell_stats['SynapseID'] == idx]['PeakTimes'].values[0]
         plt.scatter(spike_times, [i]*len(spike_times), color = '#4e4d4d', linewidths=0.1, s=1, alpha=0.6) #"#4e4d4d" edgecolors='black'f'C{idx}'
         if treatment_vid:
@@ -228,37 +214,33 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
 
         plt.gca().spines[['top', 'right']].set_visible(False)  # cleaner plot
 
-        ##OLD plots to show amplitude for each individual event, uncomment to read
     if plot_amplitudes:
         plt.subplot(2,1,2)
         for i in range(1): #change range for multiple intervals
-            # plt.title(file_path)
-            # plt.title(f'interval {i+1}')
             for idx in my_tsd.keys():
-                plt.plot(my_tsd[idx].restrict(interval_set[i]).index,my_tsd[idx].restrict(interval_set[i]).values,color=f'C{idx}',marker='o',ls='',alpha=0.5)
+                tsd = my_tsd[idx]
+                plt.plot(tsd.index, tsd.values, color=f'C{idx}',marker='o',ls='',alpha=0.5)
             plt.ylabel('Amplitude')
-            plt.ylim(0,5)
-            plt.xlabel('Spike time (s)')
+            plt.ylim(0, max_amplitude)
+            plt.xlabel('Spike Time (s)')
             plt.tight_layout()
 
     base_file_name = os.path.splitext(os.path.basename(file_path))[0]
     base_file_name = base_file_name.split("Dur180s")[0]
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
+
+    if save_fig:
+            
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
         
-    
-    figure_output_path = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.png')
-    figure_output_path2 = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.svg')
+        figure_output_path = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.png')
+        figure_output_path2 = os.path.join(output_directory, f'gray_{base_file_name}_figure_{plot_shape}.svg')
 
-    plt.savefig(figure_output_path, dpi = 300)
-    plt.savefig(figure_output_path2)
+        plt.savefig(figure_output_path, dpi = 300)
+        plt.savefig(figure_output_path2)
+    else:
+        plt.show()
 
-    plt.show()
-
-
-    transient_count = []
-    for idx in my_tsd.keys():
-        transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
 
 def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, show_peaks = False, save_fig = False):
     """
@@ -293,7 +275,6 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     iscell_mask = suite2p_dict['iscell'][:,0] == 1  
 
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
-
     
     if treatment_vid:
          if treatment_no ==1:
@@ -320,7 +301,6 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     frame_rate = 20
     time = np.arange(masked_dF.shape[1]) / frame_rate
     print("time range (s):", time[0], "->", time[-1])
-    # print("treatment(s) (s):", treatment1, treatment2)    
     plt_traces = masked_dF[lst]
     for i, trace in enumerate(plt_traces):
         offset_trace = trace + i * trace_offset
@@ -350,12 +330,10 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     
     # --- Minimalist figure: no axes ---
     ax.axis('off')
-
     # --- Optional: save to file ---
     if save_fig:
             plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.svg'))
             plt.savefig(os.path.join(suite2p_dict['file_name'], 'synapse_trace_examples_BW.png'))
-    # ax.set_xlim([0, time[-1]])
 
     plt.tight_layout()
     plt.show()
@@ -639,17 +617,14 @@ def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
         xpix = stat.iloc[n]['xpix'].flatten() - 1
 
         #Ensure the indices are within the bounds of the frame_shape
-
         valid_idx = (xpix >= 0) & (xpix<frame_shape[1]) & (ypix >=0) & (ypix < frame_shape[0])
         ypix = ypix[valid_idx]
         xpix = xpix[valid_idx]
 
         #Set ROI pixels to mask
-
         roi_masks[ypix, xpix] = 255 # n + 1 helps to differentiate masks from background
     plt.figure(figsize=(10, 10))
     plt.imshow(roi_masks, cmap='gray', interpolation='none')
-    # plt.colorbar(label='ROI ID')
     plt.title('ROI Mask')
     plt.tight_layout()
     plt.show()
