@@ -2,6 +2,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statannotations.Annotator import Annotator
+from analyze_suite2p import config_loader
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 
 config = _DEFAULT_CONFIG

@@ -2,7 +2,7 @@
 
 :: Activate the first virtual environment, evt. use Activate.ps1
 
-CALL "C:\Users\jcbeg\pyenv\syn_suite2p\Scripts\activate.bat"
+CALL "C:\Users\jcbegs\miniforge3\Scripts\activate.bat" syn_suite2p
 
 :: Set the script and source directories
 set script_dir=%~dp0

@@ -15,17 +15,17 @@ def calculate_synapse_frequency(input_df):
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        DataFrame containing at least the 'PeakTimes' and 'Total_Frames'
-        columns.
+        input_df : pandas.DataFrame
+            DataFrame containing at least the 'PeakTimes' and 'Total_Frames'
+            columns.
 
     Returns:
     --------
-    pandas.DataFrame
-        A copy of the input DataFrame with added columns:
-        - SpikesCount
-        - SpikesFreq
-        - SpikesCV
+        pandas.DataFrame
+            A copy of the input DataFrame with added columns:
+            - SpikesCount
+            - SpikesFreq
+            - SpikesCV
 
     """
     output_df = input_df.copy()
@@ -41,17 +41,17 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        DataFrame containing a 'PeakTimes' column of lists of spike frames.
+        input_df : pandas.DataFrame
+            DataFrame containing a 'PeakTimes' column of lists of spike frames.
 
     Returns:
     --------
-    pandas.DataFrame
-        A DataFrame with added ISI-related columns:
-        - SpikesDiff
-        - DiffAvg
-        - DiffMedian
-        - DiffCV
+        pandas.DataFrame
+            A DataFrame with added ISI-related columns:
+            - SpikesDiff
+            - DiffAvg
+            - DiffMedian
+            - DiffCV
 
     """
     output_df = input_df.copy()
@@ -67,17 +67,17 @@ def calculate_spike_amplitudes(input_df):
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        DataFrame containing an 'Amplitudes' column with lists of peak
-        amplitudes.
+        input_df : pandas.DataFrame
+            DataFrame containing an 'Amplitudes' column with lists of peak
+            amplitudes.
 
     Returns:
     --------
-    pandas.DataFrame
-        DataFrame with added amplitude metrics:
-        - AvgAmplitude
-        - SpkAmpMedian
-        - SpkAmpCV
+        pandas.DataFrame
+            DataFrame with added amplitude metrics:
+            - AvgAmplitude
+            - SpkAmpMedian
+            - SpkAmpCV
 
     """
     output_df = input_df.copy()
@@ -92,13 +92,13 @@ def calculate_decay_fraction(row):
 
     Args:
     -----
-    row : pandas.Series
-        Single row containing 'DecayCount' and 'SpikesCount'.
+        row : pandas.Series
+            Single row containing 'DecayCount' and 'SpikesCount'.
 
     Returns:
     --------
-    float
-        Fraction of spikes with valid decay (or empty list if no spikes).
+        float
+            Fraction of spikes with valid decay (or empty list if no spikes).
 
     """
 
@@ -114,18 +114,18 @@ def calculate_decay_values(input_df):
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        DataFrame containing a 'DecayTimes' column, where each entry is a list
-        of decay durations.
+        input_df : pandas.DataFrame
+            DataFrame containing a 'DecayTimes' column, where each entry is a list
+            of decay durations.
 
     Returns:
     --------
-    pandas.DataFrame
-        DataFrame with added decay metrics:
-        - DecayCount
-        - DecayedFraction
-        - AvgDecayTime
-        - AvgDecayCV
+        pandas.DataFrame
+            DataFrame with added decay metrics:
+            - DecayCount
+            - DecayedFraction
+            - AvgDecayTime
+            - AvgDecayCV
 
     """
 
@@ -143,21 +143,21 @@ def calculate_cell_stats(input_df, calculate_freq=True, calculate_isi=True, calc
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        Input DataFrame of ROI-level Suite2p metrics.
-    calculate_freq : bool, optional
-        Whether to compute frequency metrics.
-    calculate_isi : bool, optional
-        Whether to compute ISI metrics.
-    calculate_amplitudes : bool, optional
-        Whether to compute amplitude metrics.
-    calculate_decays : bool, optional
-        Whether to compute decay metrics.
+        input_df : pandas.DataFrame
+            Input DataFrame of ROI-level Suite2p metrics.
+        calculate_freq : bool, optional
+            Whether to compute frequency metrics.
+        calculate_isi : bool, optional
+            Whether to compute ISI metrics.
+        calculate_amplitudes : bool, optional
+            Whether to compute amplitude metrics.
+        calculate_decays : bool, optional
+            Whether to compute decay metrics.
 
     Returns:
     --------
-    pandas.DataFrame
-        DataFrame with the selected statistical metrics added.
+        pandas.DataFrame
+            DataFrame with the selected statistical metrics added.
 
     """
 
@@ -181,15 +181,15 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
 
     Args:
     -----
-    suite2p_dict : dict
-        Dictionary produced by suite2p_utility.load_suite2p_output().
+        suite2p_dict : dict
+            Dictionary produced by suite2p_utility.load_suite2p_output().
 
     Returns:
     --------
-    tuple of pandas.DataFrame
-        (raw_df, processed_df)
-        raw_df : unfiltered ROI data
-        processed_df : ROIs with full computed metrics and filtering applied
+        tuple of pandas.DataFrame
+            (raw_df, processed_df)
+            raw_df : unfiltered ROI data
+            processed_df : ROIs with full computed metrics and filtering applied
 
     """
 
@@ -202,20 +202,20 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
 
         Args:
         -----
-        deltaF: 1D array
+            deltaF: 1D array
 
         Returns:
         --------
-        peaks: 1D array
-            Frame index for where peaks were detected
-        amplitudes: 1D array
-            List of amplitudes (peak - np.median(trace))
-        decay_times: 1D array
-            List of decay times in seconds for peak to decay to threshold, or NaN
-        peak_count: int
-            len(peaks) --> count of total peaks for a synapse
-        decay_frames: 1D array
-            number of frames for peak to decay back to threshold 
+            peaks: 1D array
+                Frame index for where peaks were detected
+            amplitudes: 1D array
+                List of amplitudes (peak - np.median(trace))
+            decay_times: 1D array
+                List of decay times in seconds for peak to decay to threshold, or NaN
+            peak_count: int
+                len(peaks) --> count of total peaks for a synapse
+            decay_frames: 1D array
+                number of frames for peak to decay back to threshold 
         """
         
         peaks = detector_utility.single_synapse_peak_detection(deltaF, return_peaks = True)
@@ -275,16 +275,16 @@ def translate_suite2p_outputs_to_csv(main_folder, config, check_for_iscell=False
 
     Args:
     -----
-    main_folder : str
-        Path containing Suite2p output folders.
-    check_for_iscell : bool, optional
-        Whether to classify ROIs using Suite2p's iscell.npy.
-    update_iscell : bool, optional
-        Whether to overwrite the iscell.npy file based on reclassification.
+        main_folder : str
+            Path containing Suite2p output folders.
+        check_for_iscell : bool, optional
+            Whether to classify ROIs using Suite2p's iscell.npy.
+        update_iscell : bool, optional
+            Whether to overwrite the iscell.npy file based on reclassification.
 
     Returns:
     --------
-    None
+        None
 
     """
     suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing=True)
@@ -340,15 +340,15 @@ def create_experiment_summary(main_folder):
 
     Args:
     -----
-    main_folder : str
-        Path containing the 'csv_files' directory.
+        main_folder : str
+            Path containing the 'csv_files' directory.
 
     Returns:
     --------
-    tuple
-        (aggregate_stats, merged_df)
-        aggregate_stats : grouped summary metrics
-        merged_df : concatenated per-recording data
+        tuple
+            (aggregate_stats, merged_df)
+            aggregate_stats : grouped summary metrics
+            merged_df : concatenated per-recording data
     """
     csv_file_path = os.path.join(main_folder, 'csv_files')
     csv_files = list_all_files_of_type(csv_file_path, '.csv')
@@ -373,15 +373,15 @@ def list_all_files_of_type(input_path, filetype):
 
     Args:
     -----
-    input_path : str
-        Directory to search.
-    filetype : str
-        File extension filter.
+        input_path : str
+            Directory to search.
+        filetype : str
+            File extension filter.
 
     Returns:
     --------
-    list of str
-        Filenames matching the requested extension.
+        list of str
+            Filenames matching the requested extension.
 
     """
 
@@ -393,17 +393,17 @@ def string_to_list_translator(input_string, strip_before_split="[ ]", split_on="
 
     Args:
     -----
-    input_string : str
-        String containing delimited values.
-    strip_before_split : str, optional
-        Characters to strip from both ends.
-    split_on : str, optional
-        String delimiter for splitting.
+        input_string : str
+            String containing delimited values.
+        strip_before_split : str, optional
+            Characters to strip from both ends.
+        split_on : str, optional
+            String delimiter for splitting.
 
     Returns:
     --------
-    list
-        Cleaned list of non-empty string tokens.
+        list
+            Cleaned list of non-empty string tokens.
 
     """
 
@@ -416,17 +416,17 @@ def spike_list_translator(input_string):
 
     Args:
     -----
-    input_string : str
-        Raw string containing integer frame indices.
+        input_string : str
+            Raw string containing integer frame indices.
 
     Returns:
     --------
-    numpy.ndarray
-        Array of spike times in seconds.
+        numpy.ndarray
+            Array of spike times in seconds.
 
     """
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * config.general_settings.FRAME_INTERVAL
+    return np.array(string_list).astype(int) * (1 / float(config.general_settings.frame_rate))
 
 def amplitude_list_translator(input_string):
     """
@@ -434,12 +434,12 @@ def amplitude_list_translator(input_string):
 
     Args:
     -----
-    input_string : str
+        input_string : str
 
     Returns:
     --------
-    numpy.ndarray
-        Array of spike amplitudes.
+        numpy.ndarray
+            Array of spike amplitudes.
 
     """
 
@@ -454,17 +454,17 @@ def decay_frame_list_translator(input_string):
 
     Args:
     -----
-    input_string : str
+        input_string : str
 
     Returns:
     --------
-    numpy.ndarray
-        Array of decay times in seconds.
+        numpy.ndarray
+            Array of decay times in seconds.
 
     """
 
     decay_frame_list = string_to_list_translator(input_string)
-    return np.array(decay_frame_list).astype(float)*config.general_settings.FRAME_INTERVAL
+    return np.array(decay_frame_list).astype(float)*(1/config.general_settings.frame_rate)
 
 def decay_time_list_translator(input_string):
     """
@@ -472,12 +472,12 @@ def decay_time_list_translator(input_string):
 
     Args:
     -----
-    input_string : str
+        input_string : str
 
     Returns:
     --------
-    numpy.ndarray
-        Array of decay times.
+        numpy.ndarray
+            Array of decay times.
 
     """
 
@@ -490,16 +490,16 @@ def spike_df_iterator(input_path, return_name=True):
 
     Args:
     -----
-    input_path : str
-        Path to a folder containing CSV files.
-    return_name : bool, optional
-        Whether to include the filename in the output.
+        input_path : str
+            Path to a folder containing CSV files.
+        return_name : bool, optional
+            Whether to include the filename in the output.
 
     Returns:
     --------
-    tuple or pandas.DataFrame
-        (DataFrame, filename) if return_name=True,
-        otherwise DataFrame only.
+        tuple or pandas.DataFrame
+            (DataFrame, filename) if return_name=True,
+            otherwise DataFrame only.
 
     """
 
@@ -518,13 +518,13 @@ def calculate_binned_stats(input_df):
 
     Args:
     -----
-    input_df : pandas.DataFrame
-        DataFrame containing a 'PeakTimes' column.
+        input_df : pandas.DataFrame
+            DataFrame containing a 'PeakTimes' column.
 
     Returns:
     --------
-    pandas.DataFrame
-        Table of (bin range, spike count, frequency).
+        pandas.DataFrame
+            Table of (bin range, spike count, frequency).
 
     """
 
@@ -549,12 +549,12 @@ def process_spike_csvs_to_pkl(input_path):
 
     Args:
     -----
-    input_path : str
-        Path containing a 'csv_files' directory.
+        input_path : str
+            Path containing a 'csv_files' directory.
 
     Returns:
     --------
-    None
+        None
 
     """
     csv_path = os.path.join(input_path, 'csv_files')
@@ -572,7 +572,7 @@ def process_spike_csvs_to_pkl(input_path):
                 processed_path = os.path.join(output_path, 
                                         f"{os.path.splitext(file_name)[0]}"
                                         f"Dur{int(config.general_settings.EXPERIMENT_DURATION)}s"
-                                        f"Int{int(config.general_settings.FRAME_INTERVAL*1000)}ms"
+                                        f"Int{int((1/config.general_settings.frame_rate)*1000)}ms"
                                         + ".pkl")
                 
                 
@@ -590,16 +590,16 @@ def generate_synapse_counts_and_summary_stats(experiment_folder):
 
     Args:
     -----
-    experiment_folder : str
-        Path to the experiment directory.
+        experiment_folder : str
+            Path to the experiment directory.
 
     Returns:
     --------
-    tuple
-        (groups, metrics, summary)
-        groups : list of experimental groups
-        metrics : list of metric names
-        summary : grouped aggregate statistics
+        tuple
+            (groups, metrics, summary)
+            groups : list of experimental groups
+            metrics : list of metric names
+            summary : grouped aggregate statistics
 
     """
     import os

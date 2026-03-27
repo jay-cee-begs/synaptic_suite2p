@@ -17,20 +17,20 @@ def calculate_deltaF(F_file, event_threshold = 2):
 
     Args:
     -----------
-    F_file : str
-        Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
-    
-    event_threshold: float
-        Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
-        The Default value is 3; smaller values will limit the number of baseline points used for correction.
+        F_file : str
+            Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
+        
+        event_threshold: float
+            Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
+            The Default value is 3; smaller values will limit the number of baseline points used for correction.
 
     Returns:
     --------
-    deltaF : 1D numpy array
-        dF/F0 normalized fluorescence
-        MAD baseline estimated
-        ZhangFit / airPLS automated baseline correction
-        deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
+        deltaF : 1D numpy array
+            dF/F0 normalized fluorescence
+            MAD baseline estimated
+            ZhangFit / airPLS automated baseline correction
+            deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
     """
 
     savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
@@ -73,25 +73,25 @@ def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     
     Args:
     -----------
-    F : 1D numpy array
-        Baseline-corrected ΔF/F trace.
-    frame_rate : float
-        Sampling rate (Hz).
-    event_threshold: float
-        Preserved from calculate_deltaF function above.
-        Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
-        Default: 2 (SD above median)
-        Smaller values will limit the number of baseline points used for correction.
-    min_baseline_sec : float
-        Minimum duration (seconds) of a baseline window.
-        Default: 10 s
+        F : 1D numpy array
+            Baseline-corrected ΔF/F trace.
+        frame_rate : float
+            Sampling rate (Hz).
+        event_threshold: float
+            Preserved from calculate_deltaF function above.
+            Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
+            Default: 2 (SD above median)
+            Smaller values will limit the number of baseline points used for correction.
+        min_baseline_sec : float
+            Minimum duration (seconds) of a baseline window.
+            Default: 10 s
 
     Returns:
     --------
-    sigma : float
-        Estimated noise standard deviation.
-    baseline_mask : boolean array
-        Mask of samples classified as baseline.
+        sigma : float
+            Estimated noise standard deviation.
+        baseline_mask : boolean array
+            Mask of samples classified as baseline.
     """
 
     trace_median = np.median(F_trace)
@@ -115,13 +115,13 @@ def filter_outliers(trace):
 
     Args:
     -----------
-    trace : 1D numpy array
-        Fluorescence trace (e.g., F.npy) from suite2p output.
-    
+        trace : 1D numpy array
+            Fluorescence trace (e.g., F.npy) from suite2p output.
+        
     Returns:
     --------
-    filtered_values : 1D array
-        values from 1D array that fall within the original trace IQR.
+        filtered_values : 1D array
+            values from 1D array that fall within the original trace IQR.
     """
     q1,q3 = np.percentile(trace, [25,75])
     iqr = q3-q1
@@ -139,33 +139,34 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
                                                        extract_peaks = False):
     """
     Identify time stamps and metrics of individual calcium spikes for a single ROI.
+    
     Args:
     -----------
-    deltaF: 1D numpy array
-        Normalized fluroescence trace 
-    return_peaks: bool, optional
-        Returns time stamps (frame) for each peak
-    return_decay_frames: bool, optional
-        Returns time stamp (frame) for when each peak returns to threshold
-        if no return to threshold --> returns NaN
-    return_amplitudes: bool, optional
-        Returns normalized amplitude for each detected peak
-    return_decay_times: bool, optional
-        Returns decay time from peak frame to crossing threshold (in seconds)
-    return_peak_count: bool, optional
-        Returns len(peaks)
-    extract_peaks: bool, optional
-        Returns peaks + 30 frames for peak library --> to be used for Tau calculations
+        deltaF: 1D numpy array
+            Normalized fluroescence trace 
+        return_peaks: bool, optional
+            Returns time stamps (frame) for each peak
+        return_decay_frames: bool, optional
+            Returns time stamp (frame) for when each peak returns to threshold
+            if no return to threshold --> returns NaN
+        return_amplitudes: bool, optional
+            Returns normalized amplitude for each detected peak
+        return_decay_times: bool, optional
+            Returns decay time from peak frame to crossing threshold (in seconds)
+        return_peak_count: bool, optional
+            Returns len(peaks)
+        extract_peaks: bool, optional
+            Returns peaks + 30 frames for peak library --> to be used for Tau calculations
 
     Returns:
     --------
-    IF any==True:
-        return_peaks: returns calcium spike time_stamps
-        return_decay_frames: returns number of frames for calcium spike to decay to threshold
-        return_amplitudes: returns amplitude of calcium spike in relation to baseline fluorescence (F0)
-        return_decay_time: returns decay time in seconds (converts number of frames into seconds)
-        return_peak_count: returns the total number of calcium spikes for the ROI fluorescence trace
-        extract_peaks: returns deltaF window around calcium spike for calcium spike library 
+        IF any==True:
+            return_peaks: returns calcium spike time_stamps
+            return_decay_frames: returns number of frames for calcium spike to decay to threshold
+            return_amplitudes: returns amplitude of calcium spike in relation to baseline fluorescence (F0)
+            return_decay_time: returns decay time in seconds (converts number of frames into seconds)
+            return_peak_count: returns the total number of calcium spikes for the ROI fluorescence trace
+            extract_peaks: returns deltaF window around calcium spike for calcium spike library 
     """
     
     sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
@@ -231,12 +232,12 @@ def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
 
     Args:
     -----------
-    input_trace: 1D NumPy array
-    **signal_kwargs: assorted see signal.find_peaks()
-        Ex. width = (min,max), peak_prominence = type(float), height = type(float), threshold = type(float), distance = int/float
+        input_trace: 1D NumPy array
+        **signal_kwargs: assorted see signal.find_peaks()
+            Ex. width = (min,max), peak_prominence = type(float), height = type(float), threshold = type(float), distance = int/float
     Returns:
     --------
-    peak time frames using signal.find_peaks() function
+        peak time frames using signal.find_peaks() function
 
     """
     median = np.median(input_trace)
@@ -252,18 +253,18 @@ def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs
 
     Args:
     -----------
-    raw_trace: 1D NumPy array
-    detector_func: Function
-        Ex. scipy.signal.find_peaks() / detect_spikes_by_mod_z()
-    detector_trace: bool, optional
-    **detector_kwargs: assorted, optional
-        Ex. scipy.signal.find_peaks(x, height = , threshold = , peak_prominence = , width = , distance = )
+        raw_trace: 1D NumPy array
+        detector_func: Function
+            Ex. scipy.signal.find_peaks() / detect_spikes_by_mod_z()
+        detector_trace: bool, optional
+        **detector_kwargs: assorted, optional
+            Ex. scipy.signal.find_peaks(x, height = , threshold = , peak_prominence = , width = , distance = )
 
     Returns:
     -------- 
-    matplotlib.pyplot.plot line graph
-        blue: detector_trace (if true) or raw trace
-        red: detected spikes
+        matplotlib.pyplot.plot line graph
+            blue: detector_trace (if true) or raw trace
+            red: detected spikes
     """
     if detector_trace is None:
         detector_input_trace = raw_trace.copy()
@@ -282,15 +283,15 @@ def rolling_min(input_series, window_size):
 
     Args:
     -----------
-    input_series: 1D NumPy array
-        raw_trace / F.npy / deltaF.npy
-    window_size: int
-        Size of window to measure with each iteration
+        input_series: 1D NumPy array
+            raw_trace / F.npy / deltaF.npy
+        window_size: int
+            Size of window to measure with each iteration
 
     Returns:
     -------- 
-    m: int / float
-        Smallest local minimum across all windows
+        m: int / float
+            Smallest local minimum across all windows
     """
     r = input_series.rolling(window_size, min_periods=1)
     m = r.min()
@@ -303,16 +304,16 @@ def remove_bleaching(input_trace):
 
     Args:
     -----------
-    input_trace: 1D array
-        raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
-        functions by processing one ROI at a time
+        input_trace: 1D array
+            raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
+            functions by processing one ROI at a time
 
     Returns:
     --------
-    input_trace - fit(range(len(input_trace)))
-        input trace adjusted by rolling minimum
-        polynomial fit built on length of trace, rolling min values, and order of polynomial (e.g. 2nd)
-        poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
+        input_trace - fit(range(len(input_trace)))
+            input trace adjusted by rolling minimum
+            polynomial fit built on length of trace, rolling min values, and order of polynomial (e.g. 2nd)
+            poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
 
     """
     min_trace = rolling_min(pd.Series(input_trace), window_size=int(len(input_trace)/10))

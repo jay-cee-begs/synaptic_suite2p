@@ -63,9 +63,9 @@ Alternatively you should download a zip file of the code and save it somewhere y
 2. For every `CALL` `path_to_conda_activate.bat`, please update the path to your own base conda path. you can find this path by running `conda env list` and replacing everything before `\Scripts\activate.bat` This will only need to be done the first time openning the analysis pipeline
 
 3. The GUI will now run the analysis pipeline correctly.
-To launch the gui either double click `run_analysis_gui.bat` found in `synaptic_suite2p\src\gui_config\Scripts` or navigate to the gui_config folder using `cd .\synaptic_suite2p\src\gui_config` followed by `python -m synapse_gui`
+To launch the gui either double click `run_analysis_gui.bat` found in `synaptic_suite2p\src\gui_config\Scripts` or navigate to the gui_config folder using `cd .\synaptic_suite2p\src\gui_config` followed by `python -m run_gui`
 
-4. After launching the synapse_gui change the `experiment / main_folder` using the `Browse` button (the folder containing experimental conditions as subfolders)
+4. After launching the run_gui change the `experiment / main_folder` using the `Browse` button (the folder containing experimental conditions as subfolders)
 
 5. Enter the file extension for your image type without `.` (e.g. `tif`, `tiff`, or `nd2`) and click `Add Experiment Conditions` to automatically add the subfolders containing images as experimental groups
 
@@ -115,10 +115,9 @@ Individual file analyses in csv format will be saved in `experiment_folder\csv_f
 CONTENTS:
 ```
 notebook_scripts/
-    test_pipline: for running suite2p in its current state, including user inputs
+    run_pipeline: example for updating config.json settings without the user interface (GUI) and for seeing which functions run in the process
 src/
         main code of the repository
-    init: marks code as source code
     plotting_utility:  for generating plots from processed data and performing basic statistical tests
     
     suite2p_utility: unpacking suite2p outputs
@@ -135,14 +134,30 @@ src/
     syn_summary_plots:
     xs_plots:
 
-gui config/
+gui/
         Code to run gui and automated processing
     Scripts/
         .bat files that can be used to run the pipeline from the GUI
-    init: marks code as source code
+        run_plots.bat:
+        run_s2p_gui.bat:
+        run_suite2p.bat:
+        run_user_GUI.bat:
+        syn2p_setup.bat:
+
     analysis_params: establishes post-processing analysis parameters in the GUI
 
-    synapse_gui: code to run the gui; called using `python -m synapse_gui`
+    run_gui: code to run the gui; called using `python -m run_gui`
+    config_editor: ConfigEditor class for populating GUI 
+    ops_editor: AnalysisParams class for loading special analysis settings
+
+gui_core/
+        backend functions and files for running the GUI smoothly
+    
+    analysis_model: Default AnalysisParams settings for loading GUI more smoothly
+    folder_logic: Functions to load files and define experimental groups for establishing post-processing rules and organization structures
+    general_settings_model: GenSettings class containing default settings for config.json general_settings
+    io: Functions for saving and loading config.json files for the GUI
+        io functions only are used in the GUI and not elsewhere in the pipeline
 
 suite2p_ops_files/
         Example ops.npy files for suite2p settings
