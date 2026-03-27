@@ -29,12 +29,11 @@ class ConfigEditor:
 
         # Load existing configurations
         self.config = load_config()
-        logger.debug(f"CONFIG LOADED: {self.config}")
+        logger.debug(f"CONFIG LOADED: {self.config}\n")
         # messagebox.showinfo("Debug", f"CONFIG LOADED: {self.config}")
 
         # Correct: GenSettings object is self.config
         self.gen_settings = self.config
-        logger.debug(f"GEN SETTINGS: {vars(self.gen_settings)}")
         # messagebox.showinfo("Debug", f"GEN SETTINGS: {vars(self.gen_settings)}")
 
         # Initialize Tkinter variables
@@ -51,12 +50,12 @@ class ConfigEditor:
         self.exp_condition = self.gen_settings.exp_condition
 
         # Debug Tk variable values
-        logger.debug(f"Main folder var: {self.main_folder_var.get()}")
-        logger.debug(f"Data extension var: {self.data_extension_var.get()}")
-        logger.debug(f"Frame rate var: {self.frame_rate_var.get()}")
-        logger.debug(f"Ops path var: {self.ops_path_var.get()}")
-        logger.debug(f"Exp duration var: {self.exp_dur_var.get()}")
-        logger.debug(f"Bin width var: {self.bin_width_var.get()}")
+        logger.debug(f"Main folder var: {self.main_folder_var.get()}\n")
+        logger.debug(f"Data extension var: {self.data_extension_var.get()}\n")
+        logger.debug(f"Frame rate var: {self.frame_rate_var.get()}\n")
+        logger.debug(f"Ops path var: {self.ops_path_var.get()}\n")
+        logger.debug(f"Exp duration var: {self.exp_dur_var.get()}\n")
+        logger.debug(f"Bin width var: {self.bin_width_var.get()}\n")
         # messagebox.showinfo("Debug", f"Tk Vars Loaded:\nMain folder: {self.main_folder_var.get()}\nFrame rate: {self.frame_rate_var.get()}")
 
         # Build GUI frames
