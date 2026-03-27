@@ -81,6 +81,22 @@ def add_significance_bar_to_axis(ax, series1, series2, center_x, line_width):
     
     extended_limits = (original_limits[0], (original_limits[1] - original_limits[0]) * 1.2 + original_limits[0])
     ax.set_ylim(extended_limits)
+def single_spine_peak_plotting(deltaF, threshold_multiplier):
+    """
+    Function to plot single synaptic trace with threshold and example peak detection
+    NOTE: Function can be run iteratively if run in a `for` loop
+
+    Args:
+    ----------
+        deltaF: NumPy Array
+            Normalized Fluroescence from deltaF.npy file or calculated otherwise
+        threshold_multiplier: float
+            Number of MAD-estimated standard deviations above baseline to set peak detection threshold
+            
+    Returns:
+    ----------
+        None  
+    """
     
     return ax
 
@@ -96,6 +112,20 @@ def aggregated_feature_plot(experiment_df, feature="SpikesFreq", agg_function="m
     signficance_check: list of lists of groups to compare
     group_order: order of experimental conditions
     control_group: for normalizing values to a control conditions
+    Function to illustrate difference between normalized deltaF with and without baseline correction via airPLS
+
+    Args:
+    ----------
+        deltaF (np.ndarray):
+            Normalized fluorescence trace (e.g., from deltaF.npy).
+        lambda_values (int or list[int], optional):
+            Smoothing parameters used for baseline correction.
+        ylim (tuple[float, float], optional):
+            Y-axis limits for the plot.
+    
+    Returns:
+    ----------
+        None
     """
     numeric_df = experiment_df.select_dtypes(include='number')
 
@@ -189,6 +219,21 @@ def build_experiment_dfs(input_path, experiment_structure):
     return experiment_cell_stats, experiment_binned_stats
 
 def get_all_pkl_outputs_in_path(path):
+    """
+    Function to automatically gather all pkl files into a single list
+    
+    Args:
+    ----------
+    path: str
+        Path to experiment folder that contains contains pkl files (e.g., in `pkl_files` folder) 
+        
+    Returns:
+    ----------
+    processed_files: List
+        List of all .pkl files including full file path for easy access
+    file_names: List
+        List of all .pkl files that were found
+    """
     processed_files = []
     file_names = []
     for current_path, directories, files in os.walk(path):
@@ -199,9 +244,44 @@ def get_all_pkl_outputs_in_path(path):
     return processed_files, file_names[0]
 
 
-def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, vid_length = None, plot_amplitudes = False, 
-                   plot_shape = 'square'):#, max_amplitude = 4):#, video_label):
-    """raster plot function for all graphs; also can plot event amplitude"""
+def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, plot_amplitudes = False,
+                   max_amplitude = 5.0, plot_shape = 'square', save_fig = False):#, max_amplitude = 4):#, video_label):
+    """
+    Plotting function for implementing Pynapple plots for rasterplots and amplitudes of individual events
+    This function can be called in sequence using a 'for' loop.
+
+    Args:
+    ----------
+    file_path: str
+        Path to individual pkl file
+    output_directory: str
+        Path to where output rasterplots should be saved (if save_fig)
+    treatment_vid: bool
+        Option to account for concatenated video with treatment in middle of provided pkl file frames
+    treatment_no: int
+        Number of treatments found in a treatment_vid
+        NOTE: current implementation assumes that if treatment is 2 (baseline vs. treatment) 
+        the treatment begins at the halfway point in the trace
+    synapse_count: int
+        Maximum number of synapses for setting y-axis limits
+    plot_amplitudes: bool
+        Decide whether to plot only rasterplots or also amplitude maps showing amplitudes of individual transients
+    max_amplitude: float
+        Maximum amplitude for establishing ylim for amplitude plots
+        NOTE: can be ignored if plot_amplitudes = False
+    plot_shape: str
+        String to decide what size plot should be included (current options: 'square', 'rectangle', and 'rectangle_skinny')
+        NOTE: all other shapes will cause the function to fail unless they are defined within the function beforehand
+    save_fig: bool
+        Boolean whether to save figure (when True) or display figures (when False)
+        
+    Returns:
+    ----------
+    if save_fig is True: .png and .svg files
+        Saves pynapple output plots within experiment directory in subfolder 'rasterplots'
+    
+    if save_fig is False: plt.show()
+    """
     import os
     import warnings
     import pickle
@@ -306,10 +386,36 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
         transient_count.append(my_tsd[idx].restrict(interval_set[0]).shape[0])
 
 def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, show_peaks = False, save_fig = False):
-    # Get boolean mask of valid cells
-    # Apply mask to deltaF
-    iscell_mask = suite2p_dict['iscell'][:,0] == 1
-  
+    """
+    Plot multiple synapse fluorescence traces with optional peak detection.
+
+    Traces are vertically offset for visualization and optionally annotated
+    with detected peaks and treatment time markers.
+
+    Args:
+    ----------
+        suite2p_dict (dict):
+            Dictionary containing suite2p outputs (e.g., deltaF, iscell).
+        frame_rate (int, optional):
+            Imaging frame rate in Hz.
+        trace_offset (float, optional):
+            Vertical offset between traces.
+        list (list[int], optional):
+            Indices of synapses to plot. If None, randomly selects 10.
+        treatment_vid (bool, optional):
+            Whether to display treatment time markers.
+        treatment_no (int, optional):
+            Number of treatment events (1 or 2).
+        show_peaks (bool, optional):
+            Whether to overlay detected peaks.
+        save_fig (bool, optional):
+            Whether to save the figure to disk.
+
+    Returns:
+    ----------
+        None
+    """
+    iscell_mask = suite2p_dict['iscell'][:,0] == 1  
 
     masked_dF = suite2p_dict['deltaF'][iscell_mask]
 
@@ -380,7 +486,21 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     plt.show()
         
 def getImg(ops, config):
-    """Accesses suite2p ops file (itemized) and pulls out a composite image to map ROIs onto"""
+    """
+    Generate a normalized image from suite2p ops for ROI visualization.
+
+    Args:
+    ----------
+        ops (dict):
+            Suite2p ops dictionary containing imaging outputs.
+        config (object):
+            Configuration object with analysis parameters.
+
+    Returns:
+    ----------
+        np.ndarray:
+            Normalized 8-bit image for visualization.
+    """
     Img = ops[config.analysis_params.Img_Overlay] # Option of  "max_proj" or "meanImg"
     mimg = Img # Use suite-2p source-code naming
     mimg1 = np.percentile(mimg,1)
@@ -393,7 +513,22 @@ def getImg(ops, config):
 
     #redefine locally suite2p.gui.utils import boundary
 def boundary(ypix,xpix):
-    """ returns pixels of mask that are on the exterior of the mask """
+    """
+    Compute the boundary pixels of a given ROI mask.
+    Function is taken directly from suite2p src code.
+
+    Args:
+    ----------
+        ypix (np.ndarray):
+            Y-coordinates of ROI pixels.
+        xpix (np.ndarray):
+            X-coordinates of ROI pixels.
+
+    Returns:
+    ----------
+        tuple[np.ndarray, np.ndarray]:
+            Arrays of y and x coordinates representing the boundary pixels.
+    """
     ypix = np.expand_dims(ypix.flatten(),axis=1)
     xpix = np.expand_dims(xpix.flatten(),axis=1)
     npix = ypix.shape[0]
@@ -416,6 +551,36 @@ def boundary(ypix,xpix):
 #gets neuronal indices
 
 def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
+    """
+    Classify ROIs and compute spatial/statistical properties.
+
+    ROIs are categorized into synaptic, dendritic, or rejected based on
+    thresholds for peak count, skewness, and compactness.
+
+    Args:
+    ----------
+        suite2p_dict (dict):
+            Dictionary containing suite2p outputs (stat, F, Fneu, iscell).
+        frame_shape (tuple[int, int]):
+            Shape of the imaging frame (height, width).
+        output_df (pandas.DataFrame):
+            DataFrame containing peak detection results.
+        config (object):
+            Configuration object with analysis thresholds.
+        use_iscell (bool, optional):
+            If True, classification is based only on iscell flag.
+
+    Returns:
+    ----------
+        tuple:
+            scatters (dict): ROI boundary coordinates.
+            nid2idx (dict): Mapping of ROI IDs to indices.
+            nid2idx_rejected (dict): Rejected ROI indices.
+            pixel2neuron (np.ndarray): Pixel-to-ROI mapping.
+            synapse_ID (list): List of accepted synapse IDs.
+            nid2idx_dendrite (dict): Dendritic ROI indices.
+            nid2idx_synapse (dict): Synaptic ROI indices.
+    """
     stat = suite2p_dict['stat']
     iscell = suite2p_dict['iscell']
     F = suite2p_dict['F']
@@ -493,6 +658,43 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
 
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2idx_synapse,
              pixel2neuron, F, Fneu, save_path, fill_ROIs=False, axs=None):
+             """
+                Display ROI overlays on a background image.
+
+                ROIs are visualized with different colors depending on classification
+                (synaptic vs dendritic).
+
+                Args:
+                ----------
+                    MaxImg (np.ndarray):
+                        Background image (e.g., max projection).
+                    scatters (dict):
+                        ROI boundary coordinates.
+                    nid2idx (dict):
+                        Mapping of ROI IDs to indices.
+                    nid2idx_rejected (dict):
+                        Rejected ROI indices.
+                    nid2idx_dendrite (dict):
+                        Dendritic ROI indices.
+                    nid2idx_synapse (dict):
+                        Synaptic ROI indices.
+                    pixel2neuron (np.ndarray):
+                        Pixel-to-ROI mapping array.
+                    F (np.ndarray):
+                        Fluorescence traces.
+                    Fneu (np.ndarray):
+                        Neuropil signals.
+                    save_path (str):
+                        File path to save the output image.
+                    fill_ROIs (bool, optional):
+                        Whether to fill ROI regions instead of outlining.
+                    axs (matplotlib.axes.Axes, optional):
+                        Existing axes to plot on.
+
+                Returns:
+                ----------
+                    None
+             """
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
                 NUM_GRIDS=12
@@ -529,7 +731,30 @@ def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2i
              plt.close(fig)
 
 def create_suite2p_ROI_masks(stat, frame_shape, nid2idx, output_path):
-    """Function designed to do what was done above, except mask the ROIs for detection in other programs (e.g. FlouroSNNAP)"""
+    """
+    Generate and save ROI masks for external analysis tools.
+
+    Creates a binary mask image where ROI pixels are labeled and saves
+    it as an image file.
+
+    Args:
+    ----------
+        stat (pandas.DataFrame):
+            Suite2p stat DataFrame containing ROI pixel coordinates.
+        frame_shape (tuple[int, int]):
+            Shape of the imaging frame (height, width).
+        nid2idx (dict):
+            Mapping of ROI IDs to indices.
+        output_path (str):
+            File path to save the ROI mask image.
+
+    Returns:
+    ----------
+        tuple:
+            PIL.Image.Image: Saved image object.
+            np.ndarray: ROI mask array.
+    """
+    
     #Make an empty array to contain the nid2idx masks
     roi_masks = np.zeros(frame_shape, dtype=int)
 
