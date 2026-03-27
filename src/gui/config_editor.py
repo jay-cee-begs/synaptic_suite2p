@@ -77,7 +77,7 @@ class ConfigEditor:
         self.group_frame = tk.Frame(self.main_frame)
         self.group_frame.pack(padx=10, pady=5)
         # tk.Label(self.group_frame, text="Adds all subfolders from the Experiment:").pack(side=tk.LEFT)
-        tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.add_group).pack(side=tk.BOTTOM)
+        tk.Button(self.group_frame, text="Add Experiment Conditions", command=self.handle_add_group).pack(side=tk.BOTTOM)
 
         # Ops path
         tk.Label(self.main_frame, text="Suite2p settings (ops.npy):").pack(anchor='w', padx=10, pady=5)
@@ -103,8 +103,9 @@ class ConfigEditor:
         # Editable exp_condition
         self.exp_condition_frame = tk.Frame(self.main_frame)
         self.exp_condition_frame.pack(padx=10, pady=5)
+        
         self.create_exp_condition_dict_entries(self.exp_condition_frame, " ", self.exp_condition)
-
+        
         # Edit analysis params
         tk.Button(self.main_frame, text="Edit Analysis Parameters", command=self.open_ops).pack(pady=5)
 
@@ -115,7 +116,7 @@ class ConfigEditor:
         tk.Button(self.main_frame, text="Process", command=self.run_pipeline).pack(pady=10)
 
         # Final debug message
-        logger.debug("GUI initialized successfully")
+        logger.debug("GUI initialized successfully\n")
         # messagebox.showinfo("Debug", "GUI initialized successfully")
 
 
@@ -198,9 +199,13 @@ class ConfigEditor:
         folders = folder_logic.find_valid_folders(
             self.main_folder_var.get(), self.data_extension_var.get())
         self.config.groups = folders
-        self.config.exp_condition = folder_logic.build_exp_condition(folders)
+        self.exp_condition = folder_logic.build_exp_condition(folders)
 
         print("Sucessfully added groups:", folders)
+
+    def handle_add_group(self):
+        self.add_group()
+        self.update_exp_condition_entries()
 
     def create_exp_condition_dict_entries(self, master, title, dictionary):
         """will allow you to edit dictionaries in the configurations file"""
