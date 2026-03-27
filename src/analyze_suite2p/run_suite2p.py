@@ -17,27 +17,27 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
     'look_one_level_down'.
 
     Args:
-    -----------
-    parent_directory: path / str
-        Path-like object pointing to main folder to search through
-    file_ending: str
-        File type / file ending for image file
-        example endings ('nd2', 'tif')
+    ----------
+        parent_directory: path / str
+            Path-like object pointing to main folder to search through
+        file_ending: str
+            File type / file ending for image file
+            example endings ('nd2', 'tif')
 
     Returns:
-    --------
-    Files organized in the following tree
-        /path/to/parent_folder
-        ├───experiment_condition_folder_1
-        │   ├───image_folder_1
-        |        ├───image_1
-        │   ├───image_folder_2
-        |        ├───image_2              
-        ├───experiment_condition_folder_2
-        │   ├───image_folder_1
-        |        ├───image_1
-        │   ├───image_folder_2
-        |        ├───image_2
+    ----------
+        Files organized in the following tree
+            /path/to/parent_folder
+            ├───experiment_condition_folder_1
+            │   ├───image_folder_1
+            |        ├───image_1
+            │   ├───image_folder_2
+            |        ├───image_2              
+            ├───experiment_condition_folder_2
+            │   ├───image_folder_1
+            |        ├───image_1
+            │   ├───image_folder_2
+            |        ├───image_2
     """
     if not os.path.exists(parent_directory):
         print(f"Provided path does not exist: {parent_directory}")
@@ -77,10 +77,12 @@ def get_all_image_folders_in_path(path):
     contain exactly one `.nd2` file in the deepest subfolder, and returns a list of those folders.
 
     Args:
+    ----------
         path (str): The root directory path to begin the search from. The function will walk through all
                     subdirectories starting from this path.
 
     Returns:
+    ----------
         list: A list of absolute paths to directories that contain exactly one `.nd2` file in their deepest
               subfolder. If no such directories are found, the list will be empty.
 
@@ -97,10 +99,12 @@ def get_all_image_folders_in_path(path):
         It returns True if the directory contains exactly one such file, otherwise False.
 
         Args:
+        ----------
             current_path (str): The path of the directory to check.
             file_ending (str, optional): The file extension to look for. Default is `.nd2`.
 
         Returns:
+        ----------
             bool: True if the directory contains exactly one `.nd2` file, False otherwise.
 
         Example:
@@ -129,14 +133,18 @@ def process_files_with_suite2p(image_list, ops):
     created if needed to store Suite2p-generated binary files.
 
     Args:
-    -----
-    image_list : list of str or Path
-        List of folder paths containing images to be processed by Suite2p.
-    ops : dict
-        The Suite2p ``ops`` settings dictionary, typically loaded from ``ops.npy``.
+    ----------
+        image_list : list of str or Path
+            List of folder paths containing images to be processed by Suite2p.
+        ops : dict
+            The Suite2p ``ops`` settings dictionary, typically loaded from ``ops.npy``.
+    
+    Returns:
+    ----------
+        None
 
     Notes:
-    ------
+    ----------
     Each item in ``image_list`` is treated as a separate Suite2p input folder.
     Any exceptions raised during Suite2p processing are caught and reported,
     allowing the loop to continue.
@@ -172,25 +180,27 @@ def main(config_file = None):
     as ``analysis_config.json`` inside the main experiment folder.
 
     Args:
-    -----
-    config_file : str or Path, optional
-        Path to a JSON configuration file. If omitted, the default configuration
-        from ``config_loader`` is used.
-
-    Workflow:
-    ---------
-    1. Load configuration and ``ops.npy`` Suite2p settings.
-    2. Export raw images into Suite2p format.
-    3. Identify all image folders and detect existing Suite2p outputs.
-    4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
-    5. Convert Suite2p outputs to CSV and pickle formats.
-    6. Generate experiment summary tables and statistical outputs.
-    7. Save the analysis configuration used for reproducibility.
+    ----------
+        config_file : str or Path, optional
+            Path to a JSON configuration file. If omitted, the default configuration
+            from ``config_loader`` is used.
 
     Returns:
-    --------
-    None
-        The function performs processing and file I/O but does not return a value.
+    ----------
+        None
+            The function performs processing and file I/O but does not return a value.
+
+
+    Workflow:
+    ----------
+        1. Load configuration and ``ops.npy`` Suite2p settings.
+        2. Export raw images into Suite2p format.
+        3. Identify all image folders and detect existing Suite2p outputs.
+        4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
+        5. Convert Suite2p outputs to CSV and pickle formats.
+        6. Generate experiment summary tables and statistical outputs.
+        7. Save the analysis configuration used for reproducibility.
+
     """
     import numpy as np
     global config  # <- important

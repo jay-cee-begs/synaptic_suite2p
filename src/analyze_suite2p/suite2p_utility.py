@@ -24,14 +24,15 @@ def load_npy_array(npy_path):
     The `allow_pickle` option is set to `True` to allow loading pickled objects.
     
     Args:
-    -----
+    ----------
         npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
-    --------
+    ----------
         numpy.ndarray: The loaded NumPy array from the `.npy` file.
     
     Example:
+    ----------
         >>> load_npy_array('data/F.npy')
         array([1, 2, 3])
     """
@@ -46,14 +47,15 @@ def load_npy_df(npy_path):
     The `allow_pickle` option is set to `True` to allow loading pickled objects.
     
     Args:
-    -----
+    ----------
         npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
-    --------
+    ----------
         pd.DataFrame: A Pandas DataFrame containing the loaded data from the `.npy` file.
     
     Example:
+    ----------
         >>> load_npy_df('data/F.npy')
         DataFrame with shape (3, 3)
     """
@@ -68,14 +70,15 @@ def load_npy_dict(npy_path):
     The `allow_pickle` option is set to `True` to allow loading pickled objects.
     
     Args:
-    -----
+    ----------
         npy_path (str or Path): The file path to the `.npy` file (e.g., `F.npy` or `Fneu.npy`).
     
     Returns:
-    --------
+    ----------
         dict: The loaded dictionary from the `.npy` file.
     
     Example:
+    ----------
         >>> load_npy_dict('data/stat.npy')
         {'key1': value1, 'key2': value2}
     """
@@ -90,14 +93,15 @@ def check_for_suite2p_output(folder_name_list):
     If any folder does not contain the required output files, the function will return `False`.
     
     Args:
-    -----
+    ----------
         folder_name_list (list of str): A list of folder paths to check for Suite2p output files.
     
     Returns:
-    --------
+    ----------
         bool: `True` if all folders contain the required Suite2p files, `False` otherwise.
     
     Example:
+    ----------
         >>> check_for_suite2p_output(['/path/to/folder1', '/path/to/folder2'])
         True
     """
@@ -119,14 +123,15 @@ def check_deltaF(folder_name_list):
     the function will automatically calculate and generate `deltaF.npy` using the `detector_utility.calculate_deltaF` function.
     
     Args:
-    -----
+    ----------
         folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
     
     Returns:
-    --------
+    ----------
         None: If `deltaF.npy` is missing, it will be calculated and generated automatically.
     
     Example:
+    ----------
         >>> check_deltaF(['/path/to/folder1', '/path/to/folder2'])
     """
     for folder in folder_name_list:
@@ -149,16 +154,17 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     `deltaF.npy`, or `samples`). It can also return subfolders containing both image and Suite2p analysis files.
     
     Args:
-    -----
+    ----------
         folder_path (str or Path): The root folder path to search for Suite2p files.
         file_ending (str): The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`.
         suppress_printing (bool, optional): Whether to suppress printing the found files/folders. Defaults to `False`.
     
     Returns:
-    --------
+    ----------
         list of str: A list of file or folder paths matching the specified `file_ending`.
     
     Example:
+    ----------
         >>> get_all_suite2p_outputs_in_path('/path/to/data', 'F.npy')
         ['/path/to/data/subject1/suite2p/plane0/F.npy', '/path/to/data/subject2/suite2p/plane0/F.npy']
         >>> get_all_suite2p_outputs_in_path('/path/to/data', 'samples')
@@ -201,14 +207,15 @@ def get_experimental_dates(main_folder):
     It then assigns each unique date a corresponding replicate number (e.g., `sample1`, `sample2`).
     
     Args:
-    -----
+    ----------
         main_folder (str or Path): The path to the main folder containing subfolders with experiment data.
     
     Returns:
-    --------
+    ----------
         dict: A dictionary mapping each folder path to its corresponding sample/replicate number.
     
     Example:
+    ----------
         >>> get_experimental_dates('/path/to/main_folder')
         {'/path/to/main_folder/experimental_condition/251030_file_image': 'sample_1', '/path/to/main_folder/experimental_condition/251126_file_image': 'sample_2'}
     """
@@ -247,22 +254,23 @@ def load_suite2p_output(data_folder, config, use_iscell = False):  ## creates a 
 
     Args:
     ----------
-    data_folder : str or Path
-        Path to the folder containing the Suite2p output directory.
-    groups : list of str
-        Names of experimental groups present inside ``main_folder``.
-    main_folder : str or Path
-        Root directory containing all experimental condition folders.
-    use_iscell : bool, optional
-        If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
-        If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+        data_folder : str or Path
+            Path to the folder containing the Suite2p output directory.
+        groups : list of str
+            Names of experimental groups present inside ``main_folder``.
+        main_folder : str or Path
+            Root directory containing all experimental condition folders.
+        use_iscell : bool, optional
+            If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+            If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
 
     Returns:
-    -------
-    dict
-        Dictionary containing all Suite2p arrays and metadata associated with
-        the recording, including assigned group and replicate label.
+    ----------
+        dict
+            Dictionary containing all Suite2p arrays and metadata associated with
+            the recording, including assigned group and replicate label.
     Example:
+    ----------
             >>> load_suite2p_output('/path/to/data_folder', config_dict['general_settings']['groups'], config_dict['general_settings']['main_folder'], use_iscell = False)
             {"F": [5,6,7,8...],
             "Fneu": [0,1,2,3...],
