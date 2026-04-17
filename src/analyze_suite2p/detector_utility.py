@@ -66,6 +66,39 @@ def calculate_deltaF(F_file, event_threshold = 2):
 
     return deltaF
 
+def normalize_fluorescence_traces(F_file, save_traces = True):
+
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    neuropil_corr = F - 0.7*Fneu
+    pop_normalized_traces, roi_normalized_traces = [], []
+    airPLS_corr = []
+    for trace in neuropil_corr:
+        baseline_corrected = BaselineRemoval(trace)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+        airPLS_corr.append(airPLS_corrected)
+    airPLS_corr = np.array(airPLS_corr)
+    for trace in airPLS_corr:
+        
+        roi_normalized = (trace - trace.min()) / (trace.max()-trace.min())
+        pop_normalized =(trace - airPLS_corr.min()) / (airPLS_corr.max()-airPLS_corr.min())
+        pop_normalized_traces.append(pop_normalized)
+        roi_normalized_traces.append(roi_normalized)
+    pop_normalized_traces, roi_normalized_traces = np.array(pop_normalized_traces), np.array(roi_normalized_traces)
+    
+    if save_traces:
+        if not os.path.exists(f"{savepath}/CellNormalizedF.npy") and not os.path.exists(f"{savepath}/CellNormalizedF.npy"):
+            np.save(f"{savepath}/CellNormalizedF.npy", roi_normalized_traces, allow_pickle=True)
+            print(f"Cell Normalized traces saved as CellNormalizedF.npy under {savepath}\n")
+
+            np.save(f"{savepath}/PopNormalizedF.npy", pop_normalized_traces, allow_pickle=True)
+            print(f"Population normalized traces saved as PopNormalizedF.npy under {savepath}\n")
+
+        else:
+            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return pop_normalized_traces, roi_normalized_traces
 
 def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
