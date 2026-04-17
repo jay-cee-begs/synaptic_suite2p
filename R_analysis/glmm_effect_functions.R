@@ -14,6 +14,8 @@ library(tidyr)
 library(dplyr)
 library(JWileymisc)
 library(fitdistrplus)
+library(insight)
+
 
 
 analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = NULL, pool_baseline = FALSE, filter_extreme_values = FALSE, multiple_replicates = FALSE, classification_filter = NULL, file_base = NULL, use_forest_lim = TRUE, ymin = 0.10, ymax = 3.0) {
@@ -21,7 +23,7 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   
   # Load and clean data
   data <- read_csv(csv_file, show_col_types = FALSE) %>%
-    clean_names() %>%
+    janitor::clean_names() %>%
     filter(is.null(test_groups) | experimental_group %in% test_groups)
   
   #Pool baseline to group all baseline files with "base" string in the file name
@@ -55,7 +57,6 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   } else {
     file_base <- tools::file_path_sans_ext(basename(csv_file))
   }
-  
   output_prefix <- paste0("graphs/", file_base, "_", outcome_var)
   
   # Optionally filter by classification (e.g., "synaptic_event" or "dendritic_event")
@@ -70,7 +71,7 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   }
   
   data <- data %>%
-    drop_na(outcome_var) #TODO need to check this for decay time
+    drop_na(!!rlang::sym(outcome_var)) #TODO need to check this for decay time
   
   if (filter_extreme_values){
     fit_gamma <- fitdist(data[["spikes_freq"]], "gamma")
@@ -105,18 +106,16 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
     data <- subset(data, data[["spikes_freq"]] >= lower_cut & data[["spikes_freq"]] <= upper_cut)
   }
 
-  if (multiple_replicates){
-    formula <- as.formula(paste(outcome_var, "~", group_var, "+ (1| replicate_no / file_name)")) # Remove synapse_id as a tag (1| replicate_no / file_name)
-    
-  }
-  else{
-    formula <- as.formula(paste(outcome_var, "~", group_var, " + (1| file_name )")) # Remove synapse_id as a tag (1| replicate_no / file_name)
-
-  }
+ 
   if (outcome_var == 'spikes_freq'){
     data <- filter(data, as.numeric(spikes_count) >= 2) 
-      
-    formula <- as.formula(paste(outcome_var, "~", group_var, " + (1| file_name )")) # Remove synapse_id as a tag (1| replicate_no / file_name)
+    if (multiple_replicates){
+      formula <- as.formula(paste(outcome_var, "~", group_var, "+ (1| replicate_no / file_name)"))
+    }
+    else {
+      formula <- as.formula(paste(outcome_var, "~", group_var, " + (1| file_name )"))
+    }
+     # Remove synapse_id as a tag (1| replicate_no / file_name)
     model <- glmmTMB(
       formula,
       data = data,
@@ -129,9 +128,13 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
     )
   }
   if (outcome_var == 'avg_amplitude'){
-    
-    formula <- as.formula(paste0("log(",outcome_var, ") ~", group_var, "+ (1| file_name)")) # Remove synapse_id as a tag (1| replicate_no / file_name)
-    
+    if (multiple_replicates){
+      formula <- as.formula(paste0("log(",outcome_var, ") ~", group_var, "+ (1| replicate_no / file_name)"))
+    }
+    else{
+      
+        formula <- as.formula(paste0("log(",outcome_var, ") ~", group_var, "+ (1| file_name)")) # Remove synapse_id as a tag (1| replicate_no / file_name)
+    }
     model <- glmmTMB(
       formula,
       data = data,
@@ -237,8 +240,30 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   # combined_random_df <- bind_cols(random_variances_long, random_ci_df) %>%
   #   select(group, var_col, variance_est, `2.5 %`, `97.5 %`, Estimate)
   
-  icc_df <- icc(model, by_group = TRUE) %>% as.data.frame()
+  icc_df <- if (is.data.frame(icc_result)) icc_result else as.data.frame(icc_result)
   cat("Model statistics calculated\n")
+  var_comp <- tryCatch({
+    insight::get_variance(model)
+  }, error = function(e) {
+    warning("get_variance failed: ", e$message)
+    NULL
+  })
+  
+  var_comp_df <- if (!is.null(var_comp)) {
+    data.frame(
+      component = names(var_comp),
+      variance = unlist(var_comp)
+    )
+  } else {
+    data.frame(component = NA_character_, variance = NA_real_)
+  }
+  rownames(var_comp_df) <- NULL
+  
+  var_comp_df <- data.frame(
+         component = names(var_comp),
+         variance = unlist(var_comp)
+  )
+  rownames(var_comp_df) <- NULL
   
   if (use_forest_lim) {
     y_min <- ymin
@@ -329,10 +354,15 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
     R2_marginal = model_r2$R2_marginal,
     R2_conditional = model_r2$R2_conditional
   )
-  write.csv(metrics_df, paste0(output_prefix, "_model_metrics.csv"), row.names = FALSE)
+  var_comp_df <- as.data.frame(var_comp_df)
+  icc_df <- as.data.frame(icc_df)
+  metrics_df <- as.data.frame(metrics_df)
+  
+  write_csv(metrics_df, paste0(output_prefix, "_model_metrics.csv"))
   write_csv(est_df, paste0(output_prefix, "_OddRatio_change_CI.csv"))
   write_csv(icc_df, paste0(output_prefix,"icc_values.csv"))
   write_csv(DHARMa_df, paste0(output_prefix, "DHARMa_analysis.csv"))
+  write_csv(var_comp_df, paste0(output_prefix, "_variance_components.csv"))
   cat("All plots and metrics saved.\nModel summary:\n")
   model_summary <- summary(model)
   capture.output(summary(model))
@@ -344,7 +374,7 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   
   # Add baseline estimates
   addWorksheet(wb, "Base_model")
-  writeData(wb, "Base_model", model$frame)
+  writeData(wb, "Base_model", as.data.frame(model$frame))
   
   # Add percent change estimates
   addWorksheet(wb, "Percent Change")
@@ -357,6 +387,10 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   # Add ICC values
   addWorksheet(wb, "ICC")
   writeData(wb, "ICC", icc_df)
+  
+  #Variance Decomposition
+  addWorksheet(wb, "Variance_Comp")
+  writeData(wb, "Variance_Comp", var_comp_df)
   
   # Add model metrics (AIC, R2)
   addWorksheet(wb, "Model Metrics")
@@ -378,3 +412,81 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
 # for (outcome in outcome_vars){
 #   analyze_model("example.csv", multiple_replicates = FALSE, outcome = outcome, pool_baseline = FALSE, reference_group = "MGO_base", test_groups = c('MGO_base','MGO_tx',"003_tx",'003_base'), classification_filter = 'synaptic_event', file_base = "260302_NMDAR_AB_test", ymin = 0.5, ymax = 1.5)
 # }
+
+
+
+
+outcome_vars <- c("spikes_freq","avg_amplitude")
+secondary_outcomes <- c("amplitudes", "spikes_diff")
+#secondary_outcome_vars <- c("diff_avg","diff_cv", "decayed_fraction", "spk_amp_cv", 'spk_amp_median')
+s_outcomes <- c("spikes_diff")
+###NEW ANALYSIS COMPS
+#outcome_vars <- c("spikes_freq", "avg_amplitude","avg_decay_time")\
+analyze_model("z-score_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = 'spikes_freq', pool_baseline = FALSE, reference_group = "z-base", test_groups = c('z-base', "APV", "PDBu"), classification_filter = 'synaptic_event', file_base = "260414_test_synapse_NEW", use_forest_lim = TRUE, ymin= 0.5, ymax = 2.75)
+
+for (outcome in outcome_vars){
+  analyze_model("z-score_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "z-base", test_groups = c('z-base', "APV", "PDBu"), classification_filter = 'synaptic_event', file_base = "260413_z-base_syn", use_forest_lim = TRUE, ymin= 0.5, ymax = 2.75)
+}
+for (outcome in outcome_vars){
+  analyze_model("glycine_NBQX_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "gly_base", test_groups = c("gly_base", "glycine"), classification_filter = 'synaptic_event', file_base = "260413_Glycine_acute", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.9)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("glycine_NBQX_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "NBQX_base", test_groups = c("NBQX_base", "NBQX"), classification_filter = 'synaptic_event', file_base = "260413_NBQX_acute", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.9)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("004-NMDA_synapse_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "MGO-53", test_groups = c("MGO-53", "003-102", "007-124", "008-218"), classification_filter = 'synaptic_event', file_base = "260413_NR1_pt_AB", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.25)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "DMSO", test_groups = c("DMSO", "Ket", "Mem"), classification_filter = 'synaptic_event', file_base = "260413_Ket_Mem_acute", use_forest_lim = TRUE, ymin= 0.5, ymax = 1.15)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("filtered_img_ket_mem_chronic.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "24h_DMSO", test_groups = c("24h_1uM_mem", "24h_1uM_ket", "24h_10uM_ket","24h_DMSO","24h_10uM_mem"), classification_filter = 'synaptic_event', file_base = paste0('synaptic_event', "_final_chronic_ket_mem"), use_forest_lim = TRUE, ymin= 0.5, ymax = 1.58)
+} 
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "Ket_base", test_groups = c("Ket", "Ket_base"), classification_filter = 'synaptic_event', file_base = "260413_Ket_acute", use_forest_lim = TRUE, ymin= 0.25, ymax = 1.15)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = FALSE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "Mem_base", test_groups = c("Mem", "Mem_base"), classification_filter = 'synaptic_event', file_base = "260413_Mem_acute", use_forest_lim = TRUE, ymin= 0.25, ymax = 1.15)
+}
+
+## With Replicates
+
+for (outcome in outcome_vars){
+  analyze_model("z-score_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "z-base", test_groups = c('z-base', "APV", "PDBu"), classification_filter = 'synaptic_event', file_base = "260413_reppedz-base_syn", use_forest_lim = TRUE, ymin= 0.5, ymax = 2.75)
+}
+for (outcome in outcome_vars){
+  analyze_model("glycine_NBQX_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "gly_base", test_groups = c("gly_base", "glycine"), classification_filter = 'synaptic_event', file_base = "260413_reppedGlycine_acute", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.9)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("glycine_NBQX_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "NBQX_base", test_groups = c("NBQX_base", "NBQX"), classification_filter = 'synaptic_event', file_base = "260413_reppedNBQX_acute", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.9)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("004-NMDA_synapse_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "MGO-53", test_groups = c("MGO-53", "003-102", "007-124", "008-218"), classification_filter = 'synaptic_event', file_base = "260413_reppedNR1_pt_AB", use_forest_lim = TRUE, ymin= 0.6, ymax = 1.25)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "DMSO", test_groups = c("DMSO", "Ket", "Mem"), classification_filter = 'synaptic_event', file_base = "260413_reppedKet_Mem_acute", use_forest_lim = TRUE, ymin= 0.5, ymax = 1.15)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("filtered_img_ket_mem_chronic.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "24h_DMSO", test_groups = c("24h_1uM_mem", "24h_1uM_ket", "24h_10uM_ket","24h_DMSO","24h_10uM_mem"), classification_filter = 'synaptic_event', file_base = paste0('REPPED_synaptic_event', "_final_chronic_ket_mem"), use_forest_lim = TRUE, ymin= 0.5, ymax = 1.58)
+} 
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "Ket_base", test_groups = c("Ket", "Ket_base"), classification_filter = 'synaptic_event', file_base = "260413_reppedKet_acute", use_forest_lim = TRUE, ymin= 0.25, ymax = 1.15)
+}
+
+for (outcome in outcome_vars){
+  analyze_model("Ketamine_Mem_DMSO_low_conc_experiment_summary.csv", multiple_replicates = TRUE, outcome_var = outcome, pool_baseline = FALSE, reference_group = "Mem_base", test_groups = c("Mem", "Mem_base"), classification_filter = 'synaptic_event', file_base = "260413_reppedMem_acute", use_forest_lim = TRUE, ymin= 0.25, ymax = 1.15)
+}
+
+
+
