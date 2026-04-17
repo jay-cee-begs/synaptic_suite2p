@@ -233,7 +233,7 @@ def get_experimental_dates(main_folder):
     if i == 1:
         date_list = []
         for folder in image_folders:
-            date_list.append(os.path.basename(folder)[0:4])
+            date_list.append(os.path.basename(folder).split('_')[0])
     distinct_dates = [i for i in set(date_list)]
     distinct_dates.sort(key=lambda x: int(x))
  
