@@ -491,7 +491,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     else:
         for n in range(stat.shape[0]):
 
-            if iscell[n,0]:
+            if iscell[n,0] == 1:
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
