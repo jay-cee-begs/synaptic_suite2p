@@ -307,7 +307,7 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
         ax.plot(time, offset_trace, color='black', alpha=0.6)
         if show_peaks:
             peak_list = detector_utility.single_synapse_peak_detection(trace, return_peaks = True)
-            ax.plot(peak_list, trace[peak_list], 'o', color = 'red')
+            ax.plot(time[peak_list], offset_trace[peak_list], 'o', color = 'red')
     if treatment_vid == True and treatment_no ==  1:
          ax.axvline(treatment1, color='red', linestyle='--')
     if treatment_vid == True and treatment_no == 2:
@@ -491,7 +491,7 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
     else:
         for n in range(stat.shape[0]):
 
-            if iscell[n,0]:
+            if iscell[n,0] == 1:
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
             else:
                 nid2idx_rejected[n] = len(scatters["x"])

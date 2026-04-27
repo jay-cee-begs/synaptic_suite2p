@@ -140,7 +140,7 @@ bootstrap_analysis_vectorized <- function(
         contrasts = boot_df,
         control_means = boot_control_means,
         summary = boot_summary_all
-      ))
+      ))}
 
 
 # ----Example Workflow for a experiment csv file---- #

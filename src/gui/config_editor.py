@@ -236,6 +236,7 @@ class ConfigEditor:
         self.gen_settings.ops_path = self.ops_path_var.get()
         self.gen_settings.bin_width = self.bin_width_var.get()
         self.gen_settings.experiment_duration = self.exp_dur_var.get()
+        self.gen_settings.exp_condition = self.exp_condition
         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
         config_file_path = (script_dir / "../../config/config.json").resolve()
         save_config(config_file_path, self.config)

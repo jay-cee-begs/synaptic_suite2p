@@ -66,6 +66,39 @@ def calculate_deltaF(F_file, event_threshold = 2):
 
     return deltaF
 
+def normalize_fluorescence_traces(F_file, save_traces = True):
+
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    neuropil_corr = F - 0.7*Fneu
+    pop_normalized_traces, roi_normalized_traces = [], []
+    airPLS_corr = []
+    for trace in neuropil_corr:
+        baseline_corrected = BaselineRemoval(trace)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+        airPLS_corr.append(airPLS_corrected)
+    airPLS_corr = np.array(airPLS_corr)
+    for trace in airPLS_corr:
+        
+        roi_normalized = (trace - trace.min()) / (trace.max()-trace.min())
+        pop_normalized =(trace - airPLS_corr.min()) / (airPLS_corr.max()-airPLS_corr.min())
+        pop_normalized_traces.append(pop_normalized)
+        roi_normalized_traces.append(roi_normalized)
+    pop_normalized_traces, roi_normalized_traces = np.array(pop_normalized_traces), np.array(roi_normalized_traces)
+    
+    if save_traces:
+        if not os.path.exists(f"{savepath}/CellNormalizedF.npy") and not os.path.exists(f"{savepath}/CellNormalizedF.npy"):
+            np.save(f"{savepath}/CellNormalizedF.npy", roi_normalized_traces, allow_pickle=True)
+            print(f"Cell Normalized traces saved as CellNormalizedF.npy under {savepath}\n")
+
+            np.save(f"{savepath}/PopNormalizedF.npy", pop_normalized_traces, allow_pickle=True)
+            print(f"Population normalized traces saved as PopNormalizedF.npy under {savepath}\n")
+
+        else:
+            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return pop_normalized_traces, roi_normalized_traces
 
 def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
@@ -297,8 +330,27 @@ def rolling_min(input_series, window_size):
     m = r.min()
     return m
 
+def rolling_med(input_series, window_size):
+    """
+    Calculate rolling minimum value (input_series.rolling()) over different windows of the input trace.
 
-def remove_bleaching(input_trace):
+    Args:
+    -----------
+        input_series: 1D NumPy array
+            raw_trace / F.npy / deltaF.npy
+        window_size: int
+            Size of window to measure with each iteration
+
+    Returns:
+    -------- 
+        m: int / float
+            Smallest local minimum across all windows
+    """
+    r = input_series.rolling(window_size, min_periods=1)
+    m = r.median()
+    return m
+
+def remove_bleaching(input_trace, baseline_correction, window = None):
     """
     Basic first-order polynomial function to remove bleaching from single ROI calcium imaging trace
 
@@ -307,6 +359,9 @@ def remove_bleaching(input_trace):
         input_trace: 1D array
             raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
             functions by processing one ROI at a time
+        baseline_correction: str
+            String name of function to call for removing bleaching from fluorescence trace
+            Accepts 'rolling_min' or 'rolling_med' as possible values; all other values will break the function
 
     Returns:
     --------
@@ -316,8 +371,22 @@ def remove_bleaching(input_trace):
             poly1d fits a 1 dimensional polynomial to the adjusted trace which is subtraced from the raw trace (input_Trace)
 
     """
-    min_trace = rolling_min(pd.Series(input_trace), window_size=int(len(input_trace)/10))
-    fit_coefficients = np.polyfit(range(len(min_trace)), min_trace, 2)
+    possible_corrections = ['rolling_min', 'rolling_med']
+    if baseline_correction not in possible_corrections:
+        print(f"Please enter a valid correction method: {possible_corrections}")
+        return
+    
+    if baseline_correction == "rolling_min":
+        if window is not None:
+            corr_trace = rolling_min(pd.Series(input_trace), window_size = int(window))
+        else:
+            corr_trace = rolling_min(pd.Series(input_trace), window_size=int(len(input_trace)/10))
+    if baseline_correction == "rolling_med":
+        if window is not None:
+            corr_trace = rolling_med(pd.Series(input_trace), window_size = int(window))
+        else:
+            corr_trace = rolling_med(pd.Series(input_trace), window_size = int(len(input_trace)/10))
+    fit_coefficients = np.polyfit(range(len(corr_trace)), corr_trace, 2)
     fit = np.poly1d(fit_coefficients)
     return input_trace - fit(range(len(input_trace)))
 
