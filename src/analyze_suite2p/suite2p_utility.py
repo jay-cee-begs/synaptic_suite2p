@@ -179,8 +179,8 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
             elif file_ending=="deltaF.npy" and file.endswith(file_ending):
                     file_names.append(os.path.join(root, file))
             elif file_ending=="samples":
-                if file.endswith("F.npy") and not file.endswith("deltaF.npy"):
-                    file_names.append(os.path.join(root, file)[:-21])
+                if file.endswith("stat.npy"):
+                    file_names.append(os.path.join(root, file)[:-24])
             else:
                  if file.endswith(file_ending): other_files.append(os.path.join(root, file))
     if file_ending=="F.npy" or file_ending=="deltaF.npy":
