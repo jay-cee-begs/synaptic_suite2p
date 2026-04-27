@@ -30,9 +30,21 @@ def calculate_synapse_frequency(input_df):
     """
     output_df = input_df.copy()
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
+    output_df["BaseSpikesCount"] = output_df["BasePeakTimes"].str.len()
+    output_df["PDBuSpikesCount"] = output_df["PDBuPeakTimes"].str.len()
+    output_df["APVSpikesCount"] = output_df["APVPeakTimes"].str.len()
+
     output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+    output_df["BaseSpikesFreq"] = output_df["BaseSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+    output_df["PDBuSpikesFreq"] = output_df["PDBuSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+    output_df["APVSpikesFreq"] = output_df["APVSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
+
     #CHECK CV CALCULATION
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
+    output_df['BaseSpikesCV'] = output_df['BasePeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['BaseSpikesFreq'] * 100
+    output_df['PDBuSpikesCV'] = output_df['PDBuPeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['PDBuSpikesFreq'] * 100
+    output_df['APVSpikesCV'] = output_df['APVPeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['APVSpikesFreq'] * 100
+
     return output_df
 
 def calculate_synapse_isi(input_df): #isi == interspike interval
@@ -56,9 +68,25 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
     """
     output_df = input_df.copy()
     output_df["SpikesDiff"] = output_df["PeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
+    output_df["BaseSpikesDiff"] = output_df["BasePeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
+    output_df["PDBuSpikesDiff"] = output_df["PDBuPeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
+    output_df["APVSpikesDiff"] = output_df["APVPeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
+
     output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
+    output_df["BaseDiffAvg"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).mean())
+    output_df["PDBuDiffAvg"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).mean())
+    output_df["APVDiffAvg"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).mean())
+
     output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
+    output_df["BaseDiffMedian"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).median())
+    output_df["PDBuDiffMedian"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).median())
+    output_df["APVDiffMedian"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).median())
+
     output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
+    output_df["BaseDiffCV"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["BaseDiffAvg"] * 100
+    output_df["PDBuDiffCV"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["PDBuDiffAvg"] * 100
+    output_df["APVDiffCV"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["APVDiffAvg"] * 100
+
     return output_df
 
 def calculate_spike_amplitudes(input_df):
@@ -82,8 +110,20 @@ def calculate_spike_amplitudes(input_df):
     """
     output_df = input_df.copy()
     output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
+    output_df["BaseAvgAmplitude"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).mean())
+    output_df["PDBuAvgAmplitude"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).mean())
+    output_df["APVAvgAmplitude"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).mean())
+
     output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
+    output_df["BaseSpkAmpMedian"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).median())
+    output_df["PDBuSpkAmpMedian"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).median())
+    output_df["APVSpkAmpMedian"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).median())
+
     output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
+    output_df["BaseSpkAmpCV"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["BaseAvgAmplitude"] * 100
+    output_df["PDBuSpkAmpCV"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["PDBuAvgAmplitude"] * 100
+    output_df["APVSpkAmpCV"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["APVAvgAmplitude"] * 100
+
     return output_df
 
 def calculate_decay_fraction(row):
@@ -236,12 +276,82 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
     # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
+    total_frames = len(suite2p_dict['deltaF'].T)
+    n_vids = 3
+    vid_len = int(total_frames / 3)
+    base_count = []
+    baseline_peaks = []
+    base_amp = []
+    PDBu_count = []
+    PDBu_peaks = []
+    PDBu_amp = []
+    APV_count = []
+    APV_peaks = []
+    APV_amp = []
+
+    for roi_spikes, roi_amplitudes in zip(spikes_per_neuron, spike_amplitudes):
+        roi_base_peaks = []
+        roi_pdbu_peaks = []
+        roi_apv_peaks = []
+
+        roi_base_amp = []
+        roi_pdbu_amp = []
+        roi_apv_amp = []
+        for peak, amplitude in zip(roi_spikes, roi_amplitudes):
+    
+            if peak <= vid_len:
+                roi_base_peaks.append(peak)
+                roi_base_amp.append(amplitude)
+            
+            elif vid_len < peak <= 2*vid_len:
+                roi_pdbu_peaks.append(peak)
+                roi_pdbu_amp.append(amplitude)
+            else:
+                roi_apv_peaks.append(peak)
+                roi_apv_amp.append(amplitude)
+        
+        baseline_peaks.append(roi_base_peaks)
+        base_amp.append(roi_base_amp)
+        PDBu_peaks.append(roi_pdbu_peaks)
+        PDBu_amp.append(roi_pdbu_amp)
+        APV_peaks.append(roi_apv_peaks)
+        APV_amp.append(roi_apv_amp)
+        
+        base_count.append(len(roi_base_peaks))
+        PDBu_count.append(len(roi_pdbu_peaks))
+        APV_count.append(len(roi_apv_peaks))
+        
+#############################################
+####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
+    print(len(suite2p_dict["IsUsed"]))
+    print(len(suite2p_dict["stat"]["skew"]))
+    print(len(spikes_per_neuron))
+    print(len(baseline_peaks))
+    print(len(PDBu_peaks))
+    print(len(APV_peaks))
+    print(len(spike_amplitudes))
+    print(len(base_amp))
+    print(len(PDBu_amp))
+    print(len(APV_amp))
+    print(len(decay_times))
+    print(len(decay_frames))
+    print(len(base_count))
+    
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
                        "PeakTimes": spikes_per_neuron,
+                       "BasePeakTimes": baseline_peaks,
+                       "PDBuPeakTimes": PDBu_peaks,
+                       "APVPeakTimes": APV_peaks,
                        "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
+                       "BaseCount": base_count,
+                       "PDBuCount": PDBu_count,
+                       "APVCount": APV_count,
                        "Amplitudes": spike_amplitudes,
-                        "DecayTimes": decay_times,
+                       "BaseAmplitudes": base_amp,
+                       "PDBuAmplitudes": PDBu_amp,
+                       "APVAmplitudes": APV_amp,
+                       "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
                        "Total_Frames": len(suite2p_dict["F"].T),
                        "Experimental_Group": suite2p_dict['Group'],
@@ -505,8 +615,17 @@ def spike_df_iterator(input_path, return_name=True):
 
     for csv_file in list_all_files_of_type(input_path, "csv"):
         csv_path = os.path.join(input_path, csv_file)
-        csv_df = pd.read_csv(csv_path, converters={"PeakTimes":spike_list_translator , "Amplitudes":amplitude_list_translator, 
-        "DecayTimes": decay_time_list_translator, "DecayFrames": decay_frame_list_translator}, na_filter =False) #Remember to change 'Decaytimes; in the csv to DecayTimes
+        csv_df = pd.read_csv(csv_path, converters={
+            "PeakTimes":spike_list_translator , 
+            "BasePeakTimes":spike_list_translator , 
+            "PDBuPeakTimes":spike_list_translator , 
+            "APVPeakTimes":spike_list_translator , 
+            "Amplitudes":amplitude_list_translator,
+            "BaseAmplitudes":amplitude_list_translator,
+            "PDBuAmplitudes":amplitude_list_translator,
+            "APVAmplitudes":amplitude_list_translator,
+            "DecayTimes": decay_time_list_translator, 
+            "DecayFrames": decay_frame_list_translator}, na_filter =False) #Remember to change 'Decaytimes; in the csv to DecayTimes
         yield csv_df, csv_file if return_name else csv_df
 
         
