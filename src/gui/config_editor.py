@@ -8,7 +8,6 @@ import threading
 import json
 
 from gui_core.io import load_config, save_config
-# from gui_core.folder_logic import find_valid_folders, build_exp_condition
 from gui_core import folder_logic
 from gui.ops_editor import OpsEditor
 from gui_core.general_settings_model import GenSettings
@@ -282,6 +281,7 @@ class ConfigEditor:
         tk.Button(ops_window, text="Run Suite2P", command=self.run_suite2p).pack(pady=5)
 
     def run_pipeline(self):  #Option to skip suite2p, will execute a different .bat then
+        self.save()
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
         bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
