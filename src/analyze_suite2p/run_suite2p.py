@@ -82,6 +82,7 @@ def count_image_files_in_folder(current_path, file_ending):
             count += 1
     return count
 
+def get_all_image_folders_in_path(path, file_ending = config.general_settings.data_extension):
     """
     Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
 
@@ -102,39 +103,22 @@ def count_image_files_in_folder(current_path, file_ending):
         >>> get_all_image_folders_in_path("/home/user/images")
         ['/home/user/images/folder1', '/home/user/images/folder2']
     """
-
-    def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
-        """
-        Check if the specified directory contains exactly one `.nd2` file.
-
-        This helper function scans a directory for files that match the specified `file_ending` (default is `.nd2`).
-        It returns True if the directory contains exactly one such file, otherwise False.
-
-        Args:
-        ----------
-            current_path (str): The path of the directory to check.
-            file_ending (str, optional): The file extension to look for. Default is `.nd2`.
-
-        Returns:
-        ----------
-            bool: True if the directory contains exactly one `.nd2` file, False otherwise.
-
-        Example:
-            >>> check_for_single_image_file_in_folder("/home/user/images/folder1")
-            True
-        """
-        tiff_files = [file for file in os.listdir(current_path) if file.endswith('.'+ file_ending)]
-        return len(tiff_files) == 1
-
+    image_types = {
+        'single': [],
+        'concat': []
+    }
+    
     found_image_folders = []
     for current_path, directories, files in os.walk(path):
-        # Check if current directory is a "deepest" directory (no subdirectories)
-        if check_for_single_image_file_in_folder(current_path):
-            #current_path = current_path.split("\\")[-2]
-            found_image_folders.append(current_path)
+        image_count = count_image_files_in_folder(current_path, file_ending)
 
-    return found_image_folders
+        if image_count == 1:
+            image_types['single'].append(current_path)
 
+        elif image_count > 1:
+            image_types['concat'].append(current_path)
+
+    return image_types
 
 def process_files_with_suite2p(image_list, ops):
     """
