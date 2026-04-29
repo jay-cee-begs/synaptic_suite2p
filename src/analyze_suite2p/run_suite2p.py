@@ -2,6 +2,7 @@ import os
 import shutil
 from suite2p import run_s2p
 from analyze_suite2p import analysis_utility, suite2p_utility, config_loader
+from gui_core import folder_logic
 
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -49,27 +50,38 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
         if not os.path.isdir(dir_path):
             print(f"Skipping non-directory path: {dir_path}")
             continue
-
-        # Processing each file within the directory
+        files = []
         for file in os.listdir(dir_path):
-            if file.endswith(file_ending):
-                name, _ = os.path.splitext(file)
-                folder_path = os.path.join(dir_path, name)
-                os.makedirs(folder_path, exist_ok=True)
+            if os.path.isfile(os.path.join(dir_path, file)) and file.endswith(file_ending):
+                files.append(file)
+        
+        if len(files) == 0:
+            print(f"No {file_ending} files in {dir_path}")
+            continue
 
-                source = os.path.join(dir_path, file)
-                destination = os.path.join(folder_path, file)
+        for file in files: 
+    
+            name, _ = os.path.splitext(file)
+            folder_path = os.path.join(dir_path, name)
+            os.makedirs(folder_path, exist_ok=True)
 
-                try:
-                    shutil.copy2(source, destination)
-                    os.remove(source)
-                    print(f"Processed and moved {file} to {folder_path}")
-                except Exception as e:
-                    print(f"Failed to process {file} due to {e}")
-            else:
-                print(f"Skipping non-{file_ending} file: {file}")
+            source = os.path.join(dir_path, file)
+            destination = os.path.join(folder_path, file)
 
-def get_all_image_folders_in_path(path):
+            try:
+                shutil.copy2(source, destination)
+                os.remove(source)
+                print(f"Processed and moved {file} to {folder_path}")
+            except Exception as e:
+                print(f"Failed to process {file} due to {e}")
+
+def count_image_files_in_folder(current_path, file_ending):
+    count = 0
+    for file in os.listdir(current_path):
+        if file.endswith(file_ending):
+            count += 1
+    return count
+
     """
     Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
 
