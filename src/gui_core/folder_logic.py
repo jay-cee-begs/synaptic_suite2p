@@ -58,6 +58,47 @@ def find_valid_folders(main_folder, ext):
                     break
     return valid
 
+def classify_valid_folders(main_folder, ext):
+    """
+    Classify folders into single-file and concatenated-file groups.
+    """
+    main_folder = Path(main_folder)
+
+    if not main_folder.exists():
+        raise ValueError("Main folder does not exist")
+
+    single_files = []
+    concat_files = []
+
+    for folder in main_folder.iterdir():
+        if not folder.is_dir():
+            continue
+
+        file_count = check_for_single_image_file_in_folder(folder, ext)
+
+        # Files directly inside folder
+        if file_count == 1:
+            single_files.append(folder.name)
+            continue
+        elif file_count > 1:
+            concat_files.append(folder.name)
+            continue
+
+        # Check immediate subfolders
+        for sub in folder.iterdir():
+            if not sub.is_dir():
+                continue
+
+            sub_count = check_for_single_image_file_in_folder(sub, ext)
+
+            if sub_count == 1:
+                single_files.append(folder.name)
+                break
+            elif sub_count > 1:
+                concat_files.append(folder.name)
+                break
+
+    return single_files, concat_files
 
 def build_exp_condition(folders):
     return {f: f for f in folders}
