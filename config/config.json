@@ -1,23 +1,40 @@
 {
  "general_settings": {
   "main_folder": "C:\\synapse_groundtruth",
+  "data_extension": "tif",
+  "frame_rate": 10,
+  "ops_path": "C:\\Users\\jcbegs\\Documents\\GitHub\\synaptic_suite2p\\src\\gui_config",
   "groups": [
    "C:\\synapse_groundtruth\\202501_cropped_ground_truth2",
    "C:\\synapse_groundtruth\\202501_ground_truth3",
    "C:\\synapse_groundtruth\\202501_ground_truth_PBS"
   ],
-  "group_number": 3,
   "exp_condition": {
    "202501_cropped_ground_truth2": "202501_cropped_ground_truth2",
    "202501_ground_truth3": "202501_ground_truth3",
    "202501_ground_truth_PBS": "202501_ground_truth_PBS"
   },
-  "data_extension": "tif",
-  "frame_rate": 10,
-  "ops_path": "C:\\Users\\jcbegs\\Documents\\GitHub\\synaptic_suite2p\\src\\gui_config",
   "BIN_WIDTH": 5,
-  "EXPERIMENT_DURATION": 180,
-  "FRAME_INTERVAL": 0.1,
-  "FILTER_NEURONS": true
+  "EXPERIMENT_DURATION": 180
+ },
+ "analysis_params": {
+  "overwrite_suite2p": true,
+  "multivid_processing": false,
+  "use_suite2p_ROI_classifier": false,
+  "update_suite2p_iscell": true,
+  "Img_Overlay": "max_proj",
+  "return_decay_times": true,
+  "skew_threshold": 1.0,
+  "compactness_threshold": 1.4,
+  "peak_detection_threshold": 4.5,
+  "peak_count_threshold": 1
+ },
+ "multivid_params": {
+  "Treatment_No": 2,
+  "equal_baseline_treatments": true,
+  "unequal_treatment_lengths": [],
+  "treatment_length_units": "seconds",
+  "calculate_treatment_stats": true,
+  "calculate_total_vid_stats": true
  }
 }
