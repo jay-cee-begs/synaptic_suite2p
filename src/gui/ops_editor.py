@@ -93,7 +93,7 @@ class MultiVidEditor:
                 var = tk.BooleanVar(value=value)
                 tk.Checkbutton(self.master, variable=var).grid(row=idx, column=1)
 
-                if param == 'equal_baseline_treatments':
+                if param == 'equal_baseline_and_treatments':
                     var.trace_add("write", self.update_treatment_length_inputs)
 
             else:
@@ -104,14 +104,14 @@ class MultiVidEditor:
         
         self.length_frame = tk.Frame(self.master)
         self.length_frame.grid(row = 20, column = 0, columnspan=2, pady = 10)
-        if not self.vars['equal_baseline_treatments'].get():
+        if not self.vars['equal_baseline_and_treatments'].get():
             self.update_treatment_length_inputs()
         
         tk.Button(self.master, text = "Save", command = self.save).grid(row = 30, column = 0)
 
     def update_treatment_length_inputs(self, *args):
 
-        if self.vars['equal_baseline_treatments'].get():
+        if self.vars['equal_baseline_and_treatments'].get():
             self.length_frame.grid_remove()
             return
         else:
@@ -173,7 +173,7 @@ class MultiVidEditor:
                     updated[key] = float(val) if "." in val else int(val)
                 except:
                     updated[key] = val
-        if not self.vars['equal_baseline_treatments'].get():
+        if not self.vars['equal_baseline_and_treatments'].get():
             for var in self.length_vars:
                 updated['unequal_treatment_lengths'] = [float(var.get())]
 

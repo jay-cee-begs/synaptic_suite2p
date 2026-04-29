@@ -31,7 +31,7 @@
  },
  "multivid_params": {
   "Treatment_No": 2,
-  "equal_baseline_treatments": true,
+  "equal_baseline_and_treatments": true,
   "unequal_treatment_lengths": [],
   "treatment_length_units": "seconds",
   "calculate_treatment_stats": true,

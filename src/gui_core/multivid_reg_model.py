@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 class MultiVid_Reg_Params:
     
     Treatment_No: int = 2
-    equal_baseline_treatments: bool = True
+    equal_baseline_and_treatments: bool = True
     unequal_treatment_lengths: list = field(default_factory=list)
     treatment_length_units: str = "seconds"
     calculate_treatment_stats: bool = True
