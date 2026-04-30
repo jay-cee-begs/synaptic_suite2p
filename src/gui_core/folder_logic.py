@@ -53,7 +53,7 @@ def find_valid_folders(main_folder, ext):
             valid.append(folder.name)
         else:
             for sub in folder.iterdir():
-                if sub.is_dir() and check_for_single_image_file_in_folder(sub, ext) == 1:
+                if sub.is_dir() and check_for_single_image_file_in_folder(sub, ext) >= 1:
                     valid.append(folder.name)
                     break
     return valid
