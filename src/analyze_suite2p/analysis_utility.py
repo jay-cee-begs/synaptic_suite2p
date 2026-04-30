@@ -557,7 +557,7 @@ def amplitude_list_translator(input_string):
 
 
 def decay_frame_list_translator(input_string):
-    """
+    """ 
     Convert a decay-frame string into a time-scaled NumPy array.
 
     Args:
@@ -613,17 +613,24 @@ def spike_df_iterator(input_path, return_name=True):
 
     for csv_file in list_all_files_of_type(input_path, "csv"):
         csv_path = os.path.join(input_path, csv_file)
-        csv_df = pd.read_csv(csv_path, converters={
-            "PeakTimes":spike_list_translator , 
-            "BasePeakTimes":spike_list_translator , 
-            "PDBuPeakTimes":spike_list_translator , 
-            "APVPeakTimes":spike_list_translator , 
-            "Amplitudes":amplitude_list_translator,
-            "BaseAmplitudes":amplitude_list_translator,
-            "PDBuAmplitudes":amplitude_list_translator,
-            "APVAmplitudes":amplitude_list_translator,
-            "DecayTimes": decay_time_list_translator, 
-            "DecayFrames": decay_frame_list_translator}, na_filter =False) #Remember to change 'Decaytimes; in the csv to DecayTimes
+
+        converters = {}
+        columns = pd.read_csv(csv_path, nrows= 0).columns
+        for col in columns:
+            if col.endswith("PeakTimes"):
+                converters[col] = spike_list_translator
+            elif col.endswith("Amplitudes"):
+                converters[col] = amplitude_list_translator
+            elif col.endswith("DecayFrames"):
+                converters[col] = decay_frame_list_translator
+            elif col.endswith("DecayTimes"):
+                converters[col] = decay_time_list_translator
+        
+        csv_df = pd.read_csv(
+            csv_path, 
+            converters = converters, 
+            na_filter = False)
+        
         yield csv_df, csv_file if return_name else csv_df
 
         
