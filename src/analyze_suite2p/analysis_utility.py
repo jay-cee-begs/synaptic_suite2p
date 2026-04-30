@@ -243,80 +243,17 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
     total_frames = len(suite2p_dict['deltaF'].T)
-    n_vids = 3
-    vid_len = int(total_frames / 3)
-    base_count = []
-    baseline_peaks = []
-    base_amp = []
-    PDBu_count = []
-    PDBu_peaks = []
-    PDBu_amp = []
-    APV_count = []
-    APV_peaks = []
-    APV_amp = []
-
-    for roi_spikes, roi_amplitudes in zip(spikes_per_neuron, spike_amplitudes):
-        roi_base_peaks = []
-        roi_pdbu_peaks = []
-        roi_apv_peaks = []
-
-        roi_base_amp = []
-        roi_pdbu_amp = []
-        roi_apv_amp = []
-        for peak, amplitude in zip(roi_spikes, roi_amplitudes):
     
-            if peak <= vid_len:
-                roi_base_peaks.append(peak)
-                roi_base_amp.append(amplitude)
-            
-            elif vid_len < peak <= 2*vid_len:
-                roi_pdbu_peaks.append(peak)
-                roi_pdbu_amp.append(amplitude)
-            else:
-                roi_apv_peaks.append(peak)
-                roi_apv_amp.append(amplitude)
         
-        baseline_peaks.append(roi_base_peaks)
-        base_amp.append(roi_base_amp)
-        PDBu_peaks.append(roi_pdbu_peaks)
-        PDBu_amp.append(roi_pdbu_amp)
-        APV_peaks.append(roi_apv_peaks)
-        APV_amp.append(roi_apv_amp)
-        
-        base_count.append(len(roi_base_peaks))
-        PDBu_count.append(len(roi_pdbu_peaks))
-        APV_count.append(len(roi_apv_peaks))
         
 #############################################
 ####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
-    print(len(suite2p_dict["IsUsed"]))
-    print(len(suite2p_dict["stat"]["skew"]))
-    print(len(spikes_per_neuron))
-    print(len(baseline_peaks))
-    print(len(PDBu_peaks))
-    print(len(APV_peaks))
-    print(len(spike_amplitudes))
-    print(len(base_amp))
-    print(len(PDBu_amp))
-    print(len(APV_amp))
-    print(len(decay_times))
-    print(len(decay_frames))
-    print(len(base_count))
     
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
                        "PeakTimes": spikes_per_neuron,
-                       "BasePeakTimes": baseline_peaks,
-                       "PDBuPeakTimes": PDBu_peaks,
-                       "APVPeakTimes": APV_peaks,
-                       "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
-                       "BaseCount": base_count,
-                       "PDBuCount": PDBu_count,
-                       "APVCount": APV_count,
+                       "PeakCount": peak_count, 
                        "Amplitudes": spike_amplitudes,
-                       "BaseAmplitudes": base_amp,
-                       "PDBuAmplitudes": PDBu_amp,
-                       "APVAmplitudes": APV_amp,
                        "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
                        "Total_Frames": len(suite2p_dict["F"].T),
