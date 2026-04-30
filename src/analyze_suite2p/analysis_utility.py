@@ -33,10 +33,22 @@ def calculate_synapse_frequency(input_df):
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
     output_df["SpikesFreq"] = output_df["SpikesCount"] / ((output_df["Total_Frames"] / frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
-    output_df['BaseSpikesCV'] = output_df['BasePeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['BaseSpikesFreq'] * 100
-    output_df['PDBuSpikesCV'] = output_df['PDBuPeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['PDBuSpikesFreq'] * 100
-    output_df['APVSpikesCV'] = output_df['APVPeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['APVSpikesFreq'] * 100
+    
+    peak_cols = []
+    for col in output_df.columns:
+        if col.endswith("_PeakTimes") and col.startswith("Video_"):
+            peak_cols.append(col)
+    for peak_col in peak_cols:
+        prefix = peak_col.replace("_PeakTimes", "")
 
+        count_col = f"{prefix}_SpikesCount"
+        freq_col = f"{prefix}_SpikesFreq"
+        cv_col = f"{prefix}_SpikesCV"
+        frames_col = f"{prefix}_Frames"
+
+        output_df[count_col] = output_df[peak_col].str.len()
+        output_df[freq_col] = (output_df[count_col] / (output_df[frames_col] / frame_rate))
+        output_df[cv_col] = output_df[peak_col].apply(lambda x: pd.Series(x).std()) / output_df[freq_col] * 100
     return output_df
 
 def calculate_synapse_isi(input_df): #isi == interspike interval
