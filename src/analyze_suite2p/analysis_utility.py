@@ -244,7 +244,32 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
     total_frames = len(suite2p_dict['deltaF'].T)
     
+    if config.analysis_params.multivid_processing:
+        n_vids = int(config.multivid_params.Treatment_No)
+        if config.multivid_params.equal_baseline_and_treatments:
+            vid_len = [int(total_frames / n_vids)] * n_vids
+            if config.multivid_params.treatment_length_units == 'seconds':
+                vid_len = vid_len * float(config.general_settings.frame_rate)
+        else:
+            vid_len = []
+            unequal_vid_lengths = list(config.multivid_params.unequal_treatment_lengths)
+            for i in range(0,n_vids):
+                vid_len.append(int(unequal_vid_lengths[i]))
+            if config.multivid_params.treatment_length_units == 'seconds':
+                vids = []
+                for vid in vid_len:
+                    vids.append(vid*float(config.general_settings.frame_rate))
+                vid_len = vids
         
+        boundaries = []
+        running_total = 0
+        for length in vid_len:
+            running_total +=length
+            boundaries.append(running_total)
+            
+        all_peaks = [[] for _ in range(n_vids)]
+        all_amplitudes = [[] for _ in range(n_vids)]
+        all_counts = [[] for _ in range(n_vids)]
         
 #############################################
 ####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
