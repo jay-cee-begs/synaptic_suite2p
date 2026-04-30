@@ -6,7 +6,7 @@ class MultiVid_Reg_Params:
     Treatment_No: int = 2
     equal_baseline_and_treatments: bool = True
     unequal_treatment_lengths: list = field(default_factory=list)
-    treatment_length_units: str = "seconds"
+    treatment_length_units: str = "frames"
     calculate_treatment_stats: bool = True
     calculate_total_vid_stats: bool = True
 
