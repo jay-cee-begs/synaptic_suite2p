@@ -101,6 +101,22 @@ def calculate_spike_amplitudes(input_df):
     output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
     output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
     output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
+    
+    amp_cols = []
+    for col in output_df.columns:
+        if col.startswith("Video_") and col.endswith('_Amplitudes'):
+            amp_cols.append(col)
+    
+    for amp_col in amp_cols:
+        prefix = amp_col.replace("Amplitudes", "")
+
+        avg_amp = f"{prefix}_AvgAmplitude"
+        median_amp = f"{prefix}_SpkAmpMedian"
+        cv_amp = f"{prefix}_SpkAmpCV"
+
+        output_df[avg_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).mean())
+        output_df[median_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).median())
+        output_df[cv_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).std()) / output_df[avg_amp] * 100
 
     return output_df
 
