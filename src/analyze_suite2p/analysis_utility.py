@@ -271,6 +271,23 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
         all_amplitudes = [[] for _ in range(n_vids)]
         all_counts = [[] for _ in range(n_vids)]
         
+        for roi_spikes, roi_amplitudes in zip(spikes_per_neuron, spike_amplitudes):
+            
+            roi_peaks_by_vid = [[] for _ in range(n_vids)]
+            roi_amp_by_vid = [[] for _ in range(n_vids)]
+
+            for peak, amplitude in zip(roi_spikes, roi_amplitudes):
+                for vid_idx, boundary in enumerate(boundaries):
+                    if peak <= boundary:
+                        roi_peaks_by_vid[vid_idx].append(peak)
+                        roi_amp_by_vid[vid_idx].append(amplitude)
+                        break
+            
+            for vid_idx in range(n_vids):
+                all_peaks[vid_idx].append(roi_peaks_by_vid[vid_idx])
+                all_amplitudes[vid_idx].append(roi_amp_by_vid[vid_idx])
+                all_counts[vid_idx].append(len(roi_peaks_by_vid[vid_idx]))
+
 #############################################
 ####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
     
