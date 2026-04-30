@@ -303,7 +303,13 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
                        "Replicate_No.": suite2p_dict['sample'],
                        "File_Name": suite2p_dict['file_name']
                        })
-                       
+    if config.analysis_params.multivid_processing:
+        for vid_idx in range(n_vids):
+            df[f"Video_{vid_idx}_PeakTimes"] = all_peaks[vid_idx]
+            df[f"Video_{vid_idx}_Amplitudes"] = all_amplitudes[vid_idx]
+            df[f"Video_{vid_idx}_Count"] = all_counts[vid_idx]
+            df[f"Video_{vid_idx}_Frames"] = vid_len[vid_idx]
+            
     df.index.set_names("SynapseID", inplace=True)
     Img = plotting_utility.getImg(suite2p_dict["ops"], config)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
