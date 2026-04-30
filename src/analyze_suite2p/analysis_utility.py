@@ -75,6 +75,25 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
     output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
     output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
     output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
+    
+    peak_cols = []
+    for col in output_df.columns:
+        if col.startswith("Video_") and col.endswith("_PeakTimes"):
+            peak_cols.append(col)
+    
+    for peak_col in peak_cols:
+        prefix = peak_col.replace("_PeakTimes", "")
+
+        diff_col = f"{prefix}_SpikesDiff"
+        avg_col = f"{prefix}_DiffAvg"
+        median_col = f"{prefix}_DiffMedian"
+        cv_col = f"{prefix}_DiffCV"
+
+        output_df[diff_col] = output_df[peak_col].apply(lambda x: list(pd.Series(x).diff().dropna()))
+        output_df[avg_col] = output_df[diff_col].apply(lambda x: pd.Series(x).mean())
+        output_df[median_col] = output_df[diff_col].apply(lambda x: pd.Series(x).median())
+        output_df[cv_col] = output_df[diff_col].apply(lambda x: pd.Series(x).std()) / output_df[avg_col] * 100 
+
 
     return output_df
 
