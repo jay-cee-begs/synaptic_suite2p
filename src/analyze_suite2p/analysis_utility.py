@@ -29,17 +29,9 @@ def calculate_synapse_frequency(input_df):
 
     """
     output_df = input_df.copy()
+    frame_rate = config.general_settings.frame_rate
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["BaseSpikesCount"] = output_df["BasePeakTimes"].str.len()
-    output_df["PDBuSpikesCount"] = output_df["PDBuPeakTimes"].str.len()
-    output_df["APVSpikesCount"] = output_df["APVPeakTimes"].str.len()
-
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
-    output_df["BaseSpikesFreq"] = output_df["BaseSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
-    output_df["PDBuSpikesFreq"] = output_df["PDBuSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
-    output_df["APVSpikesFreq"] = output_df["APVSpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
-
-    #CHECK CV CALCULATION
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((output_df["Total_Frames"] / frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
     output_df['BaseSpikesCV'] = output_df['BasePeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['BaseSpikesFreq'] * 100
     output_df['PDBuSpikesCV'] = output_df['PDBuPeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['PDBuSpikesFreq'] * 100
@@ -68,24 +60,9 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
     """
     output_df = input_df.copy()
     output_df["SpikesDiff"] = output_df["PeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
-    output_df["BaseSpikesDiff"] = output_df["BasePeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
-    output_df["PDBuSpikesDiff"] = output_df["PDBuPeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
-    output_df["APVSpikesDiff"] = output_df["APVPeakTimes"].apply(lambda x: list(pd.Series(x).diff().dropna()))
-
     output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
-    output_df["BaseDiffAvg"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).mean())
-    output_df["PDBuDiffAvg"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).mean())
-    output_df["APVDiffAvg"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).mean())
-
     output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
-    output_df["BaseDiffMedian"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).median())
-    output_df["PDBuDiffMedian"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).median())
-    output_df["APVDiffMedian"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).median())
-
     output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
-    output_df["BaseDiffCV"] = output_df["BaseSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["BaseDiffAvg"] * 100
-    output_df["PDBuDiffCV"] = output_df["PDBuSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["PDBuDiffAvg"] * 100
-    output_df["APVDiffCV"] = output_df["APVSpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["APVDiffAvg"] * 100
 
     return output_df
 
@@ -110,19 +87,8 @@ def calculate_spike_amplitudes(input_df):
     """
     output_df = input_df.copy()
     output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
-    output_df["BaseAvgAmplitude"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).mean())
-    output_df["PDBuAvgAmplitude"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).mean())
-    output_df["APVAvgAmplitude"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).mean())
-
     output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
-    output_df["BaseSpkAmpMedian"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).median())
-    output_df["PDBuSpkAmpMedian"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).median())
-    output_df["APVSpkAmpMedian"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).median())
-
     output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
-    output_df["BaseSpkAmpCV"] = output_df["BaseAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["BaseAvgAmplitude"] * 100
-    output_df["PDBuSpkAmpCV"] = output_df["PDBuAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["PDBuAvgAmplitude"] * 100
-    output_df["APVSpkAmpCV"] = output_df["APVAmplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["APVAvgAmplitude"] * 100
 
     return output_df
 
