@@ -292,7 +292,7 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     total_frames = len(suite2p_dict['deltaF'].T)
     
     if config.analysis_params.multivid_processing:
-        n_vids = int(config.multivid_params.Treatment_No)
+        n_vids = int(config.multivid_params.Treatment_No) + 1
         if config.multivid_params.equal_baseline_and_treatments:
             vid_len = [int(total_frames / n_vids)] * n_vids
             if config.multivid_params.treatment_length_units == 'seconds':
@@ -305,7 +305,7 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
             if config.multivid_params.treatment_length_units == 'seconds':
                 vids = []
                 for vid in vid_len:
-                    vids.append(vid*float(config.general_settings.frame_rate))
+                    vids.append(vid*config.general_settings.frame_rate)
                 vid_len = vids
         
         boundaries = []
@@ -534,7 +534,7 @@ def spike_list_translator(input_string):
 
     """
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * (1 / float(config.general_settings.frame_rate))
+    return np.array(string_list).astype(int) * (1 / config.general_settings.frame_rate)
 
 def amplitude_list_translator(input_string):
     """
