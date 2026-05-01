@@ -25,6 +25,8 @@ class ConfigEditor:
     def __init__(self, master):
         self.master = master
         self.master.title("Synaptic suite2P Analysis Configurations Editor")
+        self.is_running = False
+        self.process = None
 
         # Load existing configurations
         self.config = load_config()
@@ -112,7 +114,15 @@ class ConfigEditor:
         tk.Button(self.main_frame, text="Save Configurations", command=self.save).pack(pady=10)
 
         # Process button
-        tk.Button(self.main_frame, text="Process", command=self.run_pipeline).pack(pady=10)
+        self.process_button = tk.Button(self.main_frame,
+                                        text="Run Analysis", 
+                                        command = self.run_pipeline)
+        self.process_button.pack(pady=10)
+        self.abort_button = tk.Button(self.main_frame,
+                                      text = "Abort",
+                                      command=self.abort_pipeline,
+                                      state = "disabled")
+        self.abort_button.pack(pady=5)
 
         # Final debug message
         logger.debug("GUI initialized successfully\n")
@@ -261,17 +271,40 @@ class ConfigEditor:
 
     
     def run_subprocess(self, bat_file):
-        subprocess.call([str(bat_file)])  # Execute sequence.bat
-        # Redirect the terminal output to a text file, seperate function to reduce interference with the process bar
         scripts_dir = Path(bat_file).parent
         log_file = scripts_dir / "process_log.txt"
+
         with open(log_file, "w") as f:
-            process = subprocess.Popen([str(bat_file)], stdout=f, stderr=subprocess.STDOUT)
-            process.wait()
+            self.process = subprocess.Popen(
+                [str(bat_file)],
+                stdout=f,
+                stderr=subprocess.STDOUT
+            )
 
-        # Display the log file content in a new GUI window
-        # self.show_log_window(log_file)
+            self.process.wait()
 
+        self.master.after(0, self.on_process_finished)
+
+    def on_process_finished(self):
+        self.is_running = False
+        self.process = None
+        self.process_button.config(state = "normal")
+        self.abort_button.config(state="disabled")
+        print("Analysis finished!")
+
+    def abort_pipeline(self):
+        if self.process and self.is_running:
+            try:
+                self.process.terminate()
+                print("Analysis terminated by user")
+                try: 
+                    self.process.wait(timeout = 2)
+                except subprocess.TimeoutError:
+                    self.process.kill()
+            except Exception as e:
+                print("Error terminating analysis: ", e)
+            self.on_process_finished()
+    
     def show_ops_options(self):
         ops_window = tk.Toplevel(self.master)
         ops_window.title("Select Ops File Option")
@@ -297,6 +330,11 @@ class ConfigEditor:
 
     def run_pipeline(self):  #Option to skip suite2p, will execute a different .bat then
         self.save()
+        if self.is_running:
+            return
+        self.is_running = True
+        self.process_button.config(state = "disabled")
+        self.abort_button.config(state = "normal")
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
         bat_file = os.path.join(scripts_dir, "run_suite2p.bat")
