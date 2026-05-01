@@ -1,23 +1,38 @@
 {
  "general_settings": {
-  "main_folder": "C:\\synapse_groundtruth",
+  "main_folder": "E:/concat_z-score",
+  "data_extension": "nd2",
+  "frame_rate": 20,
+  "ops_path": "C:/Users/jcbeg/Documents/GitHub/synaptic_suite2p/suite2p_ops_files/synaptic_suite2p_w_TTX_multivid_reg.npy",
   "groups": [
-   "C:\\synapse_groundtruth\\202501_cropped_ground_truth2",
-   "C:\\synapse_groundtruth\\202501_ground_truth3",
-   "C:\\synapse_groundtruth\\202501_ground_truth_PBS"
+   "replicate01",
+   "replicate02",
+   "replicate03"
   ],
-  "group_number": 3,
   "exp_condition": {
-   "202501_cropped_ground_truth2": "202501_cropped_ground_truth2",
-   "202501_ground_truth3": "202501_ground_truth3",
-   "202501_ground_truth_PBS": "202501_ground_truth_PBS"
+   "replicate01": "replicate01",
+   "replicate02": "replicate02",
+   "replicate03": "replicate03"
   },
-  "data_extension": "tif",
-  "frame_rate": 10,
-  "ops_path": "C:\\Users\\jcbegs\\Documents\\GitHub\\synaptic_suite2p\\src\\gui_config",
   "BIN_WIDTH": 5,
-  "EXPERIMENT_DURATION": 180,
-  "FRAME_INTERVAL": 0.1,
-  "FILTER_NEURONS": true
+  "EXPERIMENT_DURATION": 540
+ },
+ "analysis_params": {
+  "overwrite_suite2p": false,
+  "multivid_processing": true,
+  "use_suite2p_ROI_classifier": false,
+  "update_suite2p_iscell": true,
+  "Img_Overlay": "max_proj",
+  "return_decay_times": true,
+  "skew_threshold": 1.0,
+  "compactness_threshold": 1.4,
+  "peak_detection_threshold": 4.5,
+  "peak_count_threshold": 1
+ },
+ "multivid_params": {
+  "Treatment_No": 2,
+  "equal_baseline_and_treatments": true,
+  "unequal_treatment_lengths": [],
+  "treatment_length_units": "frames"
  }
 }

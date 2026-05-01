@@ -29,10 +29,26 @@ def calculate_synapse_frequency(input_df):
 
     """
     output_df = input_df.copy()
+    frame_rate = config.general_settings.frame_rate
     output_df["SpikesCount"] = output_df["PeakTimes"].str.len()
-    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((input_df["Total_Frames"] / config.general_settings.frame_rate)) #divide by total # of frames NOT framerate
-    #CHECK CV CALCULATION
+    output_df["SpikesFreq"] = output_df["SpikesCount"] / ((output_df["Total_Frames"] / frame_rate)) #divide by total # of frames NOT framerate
     output_df['SpikesCV'] = output_df['PeakTimes'].apply(lambda x: pd.Series(x).std()) / output_df['SpikesFreq'] * 100
+    
+    peak_cols = []
+    for col in output_df.columns:
+        if col.endswith("_PeakTimes") and col.startswith("Video_"):
+            peak_cols.append(col)
+    for peak_col in peak_cols:
+        prefix = peak_col.replace("_PeakTimes", "")
+
+        count_col = f"{prefix}_SpikesCount"
+        freq_col = f"{prefix}_SpikesFreq"
+        cv_col = f"{prefix}_SpikesCV"
+        frames_col = f"{prefix}_Frames"
+
+        output_df[count_col] = output_df[peak_col].str.len()
+        output_df[freq_col] = (output_df[count_col] / (output_df[frames_col] / frame_rate))
+        output_df[cv_col] = output_df[peak_col].apply(lambda x: pd.Series(x).std()) / output_df[freq_col] * 100
     return output_df
 
 def calculate_synapse_isi(input_df): #isi == interspike interval
@@ -59,6 +75,26 @@ def calculate_synapse_isi(input_df): #isi == interspike interval
     output_df["DiffAvg"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).mean())
     output_df["DiffMedian"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).median())
     output_df["DiffCV"] = output_df["SpikesDiff"].apply(lambda x: pd.Series(x).std()) / output_df["DiffAvg"] * 100
+    
+    peak_cols = []
+    for col in output_df.columns:
+        if col.startswith("Video_") and col.endswith("_PeakTimes"):
+            peak_cols.append(col)
+    
+    for peak_col in peak_cols:
+        prefix = peak_col.replace("_PeakTimes", "")
+
+        diff_col = f"{prefix}_SpikesDiff"
+        avg_col = f"{prefix}_DiffAvg"
+        median_col = f"{prefix}_DiffMedian"
+        cv_col = f"{prefix}_DiffCV"
+
+        output_df[diff_col] = output_df[peak_col].apply(lambda x: list(pd.Series(x).diff().dropna()))
+        output_df[avg_col] = output_df[diff_col].apply(lambda x: pd.Series(x).mean())
+        output_df[median_col] = output_df[diff_col].apply(lambda x: pd.Series(x).median())
+        output_df[cv_col] = output_df[diff_col].apply(lambda x: pd.Series(x).std()) / output_df[avg_col] * 100 
+
+
     return output_df
 
 def calculate_spike_amplitudes(input_df):
@@ -84,6 +120,23 @@ def calculate_spike_amplitudes(input_df):
     output_df["AvgAmplitude"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).mean())
     output_df["SpkAmpMedian"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).median())
     output_df["SpkAmpCV"] = output_df["Amplitudes"].apply(lambda x: pd.Series(x).std()) / output_df["AvgAmplitude"] * 100
+    
+    amp_cols = []
+    for col in output_df.columns:
+        if col.startswith("Video_") and col.endswith('_Amplitudes'):
+            amp_cols.append(col)
+    
+    for amp_col in amp_cols:
+        prefix = amp_col.replace("Amplitudes", "")
+
+        avg_amp = f"{prefix}_AvgAmplitude"
+        median_amp = f"{prefix}_SpkAmpMedian"
+        cv_amp = f"{prefix}_SpkAmpCV"
+
+        output_df[avg_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).mean())
+        output_df[median_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).median())
+        output_df[cv_amp] = output_df[amp_col].apply(lambda x: pd.Series(x).std()) / output_df[avg_amp] * 100
+
     return output_df
 
 def calculate_decay_fraction(row):
@@ -236,19 +289,74 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
     # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
 #spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
+    total_frames = len(suite2p_dict['deltaF'].T)
+    
+    if config.analysis_params.multivid_processing:
+        n_vids = int(config.multivid_params.Treatment_No) + 1
+        if config.multivid_params.equal_baseline_and_treatments:
+            vid_len = [int(total_frames / n_vids)] * n_vids
+            if config.multivid_params.treatment_length_units == 'seconds':
+                vid_len = vid_len * float(config.general_settings.frame_rate)
+        else:
+            vid_len = []
+            unequal_vid_lengths = list(config.multivid_params.unequal_treatment_lengths)
+            for i in range(0,n_vids):
+                vid_len.append(int(unequal_vid_lengths[i]))
+            if config.multivid_params.treatment_length_units == 'seconds':
+                vids = []
+                for vid in vid_len:
+                    vids.append(vid*config.general_settings.frame_rate)
+                vid_len = vids
+        
+        boundaries = []
+        running_total = 0
+        for length in vid_len:
+            running_total +=length
+            boundaries.append(running_total)
+            
+        all_peaks = [[] for _ in range(n_vids)]
+        all_amplitudes = [[] for _ in range(n_vids)]
+        all_counts = [[] for _ in range(n_vids)]
+        
+        for roi_spikes, roi_amplitudes in zip(spikes_per_neuron, spike_amplitudes):
+            
+            roi_peaks_by_vid = [[] for _ in range(n_vids)]
+            roi_amp_by_vid = [[] for _ in range(n_vids)]
+
+            for peak, amplitude in zip(roi_spikes, roi_amplitudes):
+                for vid_idx, boundary in enumerate(boundaries):
+                    if peak <= boundary:
+                        roi_peaks_by_vid[vid_idx].append(peak)
+                        roi_amp_by_vid[vid_idx].append(amplitude)
+                        break
+            
+            for vid_idx in range(n_vids):
+                all_peaks[vid_idx].append(roi_peaks_by_vid[vid_idx])
+                all_amplitudes[vid_idx].append(roi_amp_by_vid[vid_idx])
+                all_counts[vid_idx].append(len(roi_peaks_by_vid[vid_idx]))
+
+#############################################
+####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
+    
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
                        "PeakTimes": spikes_per_neuron,
-                       "PeakCount": peak_count, #TODO figure out if we can calculate all the coversions here before the pkl file
+                       "PeakCount": peak_count, 
                        "Amplitudes": spike_amplitudes,
-                        "DecayTimes": decay_times,
+                       "DecayTimes": decay_times,
                        "DecayFrames": decay_frames,
                        "Total_Frames": len(suite2p_dict["F"].T),
                        "Experimental_Group": suite2p_dict['Group'],
                        "Replicate_No.": suite2p_dict['sample'],
                        "File_Name": suite2p_dict['file_name']
                        })
-                       
+    if config.analysis_params.multivid_processing:
+        for vid_idx in range(n_vids):
+            df[f"Video_{vid_idx}_PeakTimes"] = all_peaks[vid_idx]
+            df[f"Video_{vid_idx}_Amplitudes"] = all_amplitudes[vid_idx]
+            df[f"Video_{vid_idx}_Count"] = all_counts[vid_idx]
+            df[f"Video_{vid_idx}_Frames"] = vid_len[vid_idx]
+            
     df.index.set_names("SynapseID", inplace=True)
     Img = plotting_utility.getImg(suite2p_dict["ops"], config)
     scatters, nid2idx, nid2idx_rejected, pixel2neuron, synapse_ID, nid2dx_dendrite, nid2idx_synapse = plotting_utility.getStats(suite2p_dict, Img.shape, df, config, use_iscell = config.analysis_params.use_suite2p_ROI_classifier)
@@ -426,7 +534,7 @@ def spike_list_translator(input_string):
 
     """
     string_list = string_to_list_translator(input_string)
-    return np.array(string_list).astype(int) * (1 / float(config.general_settings.frame_rate))
+    return np.array(string_list).astype(int) * (1 / config.general_settings.frame_rate)
 
 def amplitude_list_translator(input_string):
     """
@@ -449,7 +557,7 @@ def amplitude_list_translator(input_string):
 
 
 def decay_frame_list_translator(input_string):
-    """
+    """ 
     Convert a decay-frame string into a time-scaled NumPy array.
 
     Args:
@@ -505,8 +613,24 @@ def spike_df_iterator(input_path, return_name=True):
 
     for csv_file in list_all_files_of_type(input_path, "csv"):
         csv_path = os.path.join(input_path, csv_file)
-        csv_df = pd.read_csv(csv_path, converters={"PeakTimes":spike_list_translator , "Amplitudes":amplitude_list_translator, 
-        "DecayTimes": decay_time_list_translator, "DecayFrames": decay_frame_list_translator}, na_filter =False) #Remember to change 'Decaytimes; in the csv to DecayTimes
+
+        converters = {}
+        columns = pd.read_csv(csv_path, nrows= 0).columns
+        for col in columns:
+            if col.endswith("PeakTimes"):
+                converters[col] = spike_list_translator
+            elif col.endswith("Amplitudes"):
+                converters[col] = amplitude_list_translator
+            elif col.endswith("DecayFrames"):
+                converters[col] = decay_frame_list_translator
+            elif col.endswith("DecayTimes"):
+                converters[col] = decay_time_list_translator
+        
+        csv_df = pd.read_csv(
+            csv_path, 
+            converters = converters, 
+            na_filter = False)
+        
         yield csv_df, csv_file if return_name else csv_df
 
         

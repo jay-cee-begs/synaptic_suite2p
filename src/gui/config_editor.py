@@ -8,9 +8,8 @@ import threading
 import json
 
 from gui_core.io import load_config, save_config
-# from gui_core.folder_logic import find_valid_folders, build_exp_condition
 from gui_core import folder_logic
-from gui.ops_editor import OpsEditor
+from gui.ops_editor import OpsEditor, MultiVidEditor
 from gui_core.general_settings_model import GenSettings
 from gui_core.analysis_model import AnalysisParams
 
@@ -124,8 +123,20 @@ class ConfigEditor:
         self.canvas.yview_scroll(-1 * (event.delta // 120), "units")   
 
     def open_ops(self):
-        top = tk.Toplevel(self.master)
-        OpsEditor(top, self.config)
+        popup = tk.Toplevel(self.master)
+        popup.title("Analysis Params Editor")
+        OpsEditor(popup, self.config)
+
+        self.master.wait_window(popup)
+        if self.config.analysis_params.multivid_processing:
+            self.open_multivid_registration()
+    
+    def open_multivid_registration(self):
+        popup = tk.Toplevel(self.master)
+        popup.title("Multi-video Processing Settings")
+        MultiVidEditor(popup, self.config)
+        self.master.wait_window(popup)
+        self.save()
 
     def launch_suite2p_gui(self):
         """Call the function to create new ops file"""
@@ -184,6 +195,7 @@ class ConfigEditor:
                 "overwrite_suite2p": self.overwrite_suite2p,
                 "img_overlay": self.img_overlay,
                 "use_suite2p_ROI_classifier": self.use_iscell,
+                "multivid_processing": self.multivid_processing,
             },
             if Path(config_file_path).exists():
                 with open(config_file_path, 'r') as f:
@@ -239,8 +251,10 @@ class ConfigEditor:
         self.gen_settings.exp_condition = self.exp_condition
         script_dir = Path(__file__).resolve().parent  # Get current script directory (project/src/gui_config)
         config_file_path = (script_dir / "../../config/config.json").resolve()
+        # print("DEBUG FINAL CONFIG:", self.config.to_dict())
         save_config(config_file_path, self.config)
         print(f"Configurations saved as config.json @ {config_file_path}")
+        
 
     def create_process_button(self, parent_frame):
         tk.Button(parent_frame, text="Proceed", command=self.run_pipeline).pack(pady=5)
@@ -282,6 +296,7 @@ class ConfigEditor:
         tk.Button(ops_window, text="Run Suite2P", command=self.run_suite2p).pack(pady=5)
 
     def run_pipeline(self):  #Option to skip suite2p, will execute a different .bat then
+        self.save()
         current_dir = Path(__file__).parent
         scripts_dir = os.path.join(current_dir, "Scripts") 
         bat_file = os.path.join(scripts_dir, "run_suite2p.bat")

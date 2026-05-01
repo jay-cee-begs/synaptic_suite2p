@@ -2,6 +2,7 @@ import os
 import shutil
 from suite2p import run_s2p
 from analyze_suite2p import analysis_utility, suite2p_utility, config_loader
+from gui_core import folder_logic
 
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 config = _DEFAULT_CONFIG
@@ -49,27 +50,39 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
         if not os.path.isdir(dir_path):
             print(f"Skipping non-directory path: {dir_path}")
             continue
-
-        # Processing each file within the directory
+        files = []
         for file in os.listdir(dir_path):
-            if file.endswith(file_ending):
-                name, _ = os.path.splitext(file)
-                folder_path = os.path.join(dir_path, name)
-                os.makedirs(folder_path, exist_ok=True)
+            if os.path.isfile(os.path.join(dir_path, file)) and file.endswith(file_ending):
+                files.append(file)
+        
+        if len(files) == 0:
+            print(f"No {file_ending} files in {dir_path}")
+            continue
 
-                source = os.path.join(dir_path, file)
-                destination = os.path.join(folder_path, file)
+        for file in files: 
+    
+            name, _ = os.path.splitext(file)
+            folder_path = os.path.join(dir_path, name)
+            os.makedirs(folder_path, exist_ok=True)
 
-                try:
-                    shutil.copy2(source, destination)
-                    os.remove(source)
-                    print(f"Processed and moved {file} to {folder_path}")
-                except Exception as e:
-                    print(f"Failed to process {file} due to {e}")
-            else:
-                print(f"Skipping non-{file_ending} file: {file}")
+            source = os.path.join(dir_path, file)
+            destination = os.path.join(folder_path, file)
 
-def get_all_image_folders_in_path(path):
+            try:
+                shutil.copy2(source, destination)
+                os.remove(source)
+                print(f"Processed and moved {file} to {folder_path}")
+            except Exception as e:
+                print(f"Failed to process {file} due to {e}")
+
+def count_image_files_in_folder(current_path, file_ending):
+    count = 0
+    for file in os.listdir(current_path):
+        if file.endswith(file_ending):
+            count += 1
+    return count
+
+def get_all_image_folders_in_path(path, file_ending = config.general_settings.data_extension):
     """
     Find all folders within a given path that contain exactly one `.nd2` file in their deepest subfolder.
 
@@ -90,39 +103,22 @@ def get_all_image_folders_in_path(path):
         >>> get_all_image_folders_in_path("/home/user/images")
         ['/home/user/images/folder1', '/home/user/images/folder2']
     """
-
-    def check_for_single_image_file_in_folder(current_path, file_ending = config.general_settings.data_extension):
-        """
-        Check if the specified directory contains exactly one `.nd2` file.
-
-        This helper function scans a directory for files that match the specified `file_ending` (default is `.nd2`).
-        It returns True if the directory contains exactly one such file, otherwise False.
-
-        Args:
-        ----------
-            current_path (str): The path of the directory to check.
-            file_ending (str, optional): The file extension to look for. Default is `.nd2`.
-
-        Returns:
-        ----------
-            bool: True if the directory contains exactly one `.nd2` file, False otherwise.
-
-        Example:
-            >>> check_for_single_image_file_in_folder("/home/user/images/folder1")
-            True
-        """
-        tiff_files = [file for file in os.listdir(current_path) if file.endswith('.'+ file_ending)]
-        return len(tiff_files) == 1
-
+    image_types = {
+        'single': [],
+        'concat': []
+    }
+    
     found_image_folders = []
     for current_path, directories, files in os.walk(path):
-        # Check if current directory is a "deepest" directory (no subdirectories)
-        if check_for_single_image_file_in_folder(current_path):
-            #current_path = current_path.split("\\")[-2]
-            found_image_folders.append(current_path)
+        image_count = count_image_files_in_folder(current_path, file_ending)
 
-    return found_image_folders
+        if image_count == 1:
+            image_types['single'].append(current_path)
 
+        elif image_count > 1:
+            image_types['concat'].append(current_path)
+
+    return image_types
 
 def process_files_with_suite2p(image_list, ops):
     """
@@ -221,17 +217,31 @@ def main(config_file = None):
     ops['frame_rate'] = config.general_settings.frame_rate
     ops['input_format'] = data_extension
     ops['max_iterations'] = 20
-    export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
-    image_folders = get_all_image_folders_in_path(main_folder)
+    if not config.analysis_params.multivid_processing:
+        export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
+    image_folder_dict = get_all_image_folders_in_path(main_folder)
     suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
     unprocessed_files = []
-    if config.analysis_params.overwrite_suite2p:
-        process_files_with_suite2p(image_folders, ops)
-    else:
-        for image in image_folders:
+    if config.analysis_params.overwrite_suite2p and not config.analysis_params.multivid_processing:
+        ops['do_registration'] = 0
+        process_files_with_suite2p(image_folder_dict['single'], ops)
+        
+    elif config.analysis_params.overwrite_suite2p and config.analysis_params.multivid_processing:
+        ops['do_registration'] = 1
+        process_files_with_suite2p(image_folder_dict['concat'], ops)
+    
+    elif not config.analysis_params.overwrite_suite2p and not config.analysis_params.multivid_processing:
+        for image in image_folder_dict['single']:
             if image not in suite2p_samples:
                 unprocessed_files.append(image)
-    process_files_with_suite2p(unprocessed_files,ops)
+        ops['do_registration'] = 0
+        process_files_with_suite2p(unprocessed_files,ops)
+    elif not config.analysis_params.overwrite_suite2p and config.analysis_params.multivid_processing:
+        for image in image_folder_dict['concat']:
+            if image not in suite2p_samples:
+                unprocessed_files.append(image)
+        ops['do_registration'] = 1
+        process_files_with_suite2p(unprocessed_files,ops)
     analysis_utility.translate_suite2p_outputs_to_csv(main_folder, config = config, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                       update_iscell = config.analysis_params.update_suite2p_iscell)
     try:

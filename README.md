@@ -1,34 +1,35 @@
 # Synaptic suite2p README.md
 
-A semi-automated calcium imaging detection (using suite2p) and deconvolution (using cascade) pipeline for primary neuronal culture calcium imaging using widefield microscopy
+An automated synaptic calcium imaging detection pipeline based on Suite2p optimized for primary neuronal cell cultures and widefield microscopy
 
-This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting NMDA synaptic puncta in 0mM Mg2+ solutions with TTX. 
+This code takes the MouseLand suite2p software (https://github.com/MouseLand/suite2p), a calcium imaging ROI detector and fluorescence extractor, and applies it to detecting primarily NMDAR-mediated synaptic puncta and calcium transients in 0mM Mg2+ solutions with TTX. 
 
-The current pipeline has only been tested on Windows; Linux compatibility is being implemented
+The current pipeline has only been tested on Windows; Linux compatibility is not compatible with the current GUI
 
 ## Setup and Installation 
-You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.9, etc)
+You will need to use a python interpretter (either Anaconda, miniforge, python.exe version 3.9, etc.)
+    Newer versions of Python should also be viable for analysis, but these have not been tested thoroughly.
 
-To start you will need to create a fork of this repository (synaptic suite2p) to your current machine through github or by downloading the source code as a zip file. 
+To start you will need to create a fork of this repository (synaptic suite2p) to your current machine through GitHub or by downloading the source code as a zip file above. 
 
-Alternatively you should download a zip file of the code and save it somewhere you can access easily
 
 ### INSTALLING SUITE2P
 
-1. Make a fork of this online repository to your personal Github; set up to track this repo to get all future updates
+1. Make a fork of this online repository to your personal Github; set up to track this repo to get all future updates and improvements.
 
 2. Make a local copy of the synaptic suite2p repository on your computer saved in \Documents\Github\synaptic_suite2p
+    This is handled automatically be the GitHub Desktop app, or example.
 
-3. Navigate to the local directory where your clone of the repository is saved. Do this in an anaconda or miniforge terminal window using the `cd` command and the path to the copied repository
+3. Navigate to the local directory where your clone of the repository is saved. Do this in an anaconda or miniforge terminal window using the `cd` command and the path to the copied repository `cd path\to\synaptic_suite2p`
 
 4. Create a virtual environment in anaconda / miniforge for suite2p using python 3.9 by running the command `conda create -n suite2p python=3.9`
 
 5. To confirm suite2p installed correctly, follow Mouseland's guidelines and run the command `python -m pip install suite2p[gui]` to make sure you have access to the suite2p user interface. The version used for this project was suite2p==0.14.0
 
-6. Lastly, please run `pip install -e .` from the main project folder of synaptic_suite2p
+6. Lastly, please run `pip install -e .` from the main project folder of synaptic_suite2p `path\to\synaptic_suite2p`
 
 
-**NOTE**: some additional packages will need to be installed (e.g.`pip install seaborn BaselineRemoval pynapple` image software-specific packages such as `nd2` might also nee to be installed for processing Nikon microscope image files)
+**NOTE**: some additional packages will need to be installed (e.g.`pip install seaborn BaselineRemoval pynapple` image software-specific  packages such as `nd2` might also nee to be installed for processing Nikon microscope image files)
 
 # Workflow
 
@@ -55,63 +56,98 @@ Alternatively you should download a zip file of the code and save it somewhere y
     │   ├───image_or_image_folder_2
     │   ├───image_or_image_folder_3
 ```
-* Both image files and folders with images are acceptable. The code will look for image folders containing single image files; if it finds none, it will move all image files of a particular type (e.g. nd2 / tif) into folders of the same name automatically
+* Both image files and folders with images are acceptable. The code will look inside an experiment folder for experimental conditions. These conditions should contain image fies of a particular type (e.g., tiff, nd2) that are unsorted or pre-sorted into subfolders (if multiple images exist for similar regions). When the experiment_condition folder contains multiple images, the code will automatically sort each image file into its own folder so that it can be processed individually by Suite2p. 
 
 
-1. AFTER THE INSTALL: Please open up batch files using Visual Studio Code or another variant to look at windows batch files
+1. AFTER THE INSTALL: Please open up batch files using Visual Studio Code or another variant to look at windows batch files.
 
-2. For every `CALL` `path_to_conda_activate.bat`, please update the path to your own base conda path. you can find this path by running `conda env list` and replacing everything before `\Scripts\activate.bat` This will only need to be done the first time openning the analysis pipeline
+2. For every `CALL` `path_to_conda_activate.bat`, please update the path to your own base conda path. you can find this path by running `conda env list` and replacing everything before `\Scripts\activate.bat` This will only need to be done the first time openning the analysis pipeline.
 
 3. The GUI will now run the analysis pipeline correctly.
-To launch the gui either double click `run_analysis_gui.bat` found in `synaptic_suite2p\src\gui_config\Scripts` or navigate to the gui_config folder using `cd .\synaptic_suite2p\src\gui_config` followed by `python -m run_gui`
+To launch the gui either double click `run_analysis_gui.bat` found in `synaptic_suite2p\src\gui_config\Scripts` or navigate to the gui_config folder using `cd path\to\GitHub\folder\synaptic_suite2p\src\gui` followed by `python -m run_gui`
 
-4. After launching the run_gui change the `experiment / main_folder` using the `Browse` button (the folder containing experimental conditions as subfolders)
+4. After launching the GUI change the `Experiment / Main Folder Path:` using the `Browse` button or by manually typing in the folder containing all imaging files already presorted into experimental treatments (and potentially similar regions if running registration and comparing the same synapses over time)
 
-5. Enter the file extension for your image type without `.` (e.g. `tif`, `tiff`, or `nd2`) and click `Add Experiment Conditions` to automatically add the subfolders containing images as experimental groups
+5. Enter the `Data Extension` for your imaging files without `.` (e.g. `tif`, `tiff`, or `nd2`) and click `Add Experiment Conditions` to automatically add the subfolders containing images as experimental groups. The Experiment Conditions will automatically populate a dictionary visible lower in the GUI. 
 
-6. Find your own suite2p detection settings (`.npy` file) using `Browse` or `Open Suite2p GUI` using the suite2p GUI
-NOTE: please wait for the GUI to launch, it will take some time and then open the settings for testing using `CTRL+R` or File -> Run_Suite2p
+* It is essential that the '.' is not in the data extension / file ending so Suite2p will run and process the data appropriately!
 
-7. Enter the frame rate of your images using `Frame Rate:`<br>
+6. In the `Suite2p settings (ops.npy):` Browse or manually enter your own suite2p detection settings (`.npy` file). Example Suite2p_ops files are provided in the repository; however, custom settings files can be generated and checked for accuracy using the Suite2p GUI. 
+
+7. Enter the `Frame Rate:` of your images (in frames per second)<br>
 Enter the `Experiment Duration` in number of seconds<br>
 Enter the `Network Bin Width` in numbers of frames to group for synchronous synapse detection (default 5 frames)
 
-8. `Edit Analysis Parameters` to change the analysis_params.json file and modify analysis settings for post-processing of suite2p data
+8. `Edit Analysis Parameters` to change the analysis_params section of the `config.json` file to adjust post-processing analysis settings for suite2p data
 ```
 Editable Analysis Parameters
-    overwrite_csv: true / false (overwrites csv files containing synapse analysis)
-    
-    skew_threshold: minimum fluorescence skew required for ROI to be considered real 
-        (default = 1)
-    
-    peak_detection_threshold: Number of standard deviations above gaussian fit to noise to set as the threshold for peak detection
-        (default: 4.5 SD); for more information please see peak_detection_threshold.ipynb
+    overwite_suite2p: boolean 
+        Allows pipeline to overwrite pre-existing suite2p files, if present
 
-    peak_count_threshold: minimum number of calcium peaks per trace for ROI to be counted towards analysis
+    multivid_processing: boolean
+        Tells the pipeline that multiple images exist per region, per subfolder.
+        IF this is selected, it will automatically launch a Pop-up GUI for these settings later. 
+
+    use_suite2p_ROI_classifier: boolean
+        Utilizes Suite2p in-built classifier
+        *This is not recommended on a first pass of the data, only after manual curation. 
+        *Users can make their own classifiers for synaptic calcium imaging data if desired. 
+
+    update_suite2p_iscell: boolean 
+        Update the Suite2p `iscell.npy` file for filtering "real" and "noise" ROIs from one another. 
+        1 = "cells" or included ROIs and 0 = "non-cells" or excluded ROIs
 
     Img_Overlay: choice of max projection (max_proj) or mean img (meanImg) as a base for overlaying synaptic ROIs
 
-    use_suite2p_ROI_classifier: true / false (use built-in suite2p classifier NOT RECOMMENDED)
-
-    update_suite2p_iscell: true / false (update iscell.npy for visualizing ROIs considered "cells" -true- or "non-cells" -false-)
+    skew_threshold: float
+        minimum fluorescence skew required for ROI to be considered real 
+        (default = 1.0)
     
+    peak_detection_threshold: float
+        Number of standard deviations above gaussian fit to noise to set as the threshold for peak detection. (default: 4.5 SD)
+        
+
+    peak_count_threshold: minimum number of calcium peaks per trace
+        default: 1
+    
+Multivid_Registration_Params
+        saved in config.json as general_settings['multivid_params'] or as general namespace object general_settings.multivid_params
+    
+    Treatment_No: Number of treatments / Videos (including baseline)
+        Interactive to control for number of videos within a given subfolder
+    
+    equal_baseline_and_treatments: boolean
+        Are all videos (e.g., baseline and treatments the same number of frames?)
+        IF not selected, other settings display listed below
+
+        Treatment length units: "seconds" or "frames"
+            Units for the length of each video provided. Seconds and Frames for each video are possible units
+        
+        Video Lengths: user input
+            Video lengths for Baseline and Treatment 1, Treatment 2, etc. 
+
         
 ```
 
-analysis_params are written to their own file automatically when the window is closed
+analysis_params and multivid_params are written as dictionaries within the config.json along with the general_settings dictionary containing the main experiment information. 
+Settings are saved each time a Pop-up window is closed. 
 
 10. ***Click*** `Save Configurations` to update the configurations file (config\config.json) for analysis; these parameters can also be changed manually by the user
+    Alternatively, settings can be saved when the pipeline is run below using `Process`
 
-11. Click Process to run 
+11. Click `Process` to run the pipeline 
 
-At the end of the processing, there will be summary files in each of the image folders
+At the end of the processing, there will be summary files in the experimental_condition folders
 
 Each experimental condition folder will have ROIs circled overlayed on a meanImg or max_proj depending on which is chosen in the analysis_params settings
 <br> 
-Summary statistics are exported in csv file format in the file `Experiment Summary.csv`
+In the Experiment / Main Folder: 
+    Summary statistics are exported in csv file format in the file `Experiment Summary.csv`
 <br>
-Individual file analyses in csv format will be saved in `experiment_folder\csv_files`
+    Individual file analyses in csv format will be saved in `experiment_folder\csv_files`
 
+    Pickle files are saved in `experiment_folder\csv_files` these contain all of the raw data and processed data from csvs
+    
 CONTENTS:
 ```
 notebook_scripts/
@@ -130,10 +166,8 @@ src/
     
     config_loader: functions for loading JSON config files as namespace objects or dictionaries
 
-    export_cellprofiler_skeletons: 
-    syn_summary_plots:
-    xs_plots:
-
+    export_cellprofiler_skeletons: functions to calculate synapses per image file and map them to CellProfiler pipeline outputs
+        *NOTE These likely will not work directly with multivid_processing and are likely not necessary since synapses are tracked across conditions. 
 gui/
         Code to run gui and automated processing
     Scripts/
@@ -153,7 +187,8 @@ gui/
 gui_core/
         backend functions and files for running the GUI smoothly
     
-    analysis_model: Default AnalysisParams settings for loading GUI more smoothly
+    analysis_model: Default AnalysisParams 
+    multivid_reg: Default MultiVidEditor settings
     folder_logic: Functions to load files and define experimental groups for establishing post-processing rules and organization structures
     general_settings_model: GenSettings class containing default settings for config.json general_settings
     io: Functions for saving and loading config.json files for the GUI
@@ -173,7 +208,7 @@ R_analysis/
 neurite_normalization/
         CellProfiler and FIJI macros for determining neurite coverage
     Cell_Profiler_Projections_Dendrite_Coverage.ijm: ImageJ macro for automatically generating Average projection images
-
+        
     mask_neurons_and_skeletonize_neurites.cpproj: CellProfiler pipeline for removing soma signal and skeletonizing neurites from average projection images
 
     MAX projection minus MIN projection.ijm: ImageJ macro to generate max minus min projection images as seen in figures
@@ -206,36 +241,40 @@ Here are some example configuration options:
 ```json
 {
  "general_settings": {
-  "main_folder": "C:\\synapse_groundtruth",
+  "main_folder": "E:/concat_z-score",
+  "data_extension": "nd2",
+  "frame_rate": 20,
+  "ops_path": "C:/Users/jcbeg/Documents/GitHub/synaptic_suite2p/suite2p_ops_files/synaptic_suite2p_w_TTX_multivid_reg.npy",
   "groups": [
-   "C:\\synapse_groundtruth\\202501_cropped_ground_truth2",
-   "C:\\synapse_groundtruth\\202501_ground_truth3",
-   "C:\\synapse_groundtruth\\202501_ground_truth_PBS"
+   "replicate01",
+   "replicate02",
+   "replicate03"
   ],
-  "group_number": 3,
   "exp_condition": {
-   "202501_cropped_ground_truth2": "202501_cropped_ground_truth2",
-   "202501_ground_truth3": "202501_ground_truth3",
-   "202501_ground_truth_PBS": "202501_ground_truth_PBS"
+   "replicate01": "replicate01",
+   "replicate02": "replicate02",
+   "replicate03": "replicate03"
   },
-  "data_extension": "tif", //or "nd2" or "tiff";
-  "frame_rate": 10,
-  "ops_path": "path\\to\\suite2p\\settings\\file\\ops.npy",
   "BIN_WIDTH": 5,
-  "EXPERIMENT_DURATION": 180,
-  "FRAME_INTERVAL": 0.1,
-  "FILTER_NEURONS": true
+  "EXPERIMENT_DURATION": 540
  },
  "analysis_params": {
-  "overwrite_csv": true,
-  "overwrite_pkl": false,
-  "skew_threshold": "1.0",
-  "compactness_threshold": "1.4",
-  "peak_detection_threshold": "4.5",
-  "peak_count_threshold": "2",
-  "Img_Overlay": "max_proj",
+  "overwrite_suite2p": false,
+  "multivid_processing": true,
   "use_suite2p_ROI_classifier": false,
   "update_suite2p_iscell": true,
-  "return_decay_times": false
+  "Img_Overlay": "max_proj",
+  "return_decay_times": true,
+  "skew_threshold": 1.0,
+  "compactness_threshold": 1.4,
+  "peak_detection_threshold": 4.5,
+  "peak_count_threshold": 1
+ },
+ "multivid_params": {
+  "Treatment_No": 2,
+  "equal_baseline_and_treatments": true,
+  "unequal_treatment_lengths": [],
+  "treatment_length_units": "frames"
  }
 }
+```

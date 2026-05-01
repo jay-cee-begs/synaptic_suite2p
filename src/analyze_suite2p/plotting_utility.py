@@ -490,9 +490,26 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
             pixel2neuron[ypix, xpix] = n
     else:
         for n in range(stat.shape[0]):
+            
+            peak_count = output_df.iloc[n]["PeakCount"]
+            skew = stat.iloc[n]['skew']
+            footprint = stat.iloc[n]['footprint']
+            compact = stat.iloc[n]['compact']
+            npix = stat.iloc[n]['npix']
+            f = F[n]
+            fneu = Fneu[n]
 
-            if iscell[n,0] == 1:
+
+            if iscell[n,0] == 1 or iscell[n,0] == 1.0 or iscell[n,0] == True:
                 nid2idx[n] = len(scatters["x"]) # Assign new idx
+
+                if compact <= MIN_COMPACT:
+                    nid2idx_synapse[n] = len(scatters["x"])
+                else:
+                    # if npix > 50:
+                        nid2idx_dendrite[n] = len(scatters["x"])
+                    # else:
+                    #     nid2idx_rejected[n] = len(scatters["x"])
             else:
                 nid2idx_rejected[n] = len(scatters["x"])
 
