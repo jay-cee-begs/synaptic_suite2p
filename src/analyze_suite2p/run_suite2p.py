@@ -221,7 +221,7 @@ def main(config_file = None):
         if not config.analysis_params.multivid_processing:
             export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
         image_folder_dict = get_all_image_folders_in_path(main_folder)
-        suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", supress_printing=True)
+        suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", config = config, supress_printing=True)
         unprocessed_files = []
         if config.analysis_params.overwrite_suite2p and not config.analysis_params.multivid_processing:
             ops['do_registration'] = 0

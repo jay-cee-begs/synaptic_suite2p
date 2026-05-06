@@ -115,7 +115,7 @@ def check_for_suite2p_output(folder_name_list):
     return True
 
 
-def check_deltaF(folder_name_list):
+def check_deltaF(folder_name_list, config):
     """
     Checks if `deltaF.npy` exists in each folder; if not, calculates and generates it.
     
@@ -136,16 +136,19 @@ def check_deltaF(folder_name_list):
     """
     for folder in folder_name_list:
         location = os.path.join(folder, *SUITE2P_STRUCTURE["deltaF"])
+        
         if os.path.exists(location):
             continue
         else:
             if config.analysis_params.baseline_correction == 'airPLS': 
                 detector_utility.calculate_deltaF(location.replace("deltaF.npy","F.npy"), config = config)
+            elif config.analysis_params.baseline_correction == 'rolling_median':
+                detector_utility.rolling_correction_deltaF(location.replace("deltaF.npy", "F.npy"), config = config)                                                        
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
 
-def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
+def get_all_suite2p_outputs_in_path(folder_path, file_ending, config, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     """
     Searches the given parent folder for specific Suite2p-generated files or subfolders containing recordings.
     
@@ -156,6 +159,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
     ----------
         folder_path (str or Path): The root folder path to search for Suite2p files.
         file_ending (str): The file type to search for. Accepted values: `F.npy`, `deltaF.npy`, `samples`.
+        config (SimpleNameSpace dict): Configurations should be loaded separately with  config_loader.load_json_config_file(file = None)
         suppress_printing (bool, optional): Whether to suppress printing the found files/folders. Defaults to `False`.
     
     Returns:
@@ -188,7 +192,7 @@ def get_all_suite2p_outputs_in_path(folder_path, file_ending, supress_printing =
             print(file_names)
         return file_names
     elif file_ending=="samples":
-        check_deltaF(file_names)  #checks if deltaf exists, else calculates it
+        check_deltaF(file_names, config)  #checks if deltaf exists, else calculates it
         if not supress_printing:
             print(f"{len(file_names)} folders containing {file_ending} found:")
             print(file_names)
@@ -212,13 +216,13 @@ def get_experimental_dates(main_folder):
     Returns:
     ----------
         dict: A dictionary mapping each folder path to its corresponding sample/replicate number.
-    
+    S
     Example:
     ----------
         >>> get_experimental_dates('/path/to/main_folder')
         {'/path/to/main_folder/experimental_condition/251030_file_image': 'sample_1', '/path/to/main_folder/experimental_condition/251126_file_image': 'sample_2'}
     """
-    image_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing = True)
+    image_folders = get_all_suite2p_outputs_in_path(main_folder, "samples", config = config, supress_printing = True)
     date_list= []
     sample_dict = {}
     for folder in image_folders:
