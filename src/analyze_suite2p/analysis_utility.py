@@ -395,7 +395,7 @@ def translate_suite2p_outputs_to_csv(main_folder, config, check_for_iscell=False
         None
 
     """
-    suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(main_folder, "samples", supress_printing=True)
+    suite2p_outputs = suite2p_utility.get_all_suite2p_outputs_in_path(main_folder, "samples", config = config, supress_printing=True)
 
     output_path = os.path.join(main_folder,"csv_files")
     if not os.path.exists(output_path):
@@ -458,6 +458,7 @@ def create_experiment_summary(main_folder):
             aggregate_stats : grouped summary metrics
             merged_df : concatenated per-recording data
     """
+    home = main_folder
     csv_file_path = os.path.join(main_folder, 'csv_files')
     csv_files = list_all_files_of_type(csv_file_path, '.csv')
     processed_csvs = [file for file in csv_files if file.startswith('processed')]
@@ -469,9 +470,9 @@ def create_experiment_summary(main_folder):
 # Include non-numeric columns in the final aggregated dataframe
     aggregate_stats['Experimental_Group'] = merged_df.groupby(['File_Name', 'classification'])['Experimental_Group'].first().values
     aggregate_stats['Replicate_No.'] = merged_df.groupby(['File_Name', 'classification'])['Replicate_No.'].first().values
-    main_group = main_folder.split('\\')[-1]
-    merged_df.to_csv(os.path.join(main_folder, f'{main_group}_experiment_summary.csv'))
-    aggregate_stats.to_csv(os.path.join(main_folder, f'{main_group}_aggregate_summary.csv'))
+    main_group = os.path.basename(main_folder)
+    merged_df.to_csv(os.path.join(home, f'{main_group}_experiment_summary.csv'))
+    aggregate_stats.to_csv(os.path.join(home, f'{main_group}_aggregate_summary.csv'))
     
     return aggregate_stats, merged_df
 
@@ -729,7 +730,7 @@ def generate_synapse_counts_and_summary_stats(experiment_folder):
     import os
     from analyze_suite2p import config_loader
     config = config_loader.load_json_config_file(os.path.join(experiment_folder, 'analysis_config.json'))
-    experiment_name = str(config.general_settings.main_folder.split('\\')[-1])
+    experiment_name = str(os.path.basename(config.general_settings.main_folder))
     file_path = os.path.join(config.general_settings.main_folder,f"{experiment_name}_experiment_summary.csv")
     data = pd.read_csv(file_path)
     # synapses = data[["Experimental_Group", 
