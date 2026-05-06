@@ -11,7 +11,7 @@ import os
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def calculate_deltaF(F_file, event_threshold = 2):
+def calculate_deltaF(F_file, config, event_threshold = None, lambda_window = None):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -19,10 +19,15 @@ def calculate_deltaF(F_file, event_threshold = 2):
     -----------
         F_file : str
             Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
-        
-        event_threshold: float
+        config: SimpleNameSpace dictionary
+            loaded automatically from config_loader.load_json_config_file(file = None)
+        event_threshold: float, optional
             Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
-            The Default value is 3; smaller values will limit the number of baseline points used for correction.
+            The Default value is 2; smaller values will limit the number of baseline points used for correction.
+        lambda_window:
+            airPLS lambda value, smaller numbers result in more smoothing, a value of 10 or 100 
+            is recommended to start with
+            Number of frames to subsample for rolling median calculation
 
     Returns:
     --------
@@ -37,12 +42,16 @@ def calculate_deltaF(F_file, event_threshold = 2):
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
     deltaF= []
+    if event_threshold is None:
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+    if lambda_window is None:
+        lambda_window = config.analysis_params.lambda_window
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
 
         #Remove bleaching to generate change in Fluorescence
         baseline_corrected = BaselineRemoval(corrected_trace)
-        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
 
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)

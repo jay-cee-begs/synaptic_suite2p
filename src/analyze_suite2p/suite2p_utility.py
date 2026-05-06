@@ -139,9 +139,8 @@ def check_deltaF(folder_name_list):
         if os.path.exists(location):
             continue
         else:
-            detector_utility.calculate_deltaF(location.replace("deltaF.npy","F.npy"))
-            if os.path.exists(location):
-                continue
+            if config.analysis_params.baseline_correction == 'airPLS': 
+                detector_utility.calculate_deltaF(location.replace("deltaF.npy","F.npy"), config = config)
             else:
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
