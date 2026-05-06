@@ -26,6 +26,9 @@
   "return_decay_times": true,
   "skew_threshold": 1.0,
   "compactness_threshold": 1.4,
+  "baseline_correction": "rolling_median",
+  "lambda_window": 100,
+  "MAD_baseline_filter_threshold": 2.0,
   "peak_detection_threshold": 4.5,
   "peak_count_threshold": 1
  },
