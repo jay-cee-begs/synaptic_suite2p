@@ -395,7 +395,8 @@ def remove_bleaching(input_trace, baseline_correction, window = None):
             corr_trace = rolling_med(pd.Series(input_trace), window_size = int(window))
         else:
             corr_trace = rolling_med(pd.Series(input_trace), window_size = int(len(input_trace)/10))
-    fit_coefficients = np.polyfit(range(len(corr_trace)), corr_trace, 2)
-    fit = np.poly1d(fit_coefficients)
-    return input_trace - fit(range(len(input_trace)))
+    # fit_coefficients = np.polyfit(range(len(corr_trace)), corr_trace, 2)
+    # fit = np.poly1d(fit_coefficients)
+    # return input_trace - fit(range(len(input_trace)))
+    return input_trace - corr_trace
 
