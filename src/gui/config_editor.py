@@ -263,6 +263,7 @@ class ConfigEditor:
         config_file_path = (script_dir / "../../config/config.json").resolve()
         # print("DEBUG FINAL CONFIG:", self.config.to_dict())
         save_config(config_file_path, self.config)
+        save_config(os.path.join(self.gen_settings.main_folder, 'analysis_config.json'), self.config)
         print(f"Configurations saved as config.json @ {config_file_path}")
         
 
@@ -271,18 +272,22 @@ class ConfigEditor:
 
     
     def run_subprocess(self, bat_file):
-        scripts_dir = Path(bat_file).parent
-        log_file = scripts_dir / "process_log.txt"
+        # scripts_dir = Path(bat_file).parent
+        # log_file = scripts_dir / "process_log.txt"
 
-        with open(log_file, "w") as f:
-            self.process = subprocess.Popen(
-                [str(bat_file)],
-                stdout=f,
-                stderr=subprocess.STDOUT
-            )
+        # with open(log_file, "w") as f:
+        #     self.process = subprocess.Popen(
+        #         [str(bat_file)],
+        #         stdout=f,
+        #         stderr=subprocess.STDOUT
+        #     )
 
-            self.process.wait()
-
+        # self.process.wait()
+        self.process = subprocess.Popen(
+            [str(bat_file)],
+            shell=True
+        )
+        self.process.wait()
         self.master.after(0, self.on_process_finished)
 
     def on_process_finished(self):
