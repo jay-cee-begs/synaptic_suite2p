@@ -82,7 +82,7 @@ Enter the `Network Bin Width` in numbers of frames to group for synchronous syna
 ```
 Editable Analysis Parameters
     overwite_suite2p: boolean 
-        Allows pipeline to overwrite pre-existing suite2p files, if present
+        Allows pipeline to overwrite pre-existing suite2p files and deltaF files
 
     multivid_processing: boolean
         Tells the pipeline that multiple images exist per region, per subfolder.
@@ -97,16 +97,30 @@ Editable Analysis Parameters
         Update the Suite2p `iscell.npy` file for filtering "real" and "noise" ROIs from one another. 
         1 = "cells" or included ROIs and 0 = "non-cells" or excluded ROIs
 
-    Img_Overlay: choice of max projection (max_proj) or mean img (meanImg) as a base for overlaying synaptic ROIs
+    Img_Overlay: str ("max_proj" or "meanImg") 
+        choice of max projection (max_proj) or mean image (meanImg) as a base for overlaying synaptic ROIs
 
     skew_threshold: float
         minimum fluorescence skew required for ROI to be considered real 
         (default = 1.0)
-    
+
+    compactness_threshold: float
+        How circular an ROI needs to be to be subclassified as a dendritic ROI.
+        default = 1.4; to turn off: compactness_threshold > 10 
+
+    baseline_correction: str ("airPLS" or "rolling_median")
+        User choice of baseline correction between airPLS algorithm from NMR analysis or rolling median. These functions are used to general dF / F0 files
+
+    lambda_window: int
+        The lambda_ value for optmizing airPLS correction (recommended value: ~100; values closer to 10 make the baseline perfectly flat)
+        The _window value for number of frames to calculate rolling median over (recommended value: ~100-500)
+
+    MAD_baseline_filter_threshold: float
+        Number of MAD-estimated standard deviations above MAD to use as a cutoff for isolating baseline / noise frames
+
     peak_detection_threshold: float
         Number of standard deviations above gaussian fit to noise to set as the threshold for peak detection. (default: 4.5 SD)
-        
-
+    
     peak_count_threshold: minimum number of calcium peaks per trace
         default: 1
     
@@ -115,9 +129,11 @@ Multivid_Registration_Params
     
     Treatment_No: Number of treatments / Videos (including baseline)
         Interactive to control for number of videos within a given subfolder
+        e.g., Treatment_No = 3; baseline -> treatment1 -> treatment2
     
     equal_baseline_and_treatments: boolean
         Are all videos (e.g., baseline and treatments the same number of frames?)
+        
         IF not selected, other settings display listed below
 
         Treatment length units: "seconds" or "frames"
@@ -152,6 +168,7 @@ CONTENTS:
 ```
 notebook_scripts/
     run_pipeline: example for updating config.json settings without the user interface (GUI) and for seeing which functions run in the process
+
 src/
         main code of the repository
     plotting_utility:  for generating plots from processed data and performing basic statistical tests
@@ -168,6 +185,7 @@ src/
 
     export_cellprofiler_skeletons: functions to calculate synapses per image file and map them to CellProfiler pipeline outputs
         *NOTE These likely will not work directly with multivid_processing and are likely not necessary since synapses are tracked across conditions. 
+
 gui/
         Code to run gui and automated processing
     Scripts/
@@ -179,14 +197,12 @@ gui/
         syn2p_setup.bat:
 
     analysis_params: establishes post-processing analysis parameters in the GUI
-
     run_gui: code to run the gui; called using `python -m run_gui`
     config_editor: ConfigEditor class for populating GUI 
     ops_editor: AnalysisParams class for loading special analysis settings
 
 gui_core/
         backend functions and files for running the GUI smoothly
-    
     analysis_model: Default AnalysisParams 
     multivid_reg: Default MultiVidEditor settings
     folder_logic: Functions to load files and define experimental groups for establishing post-processing rules and organization structures
@@ -213,24 +229,15 @@ neurite_normalization/
 
     MAX projection minus MIN projection.ijm: ImageJ macro to generate max minus min projection images as seen in figures
 
-
-        suite2p/
-    pyproject.toml: 
-        dependencies for this project (work in progress)
-    export_cell_profiler_skeletons.py
-        code for skeletonization normalization
-    tau_sandbox
-        trace plotting sandbox
-    .gitignore
-        files for git not to track
-    LICENSE
-    README.md
-tests/
-    yet to be implemented
-
 config/
     analysis_params.json: JSON file containing outputs for the current experiment from analysis_params.py
     config.json: JSON file containing all information for running the current experiment (including analysis_params.json)
+
+.gitattributes
+.gitignore
+    files for git not to track
+LICENSE
+README.md
 
 ```
 ## Configuration
