@@ -211,6 +211,7 @@ def main(config_file = None):
             config_dict = config_loader.load_json_dict()
 
         main_folder = config.general_settings.main_folder
+        print(f"Loaded main folder: {main_folder}")
         groups = config.general_settings.groups
         data_extension = config.general_settings.data_extension
         ops_path = config.general_settings.ops_path
@@ -218,31 +219,44 @@ def main(config_file = None):
         ops['frame_rate'] = config.general_settings.frame_rate
         ops['input_format'] = data_extension
         ops['max_iterations'] = 20
+        print("Attempting to run Suite2p")
         if not config.analysis_params.multivid_processing:
             export_image_files_to_suite2p_format(main_folder, file_ending = data_extension)
-        image_folder_dict = get_all_image_folders_in_path(main_folder)
+        image_folder_dict = get_all_image_folders_in_path(main_folder, file_ending= data_extension)
         suite2p_samples = suite2p_utility.get_all_suite2p_outputs_in_path(config.general_settings.main_folder, file_ending="samples", config = config, supress_printing=True)
         unprocessed_files = []
-        if config.analysis_params.overwrite_suite2p and not config.analysis_params.multivid_processing:
-            ops['do_registration'] = 0
-            process_files_with_suite2p(image_folder_dict['single'], ops)
+
+        if not config.analysis_params.overwrite_suite2p:
+            if config.analysis_params.multivid_processing == True:
+                
+                for image in image_folder_dict['concat']:
+                    if image not in suite2p_samples:
+                        unprocessed_files.append(image)
+                ops['do_registration'] = 1
+                process_files_with_suite2p(unprocessed_files,ops)
+            else:
+                for image in image_folder_dict['single']:
+                    if image not in suite2p_samples:
+                        unprocessed_files.append(image)
+                ops['do_registration'] = 0
+                process_files_with_suite2p(unprocessed_files,ops)
+            if config.analysis_params.multivid_processing == False:
+                ops['do_registration'] = 0
+                process_files_with_suite2p(image_folder_dict['single'], ops)
+            else:
+                ops['do_registration'] = 1    
+                process_files_with_suite2p(image_folder_dict['concat'], ops)
+            print("Finished Suite2p ... allegedly")
+    
+        else:
+            if config.analysis_params.multivid_processing == False:
+                ops['do_registration'] = 0
+                process_files_with_suite2p(image_folder_dict['single'], ops)
+            else:
+                ops['do_registration'] = 1    
+                process_files_with_suite2p(image_folder_dict['concat'], ops)
             
-        elif config.analysis_params.overwrite_suite2p and config.analysis_params.multivid_processing:
-            ops['do_registration'] = 1
-            process_files_with_suite2p(image_folder_dict['concat'], ops)
-        
-        elif not config.analysis_params.overwrite_suite2p and not config.analysis_params.multivid_processing:
-            for image in image_folder_dict['single']:
-                if image not in suite2p_samples:
-                    unprocessed_files.append(image)
-            ops['do_registration'] = 0
-            process_files_with_suite2p(unprocessed_files,ops)
-        elif not config.analysis_params.overwrite_suite2p and config.analysis_params.multivid_processing:
-            for image in image_folder_dict['concat']:
-                if image not in suite2p_samples:
-                    unprocessed_files.append(image)
-            ops['do_registration'] = 1
-            process_files_with_suite2p(unprocessed_files,ops)
+            
         analysis_utility.translate_suite2p_outputs_to_csv(main_folder, config = config, check_for_iscell=config.analysis_params.use_suite2p_ROI_classifier, 
                                                         update_iscell = config.analysis_params.update_suite2p_iscell)
         try:
