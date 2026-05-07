@@ -148,7 +148,7 @@ def check_deltaF(folder_name_list, config):
                 print("something went wrong, please calculate delta F manually by inserting the following code above: \n F_files = get_file_name_list(folder_path = configurations.main_folder, file_ending = 'F.npy') \n for file in F_files: calculate_deltaF(file)")
 
 
-def get_all_suite2p_outputs_in_path(folder_path, file_ending, config, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
+def get_all_suite2p_outputs_in_path(folder_path, file_ending, config = config, supress_printing = False): ## accounts for possible errors if deltaF files have been created before
     """
     Searches the given parent folder for specific Suite2p-generated files or subfolders containing recordings.
     
