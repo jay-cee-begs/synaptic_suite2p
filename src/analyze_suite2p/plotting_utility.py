@@ -119,8 +119,8 @@ def get_all_pkl_outputs_in_path(path):
     return processed_files, file_names
 
 
-def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = 1000, plot_amplitudes = False,
-                   max_amplitude = 5.0, plot_shape = 'square', save_fig = False):#, max_amplitude = 4):#, video_label):
+def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment_no = 2, synapse_count = None, plot_amplitudes = False,
+                   max_amplitude = None, plot_shape = 'square', save_fig = False):#, max_amplitude = 4):#, video_label):
     """
     Plotting function for implementing Pynapple plots for rasterplots and amplitudes of individual events
     This function can be called in sequence using a 'for' loop.
@@ -209,7 +209,7 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
         if synapse_count is not None:
             plt.ylim(0,synapse_count)
         else:
-            plt.ylim(0,1000)
+            continue
         plt.tight_layout()
 
         plt.gca().spines[['top', 'right']].set_visible(False)  # cleaner plot
@@ -221,7 +221,10 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
                 tsd = my_tsd[idx]
                 plt.plot(tsd.index, tsd.values, color=f'C{idx}',marker='o',ls='',alpha=0.5)
             plt.ylabel('Amplitude')
-            plt.ylim(0, max_amplitude)
+            if max_amplitude is not None:
+                plt.ylim(0, max_amplitude)
+            else:
+                continue
             plt.xlabel('Spike Time (s)')
             plt.tight_layout()
 

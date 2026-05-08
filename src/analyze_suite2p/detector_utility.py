@@ -11,7 +11,7 @@ import os
 _DEFAULT_CONFIG = config_loader.load_json_config_file()
 config = _DEFAULT_CONFIG
 
-def calculate_deltaF(F_file, event_threshold = 2):
+def calculate_deltaF(F_file, config, event_threshold = None, lambda_window = None):
     """
     Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0).
 
@@ -19,10 +19,15 @@ def calculate_deltaF(F_file, event_threshold = 2):
     -----------
         F_file : str
             Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
-        
-        event_threshold: float
+        config: SimpleNameSpace dictionary
+            loaded automatically from config_loader.load_json_config_file(file = None)
+        event_threshold: float, optional
             Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
-            The Default value is 3; smaller values will limit the number of baseline points used for correction.
+            The Default value is 2; smaller values will limit the number of baseline points used for correction.
+        lambda_window:
+            airPLS lambda value, smaller numbers result in more smoothing, a value of 10 or 100 
+            is recommended to start with
+            Number of frames to subsample for rolling median calculation
 
     Returns:
     --------
@@ -37,12 +42,16 @@ def calculate_deltaF(F_file, event_threshold = 2):
     F = np.load(rf"{F_file}", allow_pickle=True)
     Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
     deltaF= []
+    if event_threshold is None:
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+    if lambda_window is None:
+        lambda_window = config.analysis_params.lambda_window
     for f, fneu in zip(F, Fneu):
         corrected_trace = f - (0.7*fneu) ## neuropil correction
 
         #Remove bleaching to generate change in Fluorescence
         baseline_corrected = BaselineRemoval(corrected_trace)
-        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
+        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= lambda_window)
 
         #Determine baseline F0 value
         trace_median = np.median(corrected_trace)
@@ -59,6 +68,70 @@ def calculate_deltaF(F_file, event_threshold = 2):
     deltaF = np.array(deltaF)
     deltaF = np.squeeze(deltaF)
     if not os.path.exists(f"{savepath}/deltaF.npy"):
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    else:
+        print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
+
+    return deltaF
+
+def rolling_correction_deltaF(F_file, config, event_threshold = None, lambda_window = None):
+    """
+    Convert raw fluorescence (F.npy) into change in fluorescence compared to baseline (dF / F0)
+    using rolling median baseline correction.
+
+    Args:
+    -----------
+        F_file : str
+            Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
+        config: SimpleNameSpace dictionary
+            loaded automatically from config_loader.load_json_config_file(file = None)
+        Event threshold: float, optional
+            Number of standard deviations above MAD to se peak filtering; default is 2
+        lambda_window: int, optional
+            Number of frames to subsample for rolling median calculation
+
+    Returns:
+    --------
+        deltaF : 1D numpy array
+            dF/F0 normalized fluorescence
+            MAD baseline estimated
+            rolling median automated baseline correction
+            deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
+    """
+    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
+    F = np.load(rf"{F_file}", allow_pickle=True)
+    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
+    deltaF= []
+    if event_threshold is None:
+        event_threshold = config.analysis_params.MAD_baseline_filter_threshold
+    if lambda_window is None:
+        lambda_window = config.analysis_params.lambda_window
+    for f, fneu in zip(F, Fneu):
+        corrected_trace = f - (0.7*fneu) ## neuropil correction
+
+        #Remove bleaching to generate change in Fluorescence
+        
+        baseline_corrected = remove_bleaching(corrected_trace, 'rolling_med', window = lambda_window) #TODO make interatable with config file
+
+        #Determine baseline F0 value
+        trace_median = np.median(corrected_trace)
+        trace_mad = np.median(np.abs(corrected_trace - trace_median))
+        norm_sigma = 1.4826*trace_mad
+        baseline_mask = np.abs(corrected_trace - trace_median) < event_threshold * norm_sigma
+        F0 = np.median(corrected_trace[baseline_mask])
+
+        #calculate dF / F0
+        normalized_F = (baseline_corrected)/F0
+        
+        deltaF.append(normalized_F)
+        
+    deltaF = np.array(deltaF)
+    deltaF = np.squeeze(deltaF)
+    if not os.path.exists(f"{savepath}/deltaF.npy") and not config.analysis_params.overwrite_suite2p:
+        np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
+        print(f"delta F traces saved as deltaF.npy under {savepath}\n")
+    elif os.path.exists(f"{savepath}/deltaF.npy") and config.analysis_params.overwrite_suite2p:
         np.save(f"{savepath}/deltaF.npy", deltaF, allow_pickle=True)
         print(f"delta F traces saved as deltaF.npy under {savepath}\n")
     else:
@@ -386,7 +459,8 @@ def remove_bleaching(input_trace, baseline_correction, window = None):
             corr_trace = rolling_med(pd.Series(input_trace), window_size = int(window))
         else:
             corr_trace = rolling_med(pd.Series(input_trace), window_size = int(len(input_trace)/10))
-    fit_coefficients = np.polyfit(range(len(corr_trace)), corr_trace, 2)
-    fit = np.poly1d(fit_coefficients)
-    return input_trace - fit(range(len(input_trace)))
+    # fit_coefficients = np.polyfit(range(len(corr_trace)), corr_trace, 2)
+    # fit = np.poly1d(fit_coefficients)
+    # return input_trace - fit(range(len(input_trace)))
+    return input_trace - corr_trace
 

@@ -30,6 +30,15 @@ class OpsEditor:
                     state="readonly"
                 ).grid(row=idx, column=1)
                         
+            elif param == "baseline_correction":
+                var = tk.StringVar(value=value)
+                ttk.Combobox(
+                    self.master,
+                    textvariable=var,
+                    values=["airPLS", "rolling_median"],
+                    state="readonly"
+                ).grid(row=idx, column=1)
+                        
 
             else:
                 var = tk.StringVar(value=str(value))
