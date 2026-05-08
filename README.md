@@ -112,8 +112,8 @@ Editable Analysis Parameters
         User choice of baseline correction between airPLS algorithm from NMR analysis or rolling median. These functions are used to general dF / F0 files
 
     lambda_window: int
-        The lambda_ value for optmizing airPLS correction (recommended value: ~100; values closer to 10 make the baseline perfectly flat)
-        The _window value for number of frames to calculate rolling median over (recommended value: ~100-500)
+        The lambda_ value for optmizing airPLS correction (recommended value: 10); higher values (e.g., 100, 1000) remove baseline fluctuations less rigorously)
+        The _window value for number of frames to calculate rolling median over (recommended value: ~100-500 frames out of 3600)
 
     MAD_baseline_filter_threshold: float
         Number of MAD-estimated standard deviations above MAD to use as a cutoff for isolating baseline / noise frames
