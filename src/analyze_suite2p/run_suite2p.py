@@ -240,13 +240,6 @@ def main(config_file = None):
                         unprocessed_files.append(image)
                 ops['do_registration'] = 0
                 process_files_with_suite2p(unprocessed_files,ops)
-            if config.analysis_params.multivid_processing == False:
-                ops['do_registration'] = 0
-                process_files_with_suite2p(image_folder_dict['single'], ops)
-            else:
-                ops['do_registration'] = 1    
-                process_files_with_suite2p(image_folder_dict['concat'], ops)
-            print("Finished Suite2p ... allegedly")
     
         else:
             if config.analysis_params.multivid_processing == False:
