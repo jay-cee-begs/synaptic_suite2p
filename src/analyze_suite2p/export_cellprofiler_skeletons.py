@@ -352,7 +352,8 @@ def main(folder):
 
     groups, metrics, synapses_csv = load_experiment_csv(folder)
     synapses_csv.to_csv(os.path.join(folder, f'{experiment}_synapse_average.csv'))
-    df = merge_cellprofiler_csvs_without_fuzzy_match(folder)
+    df, missing_files = normalize_synapse_to_skeletons_safe_match(folder, fuzzy_threshold =0.8)
     df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
+    missing_files.to_csv(os.path.join(folder, f"missing_normalized_files.csv"))
     return df
 
