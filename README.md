@@ -59,12 +59,12 @@ To start you will need to create a fork of this repository (synaptic suite2p) to
 * Both image files and folders with images are acceptable. The code will look inside an experiment folder for experimental conditions. These conditions should contain image fies of a particular type (e.g., tiff, nd2) that are unsorted or pre-sorted into subfolders (if multiple images exist for similar regions). When the experiment_condition folder contains multiple images, the code will automatically sort each image file into its own folder so that it can be processed individually by Suite2p. 
 
 
-1. AFTER THE INSTALL: Please open up batch files using Visual Studio Code or another variant to look at windows batch files.
+1. AFTER THE INSTALL: Please open up batch files using Visual Studio Code or another code editor.
 
 2. For every `CALL` `path_to_conda_activate.bat`, please update the path to your own base conda path. you can find this path by running `conda env list` and replacing everything before `\Scripts\activate.bat` This will only need to be done the first time openning the analysis pipeline.
 
 3. The GUI will now run the analysis pipeline correctly.
-To launch the gui either double click `run_analysis_gui.bat` found in `synaptic_suite2p\src\gui_config\Scripts` or navigate to the gui_config folder using `cd path\to\GitHub\folder\synaptic_suite2p\src\gui` followed by `python -m run_gui`
+To launch the gui, navigate to the gui_config folder using `cd path\to\GitHub\folder\synaptic_suite2p\src\gui` followed by `python -m run_gui`
 
 4. After launching the GUI change the `Experiment / Main Folder Path:` using the `Browse` button or by manually typing in the folder containing all imaging files already presorted into experimental treatments (and potentially similar regions if running registration and comparing the same synapses over time)
 
@@ -112,7 +112,7 @@ Editable Analysis Parameters
         User choice of baseline correction between airPLS algorithm from NMR analysis or rolling median. These functions are used to general dF / F0 files
 
     lambda_window: int
-        The lambda_ value for optmizing airPLS correction (recommended value: 10); higher values (e.g., 100, 1000) remove baseline fluctuations less rigorously)
+        The lambda_ value for optmizing airPLS correction (recommended value: 10); higher values (e.g., 100, 1000) remove baseline fluctuations less rigorously
         The _window value for number of frames to calculate rolling median over (recommended value: ~100-500 frames out of 3600)
 
     MAD_baseline_filter_threshold: float
@@ -148,10 +148,10 @@ Multivid_Registration_Params
 analysis_params and multivid_params are written as dictionaries within the config.json along with the general_settings dictionary containing the main experiment information. 
 Settings are saved each time a Pop-up window is closed. 
 
-10. ***Click*** `Save Configurations` to update the configurations file (config\config.json) for analysis; these parameters can also be changed manually by the user
+9. ***Click*** `Save Configurations` to update the configurations file (config\config.json) for analysis; these parameters can also be changed manually by the user
     Alternatively, settings can be saved when the pipeline is run below using `Process`
 
-11. Click `Process` to run the pipeline 
+10. Click `Process` to run the pipeline 
 
 At the end of the processing, there will be summary files in the experimental_condition folders
 
