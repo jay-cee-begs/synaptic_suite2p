@@ -235,7 +235,9 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
     Args:
     -----
         suite2p_dict : dict
-            Dictionary produced by suite2p_utility.load_suite2p_output().
+            Dictionary produced by suite2p_utility.load_suite2p_output()
+        config : SimpleNameSpace dict
+            configurations.json file
 
     Returns:
     --------
@@ -733,21 +735,7 @@ def generate_synapse_counts_and_summary_stats(experiment_folder):
     experiment_name = str(os.path.basename(config.general_settings.main_folder))
     file_path = os.path.join(config.general_settings.main_folder,f"{experiment_name}_experiment_summary.csv")
     data = pd.read_csv(file_path)
-    # synapses = data[["Experimental_Group", 
-    #                  "File_Name", 
-    #                  'synapse_ROI', 
-    #                  "dendrite_ROI",
-    #                  "total_ROIs",
-    #                  "SpikesFreq",
-    #                  "AvgAmplitude",
-    #                  "AvgDecayTime" ]].drop_duplicates()
-    # syanpses = synapses.groupby("File_Name").agg({"Experimental_Group": "first",
-    #                                           "synapse_ROI":["mean"],
-    #                                           "dendrite_ROI": ["mean"],
-    #                                           "total_ROIs": ["mean"],
-    #                                           "SpikesFreq": ["mean"],
-    #                                           "AvgAmplitude": ["mean"],
-    #                                           "AvgDecayTime": ["mean"]})
+
     synapses = data[["Experimental_Group", 
                      "Replicate_No.",
                      "File_Name",
