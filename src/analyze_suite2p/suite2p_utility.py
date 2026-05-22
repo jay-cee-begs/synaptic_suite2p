@@ -125,6 +125,8 @@ def check_deltaF(folder_name_list, config):
     Args:
     ----------
         folder_name_list (list of str): A list of folder paths containing Suite2p-generated files.
+        
+        config (SimpleNameSpace dict): Configurations should be loaded separately with  config_loader.load_json_config_file
     
     Returns:
     ----------
