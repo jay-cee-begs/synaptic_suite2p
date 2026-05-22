@@ -202,6 +202,7 @@ def main(config_file = None):
     ----------
         None
             The function performs processing and file I/O but does not return a value.
+            An analyis_config.json file is saved in the main_folder / Experiment Folder that is processed
 
 
     Workflow:
@@ -209,7 +210,7 @@ def main(config_file = None):
         1. Load configuration and ``ops.npy`` Suite2p settings.
         2. Export raw images into Suite2p format.
         3. Identify all image folders and detect existing Suite2p outputs.
-        4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
+        4. Run Suite2p on unprocessed folders (or all folders if overwrite_suite2p is enabled).
         5. Convert Suite2p outputs to CSV and pickle formats.
         6. Generate experiment summary tables and statistical outputs.
         7. Save the analysis configuration used for reproducibility.
