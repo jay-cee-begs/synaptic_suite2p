@@ -76,6 +76,23 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 print(f"Failed to process {file} due to {e}")
 
 def count_image_files_in_folder(current_path, file_ending):
+    """
+    Count the number of image files (or files with a certain file ending) present
+    in the current path.
+
+        Args:
+    ----------
+        current_path: path / str
+            Path-like object pointing to a folder containing image files
+        file_ending: str
+            File type / file ending for image file
+            example endings ('nd2', 'tif')
+
+    Returns:
+    ----------
+        Count: int
+            Number of files matching a file ending within a given folder
+    """
     count = 0
     for file in os.listdir(current_path):
         if file.endswith(file_ending):
@@ -240,13 +257,6 @@ def main(config_file = None):
                         unprocessed_files.append(image)
                 ops['do_registration'] = 0
                 process_files_with_suite2p(unprocessed_files,ops)
-            if config.analysis_params.multivid_processing == False:
-                ops['do_registration'] = 0
-                process_files_with_suite2p(image_folder_dict['single'], ops)
-            else:
-                ops['do_registration'] = 1    
-                process_files_with_suite2p(image_folder_dict['concat'], ops)
-            print("Finished Suite2p ... allegedly")
     
         else:
             if config.analysis_params.multivid_processing == False:
