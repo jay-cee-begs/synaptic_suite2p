@@ -19,12 +19,12 @@ def calculate_deltaF(F_file, config, event_threshold = None, lambda_window = Non
     -----------
         F_file : str
             Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
-        config: SimpleNameSpace dictionary
+        config : SimpleNameSpace dictionary
             loaded automatically from config_loader.load_json_config_file(file = None)
-        event_threshold: float, optional
+        event_threshold : float, optional
             Threshold (in MAD units) to mask obvious events by multiplying threshold by standard deviation. 
             The Default value is 2; smaller values will limit the number of baseline points used for correction.
-        lambda_window:
+        lambda_window :
             airPLS lambda value, smaller numbers result in more smoothing, a value of 10 or 100 
             is recommended to start with
             Number of frames to subsample for rolling median calculation
@@ -84,11 +84,11 @@ def rolling_correction_deltaF(F_file, config, event_threshold = None, lambda_win
     -----------
         F_file : str
             Path to NumPy array containing raw flourescence (F.npy) trace from suite2p.
-        config: SimpleNameSpace dictionary
+        config : SimpleNameSpace dictionary
             loaded automatically from config_loader.load_json_config_file(file = None)
-        Event threshold: float, optional
+        event_threshold : float, optional
             Number of standard deviations above MAD to se peak filtering; default is 2
-        lambda_window: int, optional
+        lambda_window : int, optional
             Number of frames to subsample for rolling median calculation
 
     Returns:
@@ -139,39 +139,6 @@ def rolling_correction_deltaF(F_file, config, event_threshold = None, lambda_win
 
     return deltaF
 
-def normalize_fluorescence_traces(F_file, save_traces = True):
-
-    savepath = rf"{F_file}".replace("\\F.npy","") ## make savepath original folder, indicates where deltaF.npy is saved
-    F = np.load(rf"{F_file}", allow_pickle=True)
-    Fneu = np.load(rf"{F_file[:-4]}"+"neu.npy", allow_pickle=True)
-    neuropil_corr = F - 0.7*Fneu
-    pop_normalized_traces, roi_normalized_traces = [], []
-    airPLS_corr = []
-    for trace in neuropil_corr:
-        baseline_corrected = BaselineRemoval(trace)
-        airPLS_corrected = baseline_corrected.ZhangFit(lambda_= 10)
-        airPLS_corr.append(airPLS_corrected)
-    airPLS_corr = np.array(airPLS_corr)
-    for trace in airPLS_corr:
-        
-        roi_normalized = (trace - trace.min()) / (trace.max()-trace.min())
-        pop_normalized =(trace - airPLS_corr.min()) / (airPLS_corr.max()-airPLS_corr.min())
-        pop_normalized_traces.append(pop_normalized)
-        roi_normalized_traces.append(roi_normalized)
-    pop_normalized_traces, roi_normalized_traces = np.array(pop_normalized_traces), np.array(roi_normalized_traces)
-    
-    if save_traces:
-        if not os.path.exists(f"{savepath}/CellNormalizedF.npy") and not os.path.exists(f"{savepath}/CellNormalizedF.npy"):
-            np.save(f"{savepath}/CellNormalizedF.npy", roi_normalized_traces, allow_pickle=True)
-            print(f"Cell Normalized traces saved as CellNormalizedF.npy under {savepath}\n")
-
-            np.save(f"{savepath}/PopNormalizedF.npy", pop_normalized_traces, allow_pickle=True)
-            print(f"Population normalized traces saved as PopNormalizedF.npy under {savepath}\n")
-
-        else:
-            print(f"deltaF files already exist for {F_file[len(config.general_settings.main_folder)+1:-21]}")
-
-    return pop_normalized_traces, roi_normalized_traces
 
 def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
     """
@@ -183,7 +150,7 @@ def estimate_single_trace_baseline_noise_mad(F_trace, event_threshold = 2):
             Baseline-corrected ΔF/F trace.
         frame_rate : float
             Sampling rate (Hz).
-        event_threshold: float
+        event_threshold : float
             Preserved from calculate_deltaF function above.
             Threshold (in MAD units) to mask obvious events by multiplying by estimated noise standard deviation. 
             Default: 2 (SD above median)
@@ -248,31 +215,31 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
     
     Args:
     -----------
-        deltaF: 1D numpy array
+        deltaF : 1D numpy array
             Normalized fluroescence trace 
-        return_peaks: bool, optional
+        return_peaks : bool, optional
             Returns time stamps (frame) for each peak
-        return_decay_frames: bool, optional
+        return_decay_frames : bool, optional
             Returns time stamp (frame) for when each peak returns to threshold
             if no return to threshold --> returns NaN
-        return_amplitudes: bool, optional
+        return_amplitudes : bool, optional
             Returns normalized amplitude for each detected peak
-        return_decay_times: bool, optional
+        return_decay_times : bool, optional
             Returns decay time from peak frame to crossing threshold (in seconds)
-        return_peak_count: bool, optional
+        return_peak_count : bool, optional
             Returns len(peaks)
-        extract_peaks: bool, optional
+        extract_peaks : bool, optional
             Returns peaks + 30 frames for peak library --> to be used for Tau calculations
 
     Returns:
     --------
-        IF any==True:
-            return_peaks: returns calcium spike time_stamps
-            return_decay_frames: returns number of frames for calcium spike to decay to threshold
-            return_amplitudes: returns amplitude of calcium spike in relation to baseline fluorescence (F0)
-            return_decay_time: returns decay time in seconds (converts number of frames into seconds)
-            return_peak_count: returns the total number of calcium spikes for the ROI fluorescence trace
-            extract_peaks: returns deltaF window around calcium spike for calcium spike library 
+        IF any==True :
+            return_peaks : returns calcium spike time_stamps
+            return_decay_frames : returns number of frames for calcium spike to decay to threshold
+            return_amplitudes : returns amplitude of calcium spike in relation to baseline fluorescence (F0)
+            return_decay_time : returns decay time in seconds (converts number of frames into seconds)
+            return_peak_count : returns the total number of calcium spikes for the ROI fluorescence trace
+            extract_peaks : returns deltaF window around calcium spike for calcium spike library 
     """
     
     sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
@@ -338,8 +305,8 @@ def detect_spikes_by_mod_z(input_trace, **signal_kwargs):
 
     Args:
     -----------
-        input_trace: 1D NumPy array
-        **signal_kwargs: assorted see signal.find_peaks()
+        input_trace : 1D NumPy array
+        **signal_kwargs : assorted see signal.find_peaks()
             Ex. width = (min,max), peak_prominence = type(float), height = type(float), threshold = type(float), distance = int/float
     Returns:
     --------
@@ -359,18 +326,21 @@ def plot_spikes(raw_trace, detector_func, detector_trace=None, **detector_kwargs
 
     Args:
     -----------
-        raw_trace: 1D NumPy array
-        detector_func: Function
+        raw_trace : 1D NumPy array
+
+        detector_func : Function
             Ex. scipy.signal.find_peaks() / detect_spikes_by_mod_z()
-        detector_trace: bool, optional
-        **detector_kwargs: assorted, optional
+       
+         detector_trace : bool, optional
+
+        **detector_kwargs : assorted, optional
             Ex. scipy.signal.find_peaks(x, height = , threshold = , peak_prominence = , width = , distance = )
 
     Returns:
     -------- 
         matplotlib.pyplot.plot line graph
-            blue: detector_trace (if true) or raw trace
-            red: detected spikes
+            blue : detector_trace (if true) or raw trace
+            red : detected spikes
     """
     if detector_trace is None:
         detector_input_trace = raw_trace.copy()
@@ -389,14 +359,14 @@ def rolling_min(input_series, window_size):
 
     Args:
     -----------
-        input_series: 1D NumPy array
+        input_series : 1D NumPy array
             raw_trace / F.npy / deltaF.npy
-        window_size: int
+        window_size : int
             Size of window to measure with each iteration
 
     Returns:
     -------- 
-        m: int / float
+        m : int / float
             Smallest local minimum across all windows
     """
     r = input_series.rolling(window_size, min_periods=1)
@@ -409,14 +379,14 @@ def rolling_med(input_series, window_size):
 
     Args:
     -----------
-        input_series: 1D NumPy array
+        input_series : 1D NumPy array
             raw_trace / F.npy / deltaF.npy
-        window_size: int
+        window_size : int
             Size of window to measure with each iteration
 
     Returns:
     -------- 
-        m: int / float
+        m : int / float
             Smallest local minimum across all windows
     """
     r = input_series.rolling(window_size, min_periods=1)
@@ -429,10 +399,10 @@ def remove_bleaching(input_trace, baseline_correction, window = None):
 
     Args:
     -----------
-        input_trace: 1D array
+        input_trace : 1D array
             raw fluorescence trace (F.npy or corrected: F.npy - 0.7*Fneu.npy)
             functions by processing one ROI at a time
-        baseline_correction: str
+        baseline_correction : str
             String name of function to call for removing bleaching from fluorescence trace
             Accepts 'rolling_min' or 'rolling_med' as possible values; all other values will break the function
 

@@ -19,9 +19,9 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
 
     Args:
     ----------
-        parent_directory: path / str
+        parent_directory : path / str
             Path-like object pointing to main folder to search through
-        file_ending: str
+        file_ending : str
             File type / file ending for image file
             example endings ('nd2', 'tif')
 
@@ -80,17 +80,17 @@ def count_image_files_in_folder(current_path, file_ending):
     Count the number of image files (or files with a certain file ending) present
     in the current path.
 
-        Args:
+    Args:
     ----------
-        current_path: path / str
+        current_path : path / str
             Path-like object pointing to a folder containing image files
-        file_ending: str
+        file_ending : str
             File type / file ending for image file
             example endings ('nd2', 'tif')
 
     Returns:
     ----------
-        Count: int
+        Count : int
             Number of files matching a file ending within a given folder
     """
     count = 0
@@ -108,13 +108,15 @@ def get_all_image_folders_in_path(path, file_ending = config.general_settings.da
 
     Args:
     ----------
-        path (str): The root directory path to begin the search from. The function will walk through all
-                    subdirectories starting from this path.
+        path : str
+            The root directory path to begin the search from. The function will walk through all
+            subdirectories starting from this path.
 
     Returns:
     ----------
-        list: A list of absolute paths to directories that contain exactly one `.nd2` file in their deepest
-              subfolder. If no such directories are found, the list will be empty.
+        image_type : dict
+            Dictionary of file directories for either single image files (in 'single')
+            or multiple images per folder in 'concat' for registration processing.
 
     Example:
         >>> get_all_image_folders_in_path("/home/user/images")

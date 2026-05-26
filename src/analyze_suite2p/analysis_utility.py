@@ -257,19 +257,19 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
 
         Args:
         -----
-            deltaF: 1D array
+            deltaF : 1D array
 
         Returns:
         --------
-            peaks: 1D array
+            peaks : 1D array
                 Frame index for where peaks were detected
-            amplitudes: 1D array
+            amplitudes : 1D array
                 List of amplitudes (peak - np.median(trace))
-            decay_times: 1D array
+            decay_times : 1D array
                 List of decay times in seconds for peak to decay to threshold, or NaN
-            peak_count: int
+            peak_count : int
                 len(peaks) --> count of total peaks for a synapse
-            decay_frames: 1D array
+            decay_frames : 1D array
                 number of frames for peak to decay back to threshold 
         """
         
@@ -287,10 +287,7 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
         
         results.append(result)
     spikes_per_neuron, spike_amplitudes, peak_count, decay_times, decay_frames = zip(*results)
-    # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     results = list(executor.map(lambda args: process_individual_synapse(*args), zip(suite2p_dict["F"], suite2p_dict["Fneu"])))
-    # spikes_per_neuron, decay_points_after_peaks, spike_amplitudes, decay_times, peak_count = zip(*results)
-#spikes_per_neuron from single_cell_peak_return OUTPUT = list of np.arrays        
+   
     total_frames = len(suite2p_dict['deltaF'].T)
     
     if config.analysis_params.multivid_processing:
@@ -337,9 +334,6 @@ def translate_suite2p_dict_to_df(suite2p_dict, config):
                 all_amplitudes[vid_idx].append(roi_amp_by_vid[vid_idx])
                 all_counts[vid_idx].append(len(roi_peaks_by_vid[vid_idx]))
 
-#############################################
-####TODO Concatenated traces are currently hardcoded; this would need to be fixed in the future
-    
     df = pd.DataFrame({"IsUsed": suite2p_dict["IsUsed"],
                        "Skew": suite2p_dict["stat"]["skew"],
                        "PeakTimes": spikes_per_neuron,
