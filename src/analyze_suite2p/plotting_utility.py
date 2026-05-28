@@ -532,41 +532,42 @@ def getStats(suite2p_dict, frame_shape, output_df, config, use_iscell = False):
 def dispPlot(MaxImg, scatters, nid2idx, nid2idx_rejected,nid2idx_dendrite, nid2idx_synapse,
              pixel2neuron, F, Fneu, save_path, fill_ROIs=False, axs=None):
              """
-                Display ROI overlays on a background image.
+            Display ROI overlays on a background image.
 
-                ROIs are visualized with different colors depending on classification
-                (synaptic vs dendritic).
+            ROIs are visualized with different colors depending on classification
+            (synaptic vs dendritic).
 
-                Args:
-                ----------
-                    MaxImg : np.ndarray
-                        Background image (e.g., max projection).
-                    scatters : dict
-                        ROI boundary coordinates.
-                    nid2idx : dict
-                        Mapping of ROI IDs to indices.
-                    nid2idx_rejected : dict
-                        Rejected ROI indices.
-                    nid2idx_dendrite : dict
-                        Dendritic ROI indices.
-                    nid2idx_synapse : dict
-                        Synaptic ROI indices.
-                    pixel2neuron : np.ndarray
-                        Pixel-to-ROI mapping array.
-                    F : np.ndarray
-                        Fluorescence traces.
-                    Fneu : np.ndarray
-                        Neuropil signals.
-                    save_path : str
-                        File path to save the output image.
-                    fill_ROIs : bool, optional
-                        Whether to fill ROI regions instead of outlining.
-                    axs : matplotlib.axes.Axes, optional
-                        Existing axes to plot on.
+            Args:
+            ----------
+                MaxImg : np.ndarray
+                    Background image (e.g., max projection).
+                scatters : dict
+                    ROI boundary coordinates.
+                nid2idx : dict
+                    Mapping of ROI IDs to indices.
+                nid2idx_rejected : dict
+                    Rejected ROI indices.
+                nid2idx_dendrite : dict
+                    Dendritic ROI indices.
+                nid2idx_synapse : dict
+                    Synaptic ROI indices.
+                pixel2neuron : np.ndarray
+                    Pixel-to-ROI mapping array.
+                F : np.ndarray
+                    Fluorescence traces.
+                Fneu : np.ndarray
+                    Neuropil signals.
+                save_path : str, optional
+                    File path to save the output image.
+                fill_ROIs : bool, optional
+                    Whether to fill ROI regions instead of outlining.
+                axs : matplotlib.axes.Axes, optional
+                    Existing axes to plot on.
 
-                Returns:
-                ----------
-                    None
+            Returns:
+            ----------
+                Returns Imaged Region overlayed with detected ROIs
+                Synapses are displayed in cyan, dendritic events displayed in orange
              """
              if axs is None:
                 fig = plt.figure(constrained_layout=True)
