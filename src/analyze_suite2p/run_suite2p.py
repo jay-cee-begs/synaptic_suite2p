@@ -19,9 +19,9 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
 
     Args:
     ----------
-        parent_directory: path / str
+        parent_directory : path / str
             Path-like object pointing to main folder to search through
-        file_ending: str
+        file_ending : str
             File type / file ending for image file
             example endings ('nd2', 'tif')
 
@@ -76,6 +76,23 @@ def export_image_files_to_suite2p_format(parent_directory, file_ending= config.g
                 print(f"Failed to process {file} due to {e}")
 
 def count_image_files_in_folder(current_path, file_ending):
+    """
+    Count the number of image files (or files with a certain file ending) present
+    in the current path.
+
+    Args:
+    ----------
+        current_path : path / str
+            Path-like object pointing to a folder containing image files
+        file_ending : str
+            File type / file ending for image file
+            example endings ('nd2', 'tif')
+
+    Returns:
+    ----------
+        Count : int
+            Number of files matching a file ending within a given folder
+    """
     count = 0
     for file in os.listdir(current_path):
         if file.endswith(file_ending):
@@ -91,13 +108,15 @@ def get_all_image_folders_in_path(path, file_ending = config.general_settings.da
 
     Args:
     ----------
-        path (str): The root directory path to begin the search from. The function will walk through all
-                    subdirectories starting from this path.
+        path : str
+            The root directory path to begin the search from. The function will walk through all
+            subdirectories starting from this path.
 
     Returns:
     ----------
-        list: A list of absolute paths to directories that contain exactly one `.nd2` file in their deepest
-              subfolder. If no such directories are found, the list will be empty.
+        image_type : dict
+            Dictionary of file directories for either single image files (in 'single')
+            or multiple images per folder in 'concat' for registration processing.
 
     Example:
         >>> get_all_image_folders_in_path("/home/user/images")
@@ -185,6 +204,7 @@ def main(config_file = None):
     ----------
         None
             The function performs processing and file I/O but does not return a value.
+            An analyis_config.json file is saved in the main_folder / Experiment Folder that is processed
 
 
     Workflow:
@@ -192,7 +212,7 @@ def main(config_file = None):
         1. Load configuration and ``ops.npy`` Suite2p settings.
         2. Export raw images into Suite2p format.
         3. Identify all image folders and detect existing Suite2p outputs.
-        4. Run Suite2p on unprocessed folders (or all folders if overwrite is enabled).
+        4. Run Suite2p on unprocessed folders (or all folders if overwrite_suite2p is enabled).
         5. Convert Suite2p outputs to CSV and pickle formats.
         6. Generate experiment summary tables and statistical outputs.
         7. Save the analysis configuration used for reproducibility.
@@ -240,13 +260,6 @@ def main(config_file = None):
                         unprocessed_files.append(image)
                 ops['do_registration'] = 0
                 process_files_with_suite2p(unprocessed_files,ops)
-            if config.analysis_params.multivid_processing == False:
-                ops['do_registration'] = 0
-                process_files_with_suite2p(image_folder_dict['single'], ops)
-            else:
-                ops['do_registration'] = 1    
-                process_files_with_suite2p(image_folder_dict['concat'], ops)
-            print("Finished Suite2p ... allegedly")
     
         else:
             if config.analysis_params.multivid_processing == False:

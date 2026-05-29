@@ -12,19 +12,19 @@ def load_experiment_csv(experiment_folder):
 
     Args:
     -----------
-        experiment_folder: str
+        experiment_folder : str
             Path to experiment folder containing file ending with "_experiment_summary.csv"
 
     Returns:
     --------
-        groups: List
+        groups : List
             Folders for experimental conditions as multiple str in list
             MAD baseline estimated
             ZhangFit / airPLS automated baseline correction
             deltaF is saved into the suite2p output folder generated from suite2p ROI detection.
-        metrics: List
+        metrics : List
             columns from experiment_summary.csv that were included in the aggregated processing 
-        synapses: DataFrame
+        synapses : DataFrame
             Pandas DataFrame containing synapse, dendrite, and total ROI numbers per imaged file.
             Frequency averages are also reported for the entire field of view
     """
@@ -70,16 +70,16 @@ def merge_cellprofiler_csvs_without_fuzzy_match(folder):
 
     Args:
     -----------
-        folder: str
+        folder : str
             Path to experiment directory containing all image files, csv files, and pkl files
 
     Returns:
     --------
-        full_df: DataFrame
+        full_df : DataFrame
             Merged Pandas DataFrame containing synapse_averages per file and coverage of neurites per file in a single dataframe
-        skele_only: DataFrame
+        skele_only : DataFrame
             DataFrame containing files that were only found in CellProfiler skeleton
-        stat_only: DataFrame 
+        stat_only : DataFrame 
             Files only from suite2p processing without a matching CellProfiler skeleton 
     """
     skele_data = pd.read_csv(os.path.join(folder, 'CellProfiler', 'GCaMP6f_new_skeleImage.csv'))
@@ -147,17 +147,17 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
 
     Args:
     -----------
-        experiment_folder: str
+        experiment_folder : str
             Path to experiment directory containing experiment_summary.csv files and CellProfiler files found in 
             folder 'CellProfiler'
-        fuzzy_threshold: float (0 - 1.0)
+        fuzzy_threshold : float (0 - 1.0)
             Percent of string that is required to match for matching between CellProfiler and suite2p image files
     
     Returns:
     --------
-        merged_df: DataFrame
+        merged_df : DataFrame
             Merged Pandas DataFrame containing synapse_averages per file and coverage of neurites per file in a single dataframe
-        missing: DataFrame
+        missing : DataFrame
             DataFrame containing files that could not be matched between CellProfiler projections and suite2p image files
     """
 
@@ -222,28 +222,28 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
 
         Args:
         ----------
-            df1: pandas.DataFrame
+            df1 : pandas.DataFrame
                 The reference DataFrame containing original filenames to match against.
-            df2: pandas.DataFrame
+            df2 : pandas.DataFrame
                 The target DataFrame whose filenames will be matched to `df1`.
-            group_col: str, optional
+            group_col : str, optional
                 Column name used to group entries (e.g., experimental condition).
                 Matching is only performed within the same group. Default is
                 "Experimental_Group".
-            match_col: str, optional
+            match_col : str, optional
                 Column name containing the strings (e.g., filenames) to be matched.
                 Default is "FileName_Originals".
-            threshold: int or float, optional
+            threshold : int or float, optional
                 Minimum similarity score required to consider a match valid.
                 Typically ranges from 0 to 100 depending on the fuzzy matching method.
 
         Returns:
         --------
-            df1: pandas.DataFrame
+            df1 : pandas.DataFrame
                 The input `df1` with an added 'combined_key' column.
-            df2: pandas.DataFrame
+            df2 : pandas.DataFrame
                 The input `df2` with an added 'combined_key' column.
-            mapping: dict
+            mapping : dict
                 A dictionary mapping each entry in `df2` (formatted as
                 "group | filename") to its best fuzzy match in `df1`.
                 If no match meets the threshold, the value is None.
@@ -340,12 +340,12 @@ def main(folder):
     
     Args:
     ----------
-        folder: path
+        folder : path
             Path to folder containing 'experiment_summary.csv' file and directory titled 'CellProfiler' containing processed AVG_projection.tiff images
 
     Returns:
     ----------
-        df: DataFrame
+        df : DataFrame
             Merged dataframe containing synapse counts per video and skeletonized neurite coverage from average projection images
     """
     experiment = folder.split('\\')[-1]

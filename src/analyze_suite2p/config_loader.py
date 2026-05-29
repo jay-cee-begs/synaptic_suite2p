@@ -10,7 +10,7 @@ def load_json_config_file(config_path = None):
 
     Args:
     -----
-        config_path: str, optional
+        config_path : str, optional
             Path to JSON configurations file (config.json)
     
     Returns:
@@ -53,12 +53,12 @@ def load_json_dict(config_path = None):
 
     Args:
     -----
-        config_path: str, optional
+        config_path : str, optional
             Path to JSON configurations file (config.json)
     
     Returns:
     --------
-        config_dict: dictionary
+        config_dict : dictionary
 
     Example:
         >>> load_json_config_file()

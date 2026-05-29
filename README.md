@@ -109,7 +109,7 @@ Editable Analysis Parameters
         default = 1.4; to turn off: compactness_threshold > 10 
 
     baseline_correction: str ("airPLS" or "rolling_median")
-        User choice of baseline correction between airPLS algorithm from NMR analysis or rolling median. These functions are used to general dF / F0 files
+        User choice of baseline correction between airPLS algorithm from NMR analysis or rolling median. These functions are used to generate dF / F0 files
 
     lambda_window: int
         The lambda_ value for optmizing airPLS correction (recommended value: 10); higher values (e.g., 100, 1000) remove baseline fluctuations less rigorously
