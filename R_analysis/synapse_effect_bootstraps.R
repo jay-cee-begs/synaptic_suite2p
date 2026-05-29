@@ -143,6 +143,34 @@ bootstrap_analysis_vectorized <- function(
       ))}
 
 
+data_dir <- "C:/Users/jcbegs/Documents/R_analysis/r_analysis"
+if (wd != data_dir) {
+  setwd(data_dir)
+  wd <- getwd()
+}
+param_list <- c("spikes_freq", "avg_amplitude")
+for (param in param_list){
+
+    bootstrap_analysis_vectorized("260403_Musashi_acute_chronic_experiment_summary.csv",
+                                  param,
+                                  test_groups = c("acute_PBS_ctrl", "acute_tx_low","acute_tx_mid","acute_tx_super", "chronic_tx", "chronic_ctrl"),
+                                  classification_filter = 'synaptic_event',
+                                  reference_group = 'acute_PBS_ctrl',
+                                  y_min= 0.1, y_max = 5,
+                                  file_base = "Mushashi_v_acute")
+  }
+for (param in param_list){
+  
+  bootstrap_analysis_vectorized("260403_Musashi_acute_chronic_experiment_summary.csv",
+                                param,
+                                test_groups = c("acute_PBS_ctrl", "acute_tx_low","acute_tx_mid","acute_tx_super", "chronic_tx", "chronic_ctrl"),
+                                classification_filter = 'synaptic_event',
+                                reference_group = 'chronic_ctrl',
+                                y_min= 0.1, y_max = 5,
+                                file_base = "Mushashi_v_chronic")
+}
+
+
 # ----Example Workflow for a experiment csv file---- #
 
 
