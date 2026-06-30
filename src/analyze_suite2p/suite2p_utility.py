@@ -319,8 +319,6 @@ def load_suite2p_output(data_folder, config, use_iscell = False):  ## creates a 
         suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["IsUsed"])
 
     else:
-        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
-        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
         suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
 
     if not groups:
@@ -341,6 +339,8 @@ def load_suite2p_output(data_folder, config, use_iscell = False):  ## creates a 
     # debugging
     if "iscell" not in suite2p_dict:
         raise KeyError ("'IsUsed' was not defined correctly either")
+    if suite2p_dict['iscell'].shape[1] is not 2:
+        raise KeyError("Iscell has been modified irrepairibly")
     if "Group" not in suite2p_dict:
         raise KeyError("'Group' key not found in suite2p_dict.")
     if not found_group:
