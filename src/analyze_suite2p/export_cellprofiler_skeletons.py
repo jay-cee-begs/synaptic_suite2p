@@ -3,8 +3,10 @@ import sys
 
 import pandas as pd
 import numpy as np
+from analyze_suite2p import config_loader
 
-
+_DEFAULT_CONFIG = config_loader.load_json_config_file()
+config = _DEFAULT_CONFIG
 
 def load_experiment_csv(experiment_folder):
     """
@@ -162,8 +164,6 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
     """
 
     from fuzzywuzzy import process
-    global config
-    global config_dict
     from analyze_suite2p import config_loader
     config = config_loader.load_json_config_file(os.path.join(experiment_folder, 'analysis_config.json'))
 
@@ -278,8 +278,8 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
             df2_sub = df2[df2[group_col] == group]
 
             if df1_sub.empty:
-                print("No Groups Found")
-                break
+                print(f"Warning: group '{group}' not found in df1 - skipping")
+                continue #previous break spot
             
             df1_filenames = df1_sub[match_col].astype(str).tolist()
 
@@ -306,7 +306,7 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
     
     sorted_CellProfilerSkeletons["Matched_Key"] = (
         sorted_CellProfilerSkeletons["combined_key"].map(file_map)
-    )
+    ).astype(object)
 
     merged_df = sorted_experiment_stats.merge(
         sorted_CellProfilerSkeletons,
@@ -314,6 +314,7 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
         right_on="Matched_Key",
         how="outer"
     )
+    sorted_experiment_stats["combined_key"] = sorted_experiment_stats["combined_key"].astype("string")
     missing = merged_df[merged_df["Matched_Key"].isna()]
 
     print(f"Unmatched rows: {len(missing)}")
@@ -329,11 +330,12 @@ def normalize_synapse_to_skeletons_safe_match(experiment_folder, fuzzy_threshold
     merged_df['dendrites_per_10um'] = (merged_df['dendrite_ROI'] / merged_df["um Skeleton Coverage"]) * 10
     merged_df['total_per_10um'] = (merged_df['total_ROIs'] / merged_df["um Skeleton Coverage"]) * 10
 
-    
+    print("experiment_stats groups:", sorted_experiment_stats["Experimental_Group"].unique())
+    print("CellProfiler groups:    ", sorted_CellProfilerSkeletons["Experimental_Group"].unique())
     return merged_df, missing
 
 
-def main(folder):
+def main(folder, matching = 'fuzzy'):
     """
     Function to automatically process preprocessed suite2p and CellProfiler run image sets
     NOTE: synapse averages are calculated as part of the main function
@@ -342,7 +344,8 @@ def main(folder):
     ----------
         folder : path
             Path to folder containing 'experiment_summary.csv' file and directory titled 'CellProfiler' containing processed AVG_projection.tiff images
-
+        matching: str
+            "fuzzy" to use fuzzywuzzy and 'raw' to match raw strings
     Returns:
     ----------
         df : DataFrame
@@ -352,7 +355,10 @@ def main(folder):
 
     groups, metrics, synapses_csv = load_experiment_csv(folder)
     synapses_csv.to_csv(os.path.join(folder, f'{experiment}_synapse_average.csv'))
-    df = merge_cellprofiler_csvs_without_fuzzy_match(folder)
+    if matching is 'raw':
+        df, skele_only, stat_only = merge_cellprofiler_csvs_without_fuzzy_match(folder)
+    if matching is 'fuzzy':
+        df, missing = merge_cellprofiler_csvs_without_fuzzy_match(folder)
     df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
     return df
 
