@@ -245,7 +245,7 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
         plt.show()
 
 
-def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, show_peaks = False, save_fig = False):
+def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, mask_synapses = False, show_peaks = False, save_fig = False):
     """
     Plot multiple synapse fluorescence traces with optional peak detection.
 
@@ -275,10 +275,12 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
     ----------
         None
     """
-    iscell_mask = suite2p_dict['iscell'][:,0] == 1  
+    if mask_synapses:
+        iscell_mask = suite2p_dict['iscell'][:,0] == 1  
 
-    masked_dF = suite2p_dict['deltaF'][iscell_mask]
-    
+        masked_dF = suite2p_dict['deltaF'][iscell_mask]
+    else:
+        masked_dF = suite2p_dict['deltaF']
     if treatment_vid:
          if treatment_no ==1:
               treatment1 = 180
