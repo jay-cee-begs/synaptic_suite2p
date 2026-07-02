@@ -240,7 +240,20 @@ analyze_model <- function(csv_file, reference_group, outcome_var, test_groups = 
   # combined_random_df <- bind_cols(random_variances_long, random_ci_df) %>%
   #   select(group, var_col, variance_est, `2.5 %`, `97.5 %`, Estimate)
   
-  icc_df <- if (is.data.frame(icc_result)) icc_result else as.data.frame(icc_result)
+  icc_result <- tryCatch({
+    performance::icc(model)
+  }, error = function(e) {
+    warning("icc() failed: ", e$message)
+    NULL
+  })
+  
+  icc_df <- if (is.null(icc_result)) {
+    data.frame(ICC_adjusted = NA_real_, ICC_unadjusted = NA_real_)
+  } else if (is.data.frame(icc_result)) {
+    icc_result
+  } else {
+    as.data.frame(icc_result)
+  }
   cat("Model statistics calculated\n")
   var_comp <- tryCatch({
     insight::get_variance(model)
