@@ -355,10 +355,11 @@ def main(folder, matching = 'fuzzy'):
 
     groups, metrics, synapses_csv = load_experiment_csv(folder)
     synapses_csv.to_csv(os.path.join(folder, f'{experiment}_synapse_average.csv'))
-    if matching is 'raw':
+    if matching == 'raw':
         df, skele_only, stat_only = merge_cellprofiler_csvs_without_fuzzy_match(folder)
-    if matching is 'fuzzy':
+    if matching == 'fuzzy':
         df, missing = merge_cellprofiler_csvs_without_fuzzy_match(folder)
     df.to_csv(os.path.join(folder, f'{experiment}_synapse_normalized_data.csv'))
+    
     return df
 
