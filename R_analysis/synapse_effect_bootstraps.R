@@ -23,8 +23,13 @@ bootstrap_analysis_vectorized <- function(
     filter(is.null(test_groups) | experimental_group %in% test_groups) %>%
     mutate(experimental_group = relevel(factor(experimental_group), ref = reference_group))
   
+  if (!is.null(test_groups)) {
+    data <- data %>%
+      filter(experimental_group %in% test_groups)
+  }
   if (!is.null(classification_filter)) {
-    data <- filter(data, classification == classification_filter)
+    data <- data %>%
+      filter(classification == classification_filter)
   }
   
   groups <- levels(data$experimental_group)
@@ -145,6 +150,7 @@ bootstrap_analysis_vectorized <- function(
 
 
 data_dir <- "C:/Users/jcbegs/Documents/R_analysis/r_analysis"
+wd <- getwd()
 if (wd != data_dir) {
   setwd(data_dir)
   wd <- getwd()
@@ -152,23 +158,113 @@ if (wd != data_dir) {
 param_list <- c("spikes_freq", "avg_amplitude")
 for (param in param_list){
 
-    bootstrap_analysis_vectorized("260403_Musashi_acute_chronic_experiment_summary.csv",
+    bootstrap_analysis_vectorized("mAB_HP_synaptic_experiment_summary.csv",
                                   param,
-                                  test_groups = c("acute_PBS_ctrl", "acute_tx_low","acute_tx_mid","acute_tx_super", "chronic_tx", "chronic_ctrl"),
+                                  test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5', 'CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020'),
                                   classification_filter = 'synaptic_event',
-                                  reference_group = 'acute_PBS_ctrl',
-                                  y_min= 0.1, y_max = 5,
-                                  file_base = "Mushashi_v_acute")
-  }
+                                  reference_group = 'neg_AB1',
+                                  y_min= .5, y_max = 5,
+                                  file_base = "FULL_pt_AB_screen_syn_v_neg_AB1")
+}
+
+for (param in param_list){
+  
+  bootstrap_analysis_vectorized("mAB_HP_synaptic_experiment_summary.csv",
+                                param,
+                                test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5', 'CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020'),
+                                classification_filter = 'synaptic_event',
+                                reference_group = 'neg_AB2',
+                                y_min= .5, y_max = 5,
+                                file_base = "FULL_pt_AB_screen_syn_v_neg_AB2")
+}
+
+for (param in param_list){
+  
+  bootstrap_analysis_vectorized("260622_ptAB_summary.csv",
+                                param,
+                                test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                                classification_filter = 'synaptic_event',
+                                reference_group = 'neg_AB1',
+                                y_min= .5, y_max = 5,
+                                file_base = "250622_pt_AB_screen_syn_v_neg_AB1")
+}
+
+for (param in param_list){
+  
+  bootstrap_analysis_vectorized("260622_ptAB_summary.csv",
+                                param,
+                                test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                                classification_filter = 'synaptic_event',
+                                reference_group = 'neg_AB2',
+                                y_min= .5, y_max = 5,
+                                file_base = "250622_pt_AB_screen_syn_v_neg_AB2")
+}
+bootstrap_analysis_vectorized("260624_260622_combined_Experiment_summary.csv",
+                              'spikes_freq',
+                              test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5', 'CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 5,
+                              file_base = "250624-260622_pt_AB_screen_syn_v_neg_AB2")
+
+bootstrap_analysis_vectorized("260624_260622_combined_Experiment_summary.csv",
+                              'avg_amplitude',
+                              test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5', 'CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 1.5,
+                              file_base = "250624-260622_pt_AB_screen_syn_v_neg_AB2")
+bootstrap_analysis_vectorized("260624_ptAB_summary.csv",
+                              'avg_amplitude',
+                              test_groups = c('mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020', 'neg_AB2', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 1.5,
+                              file_base = "250624_pt_AB_screen_syn_v_neg_AB2")
+bootstrap_analysis_vectorized("260622_ptAB_summary.csv",
+                              'avg_amplitude',
+                              test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 1.5,
+                              file_base = "250622_pt_AB_screen_syn_v_neg_AB2")
+bootstrap_analysis_vectorized("260624_ptAB_summary.csv",
+                              'spikes_freq',
+                              test_groups = c('mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020', 'neg_AB2', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 5,
+                              file_base = "250624_pt_AB_screen_syn_v_neg_AB2")
+bootstrap_analysis_vectorized("260622_ptAB_summary.csv",
+                              'spikes_freq',
+                              test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                              classification_filter = 'synaptic_event',
+                              reference_group = 'neg_AB2',
+                              y_min= .5, y_max = 5,
+                              file_base = "250622_pt_AB_screen_syn_v_neg_AB2")
+
+for (param in param_list){
+  
+  bootstrap_analysis_vectorized("260624_ptAB_summary.csv",
+                                param,
+                                test_groups = c('CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020', 'neg_AB2', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5'),
+                                classification_filter = 'synaptic_event',
+                                reference_group = 'neg_AB2',
+                                y_min= .5, y_max = 5,
+                                file_base = "250624_pt_AB_screen_syn_v_neg_AB2")
+}
+
+
+
 for (param in param_list){
   
   bootstrap_analysis_vectorized("260403_Musashi_acute_chronic_experiment_summary.csv",
                                 param,
-                                test_groups = c("acute_PBS_ctrl", "acute_tx_low","acute_tx_mid","acute_tx_super", "chronic_tx", "chronic_ctrl"),
+                                test_groups = c('neg_AB1', 'neg_AB2', 'mAB010', 'mAB011', 'mAB012', 'mAB001', 'mAB002', 'mAB003', 'mAB004', 'mAB005', 'mAB006', 'mAB007', 'mAB008', 'mAB009', 'pos_AB1', 'pos_AB2', 'pos_AB3', 'pos_AB4', 'pos_AB5', 'CSF1', 'CSF2', 'CSF3', 'mAB013', 'mAB014', 'mAB015', 'mAB016', 'mAB017', 'mAB018', 'mAB019', 'mAB020'),
                                 classification_filter = 'synaptic_event',
-                                reference_group = 'chronic_ctrl',
+                                reference_group = 'neg_AB1',
                                 y_min= 0.1, y_max = 5,
-                                file_base = "Mushashi_v_chronic")
+                                file_base = "pt_AB_screen")
 }
 
 
