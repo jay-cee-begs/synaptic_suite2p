@@ -245,7 +245,8 @@ def pynapple_plots(file_path, output_directory, treatment_vid = False, treatment
         plt.show()
 
 
-def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, treatment_vid = False, treatment_no = 1, mask_synapses = False, show_peaks = False, save_fig = False):
+def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = None, 
+                        peak_detection_multiplier = 4.5, treatment_vid = False, treatment_no = 1, mask_synapses = False, show_peaks = False, save_fig = False):
     """
     Plot multiple synapse fluorescence traces with optional peak detection.
 
@@ -311,7 +312,7 @@ def plot_synapse_traces(suite2p_dict, frame_rate = 20, trace_offset = 5, list = 
         offset_trace = trace + i * trace_offset
         ax.plot(time, offset_trace, color='black', alpha=0.6)
         if show_peaks:
-            peak_list = detector_utility.single_synapse_peak_detection(trace, return_peaks = True)
+            peak_list = detector_utility.single_synapse_peak_detection(trace, peak_detection_multiplier= peak_detection_multiplier,return_peaks = True)
             ax.plot(time[peak_list], offset_trace[peak_list], 'o', color = 'red')
     if treatment_vid == True and treatment_no ==  1:
          ax.axvline(treatment1, color='red', linestyle='--')
