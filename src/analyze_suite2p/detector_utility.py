@@ -204,7 +204,7 @@ def filter_outliers(trace):
     return filtered_values   
 
 
-def single_synapse_peak_detection(deltaF, return_peaks = False, 
+def single_synapse_peak_detection(deltaF,peak_detection_multiplier = 4.5, return_peaks = False, 
                                                        return_decay_frames = False, 
                                                        return_amplitudes = False, 
                                                        return_decay_time = False,
@@ -245,7 +245,7 @@ def single_synapse_peak_detection(deltaF, return_peaks = False,
     sigma, deltaF_baseline = estimate_single_trace_baseline_noise_mad(deltaF, event_threshold=2)
     
     baseline_reference = np.median(deltaF_baseline)
-    peak_detection_multiplier = 4.5# float(config.analysis_params.peak_detection_threshold)
+    # peak_detection_multiplier = 4.5# float(config.analysis_params.peak_detection_threshold)
     threshold = np.median(deltaF_baseline) + (peak_detection_multiplier * sigma)
 
     peaks, _ = find_peaks(deltaF, height = threshold, distance = 5, prominence = baseline_reference + sigma, width = (2,None))
