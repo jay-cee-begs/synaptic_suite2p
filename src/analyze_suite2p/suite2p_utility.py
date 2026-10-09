@@ -352,3 +352,108 @@ def load_suite2p_output(data_folder, config, use_iscell = False):  ## creates a 
  
     suite2p_dict['file_name'] = data_folder
     return suite2p_dict
+
+
+def load_local_suite2p_output(data_folder, groups = None, main_folder = None, load_local_suite2p = True, use_iscell = False):  ## creates a dictionary for the suite2p paths in the given data folder (e.g.: folder for well_x)
+    """
+    Load an example Suite2p output file from a local directory without needing to open a configurations file.
+
+    This includes fluorescence traces, neuropil signals, ROI statistics,
+    Suite2p processing options, and classification arrays. Optionally replaces
+    Suite2p's ``iscell.npy`` classification with user-defined skew-thresholding.
+
+    Args:
+    ----------
+        data_folder : str or Path
+            Path to the folder containing the Suite2p output directory.
+        groups : list of str
+            Names of experimental groups present inside ``main_folder``.
+        main_folder : str or Path
+            Root directory containing all experimental condition folders.
+        use_iscell : bool, optional
+            If ``True``, use Suite2p's ``iscell.npy`` array for ROI selection.
+            If ``False`` (default), compute ``IsUsed`` via skewness thresholding.
+
+    Returns:
+    ----------
+        dict
+            Dictionary containing all Suite2p arrays and metadata associated with
+            the recording, including assigned group and replicate label.
+    Example:
+    ----------
+            >>> load_local_suite2p_output('/path/to/data_folder', 
+                                          groups = None, main_folder = None, 
+                                          load_local_suite2p = True, use_iscell = True)
+            {"F": [5,6,7,8...],
+            "Fneu": [0,1,2,3...],
+            "stat": {npix: [7], skew: [0.56], radius: 25,...}
+            "ops": {dict}
+            "iscell": 2D array [[1, 0.5602], [0, 0.1123]...],
+            "deltaF": [0.25, 0.5, 0.67, 0.012,...],
+            "IsUsed": [True, False, True, True, False, False, ...],
+            "Group": 'Experimental_Treatment_Condition',
+            "sample": 'Replicate01',
+            "file_name": '202511_this_is_the_calcium_imaging_video_file_w_extension" 
+            }
+        
+    """
+    suite2p_dict = {
+        "F": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["F"])),
+        "Fneu": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["Fneu"])),
+        "stat": load_npy_df(os.path.join(data_folder, *SUITE2P_STRUCTURE["stat"]))[0].apply(pd.Series),
+        "ops": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE["ops"])).item(),
+        "deltaF": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['deltaF'])),
+        
+        "iscell": load_npy_array(os.path.join(data_folder, *SUITE2P_STRUCTURE['iscell'])),
+        
+
+}
+    if not use_iscell:
+        suite2p_dict["IsUsed"] = [(suite2p_dict["stat"]["skew"] >= 1)] 
+
+    else:
+        suite2p_dict["IsUsed"] = pd.DataFrame(suite2p_dict["iscell"]).iloc[:,0].values.T
+        suite2p_dict["IsUsed"] = np.squeeze(suite2p_dict["iscell"])
+        suite2p_dict['IsUsed'] = suite2p_dict['iscell'][:,0].astype(bool)
+ #TODO make sure that changing "path" to "data_folder" for using IsCell natively will still work
+    suite2p_dict['data_folder'] = data_folder
+
+    if load_local_suite2p:
+        main_folder = suite2p_dict['data_folder'].split('\\')[:-2]
+        main_folder = "\\".join(main_folder)
+
+        print(main_folder)
+        groups = suite2p_dict['data_folder'].split("\\")[0:-1]
+        groups = ["\\".join(groups)]
+    if not groups:
+        raise ValueError("The 'groups' list is empty. Please provide valid group names.")
+    print(f"Data folder: {data_folder}")
+    print(f"Groups: {groups}")
+    print(f"Main folder: {main_folder}")
+    found_group = False
+    if groups is not None:
+        for group in groups: ## creates the group column based on groups list from configurations file
+            if (str(group)) in data_folder:
+                group_name = group.split(main_folder)[-1].strip("\\/")
+                suite2p_dict["Group"] = group_name
+                found_group = True
+                print(f"Assigned Group: {suite2p_dict['Group']}")
+        
+    # debugging
+    if "iscell" not in suite2p_dict:
+        raise KeyError ("'IsUsed' was not defined correctly either")
+    # if "Group" not in suite2p_dict:
+    #     raise KeyError("'Group' key not found in suite2p_dict.")
+    #     #TODO find a way to ignore files not in the group list if manually removed
+    # if not found_group:
+    #     raise KeyError(f"No group found in the data_folder path: {data_folder}")
+    suite2p_dict["file_name"] = str(os.path.join(data_folder.split('\\')[-1], *SUITE2P_STRUCTURE["F"]))
+
+    if main_folder is not None:
+        sample_dict = get_experimental_dates(main_folder) ## creates the sample number dict
+   
+        suite2p_dict["sample"] = sample_dict[data_folder]  ## gets the sample number for the corresponding well folder from the sample dict
+    else:
+        suite2p_dict['sample'] = suite2p_dict['file_name'].split('\\')[-1]
+ 
+    return suite2p_dict
